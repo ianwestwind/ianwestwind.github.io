@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forum · WINN Platforms</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <nav class="nav">
+    <a href="index.html" class="nav-brand">WINN<span> Platforms</span></a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="portfolio-software.html">Software</a>
+      <a href="portfolio-design.html">Design</a>
+      <a href="forum.html" class="active">Forum</a>
+      <a href="discussion.html">Discussion</a>
+      <a href="announcements.html">Announcements</a>
+    </div>
+    <div class="nav-right">
+      <div class="nav-user" id="nav-user" style="display:none"></div>
+      <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign In</a>
+      <button class="btn btn-ghost btn-sm" id="nav-logout" style="display:none">Sign Out</button>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme">🌙</button>
+    </div>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <div class="nav-drawer" id="nav-drawer">
+    <a href="index.html">Home</a>
+    <a href="portfolio-software.html">Software Portfolio</a>
+    <a href="portfolio-design.html">Design Portfolio</a>
+    <a href="forum.html">Forum</a>
+    <a href="discussion.html">Discussion</a>
+    <a href="announcements.html">Announcements</a>
+    <a href="login.html" id="drawer-login">Sign In</a>
+  </div>
+
+  <div class="page-wrapper">
+    <div class="page-title-bar">
+      <div class="container">
+        <h1>Forum</h1>
+        <p>Community discussions — threaded by topic</p>
+      </div>
+    </div>
+
+    <div class="section-sm container-sm">
+
+      <!-- Post form (visible to regular+ users) -->
+      <div id="post-gate"></div>
+
+      <div class="post-form" id="new-post-form" style="display:none">
+        <h3>New Post</h3>
+        <form id="forum-form">
+          <div class="form-group">
+            <label for="post-title">Title</label>
+            <input type="text" id="post-title" name="title" placeholder="What's your topic?" required />
+          </div>
+          <div class="form-group">
+            <label for="post-thread">Thread / Tag <span style="color:var(--text-muted)">(optional)</span></label>
+            <input type="text" id="post-thread" name="thread" placeholder="e.g. general, dev, design" />
+          </div>
+          <div class="form-group">
+            <label for="post-body">Body</label>
+            <textarea id="post-body" name="body" placeholder="Share your thoughts…" required></textarea>
+          </div>
+          <p class="form-error" id="forum-form-error"></p>
+          <button type="submit" class="btn btn-primary">Post</button>
+        </form>
+      </div>
+
+      <!-- Posts -->
+      <div id="forum-posts">
+        <div class="spinner"><div class="spinner-ring"></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <p>© 2026 WINN Platforms</p>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { initAuth, updateNavUI, logout, hasRole, showToast } from "./js/auth.js";
+    import { loadForumPosts, submitForumPost } from "./js/forum.js";
+
+    const themeBtn   = document.getElementById("theme-toggle");
+    const savedTheme = localStorage.getItem("winn-theme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    themeBtn.textContent = savedTheme === "dark" ? "☀️" : "🌙";
+    themeBtn.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      const next    = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("winn-theme", next);
+      themeBtn.textContent = next === "dark" ? "☀️" : "🌙";
+    });
+
+    document.getElementById("nav-hamburger").addEventListener("click", () =>
+      document.getElementById("nav-drawer").classList.toggle("open"));
+
+    document.getElementById("nav-logout").addEventListener("click", async () => {
+      await logout();
+      showToast("Signed out.", "info");
+      window.location.reload();
+    });
+
+    initAuth(async (user, role) => {
+      updateNavUI(user, role);
+      if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
+
+      const gate     = document.getElementById("post-gate");
+      const postForm = document.getElementById("new-post-form");
+
+      if (hasRole(role, "regular")) {
+        postForm.style.display = "";
+      } else {
+        gate.innerHTML = `
+          <div class="access-gate">
+            <div class="gate-icon">🔒</div>
+            <h3>Sign in to post</h3>
+            <p>You need a registered account to post in the forum. All roles can read.</p>
+            <a href="login.html" class="btn btn-primary">Sign In / Register</a>
+          </div>
+        `;
+      }
+
+      await loadForumPosts("forum-posts");
+    });
+
+    document.getElementById("forum-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await submitForumPost("forum-form", "forum-posts");
+    });
+  </script>
+</body>
+</html>

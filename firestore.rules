@@ -1,0 +1,123 @@
+// ============================================================
+// WINN Platforms — Firestore Security Rules
+//
+// Deploy via: firebase deploy --only firestore:rules
+// Or paste directly in Firebase Console → Firestore → Rules
+// ============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- Helper functions ----
+
+    // Is the request from an authenticated user?
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Fetch the caller's role from the users collection
+    function callerRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    // Role hierarchy check: caller's role must be >= required
+    // Roles: guest(0) < regular(1) < moderator(2) < admin(3)
+    function hasRole(required) {
+      let rank = {'regular': 1, 'moderator': 2, 'admin': 3};
+      return isAuth() && rank[callerRole()] >= rank[required];
+    }
+
+    // Is the caller the owner of the document?
+    function isOwner(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+
+
+    // ---- /users/{uid} ----
+    match /users/{uid} {
+      // Anyone authenticated can read user profiles
+      allow read: if isAuth();
+
+      // A user can create their own document (registration)
+      // They may NOT set themselves a privileged role
+      allow create: if isOwner(uid)
+        && request.resource.data.role == 'regular'
+        && request.resource.data.email == request.auth.token.email;
+
+      // A user can update their own displayName only
+      // Role changes are admin-only
+      allow update: if
+        // Own profile: only displayName allowed
+        (isOwner(uid)
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.email == resource.data.email)
+        ||
+        // Admin can update anything
+        hasRole('admin');
+
+      // Only admin can delete user documents
+      allow delete: if hasRole('admin');
+    }
+
+
+    // ---- /announcements/{id} ----
+    match /announcements/{id} {
+      // Everyone (including unauthenticated) can read
+      allow read: if true;
+
+      // Only moderators and admins can create
+      allow create: if hasRole('moderator')
+        && request.resource.data.authorUid == request.auth.uid;
+
+      // Only the author (if mod+) or an admin can update
+      allow update: if hasRole('admin');
+
+      // Moderator+ can delete any announcement; author can delete their own
+      allow delete: if hasRole('moderator')
+        || (isAuth() && resource.data.authorUid == request.auth.uid && hasRole('moderator'));
+    }
+
+
+    // ---- /forum_posts/{id} ----
+    match /forum_posts/{id} {
+      // Everyone can read forum posts
+      allow read: if true;
+
+      // Registered users (regular+) can create posts
+      allow create: if hasRole('regular')
+        && request.resource.data.authorUid == request.auth.uid;
+
+      // Authors can update their own post body (no role escalation)
+      allow update: if isOwner(resource.data.authorUid) && hasRole('regular');
+
+      // Moderators can delete any post; authors can delete their own
+      allow delete: if hasRole('moderator')
+        || isOwner(resource.data.authorUid);
+    }
+
+
+    // ---- /discussion_posts/{id} ----
+    match /discussion_posts/{id} {
+      // Everyone can read
+      allow read: if true;
+
+      // Registered users can create
+      allow create: if hasRole('regular')
+        && request.resource.data.authorUid == request.auth.uid;
+
+      // Authors can edit their own post
+      allow update: if isOwner(resource.data.authorUid) && hasRole('regular');
+
+      // Moderators can delete any; authors can delete their own
+      allow delete: if hasRole('moderator')
+        || isOwner(resource.data.authorUid);
+    }
+
+
+    // ---- Deny all other paths ----
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

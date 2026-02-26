@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Design Portfolio · WINN Platforms</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <nav class="nav">
+    <a href="index.html" class="nav-brand">WINN<span> Platforms</span></a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="portfolio-software.html">Software</a>
+      <a href="portfolio-design.html" class="active">Design</a>
+      <a href="forum.html">Forum</a>
+      <a href="discussion.html">Discussion</a>
+      <a href="announcements.html">Announcements</a>
+    </div>
+    <div class="nav-right">
+      <div class="nav-user" id="nav-user" style="display:none"></div>
+      <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign In</a>
+      <button class="btn btn-ghost btn-sm" id="nav-logout" style="display:none">Sign Out</button>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme">🌙</button>
+    </div>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <div class="nav-drawer" id="nav-drawer">
+    <a href="index.html">Home</a>
+    <a href="portfolio-software.html">Software Portfolio</a>
+    <a href="portfolio-design.html">Design Portfolio</a>
+    <a href="forum.html">Forum</a>
+    <a href="discussion.html">Discussion</a>
+    <a href="announcements.html">Announcements</a>
+    <a href="login.html" id="drawer-login">Sign In</a>
+  </div>
+
+  <div class="page-wrapper">
+    <div class="page-title-bar">
+      <div class="container">
+        <h1>Design Portfolio</h1>
+        <p>UI/UX, branding, and visual design work</p>
+      </div>
+    </div>
+
+    <section class="section-sm container">
+      <!-- Category filter -->
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:2rem;" id="filter-bar">
+        <button class="btn btn-secondary btn-sm active-filter" data-filter="all">All</button>
+        <button class="btn btn-secondary btn-sm" data-filter="ui">UI/UX</button>
+        <button class="btn btn-secondary btn-sm" data-filter="brand">Branding</button>
+        <button class="btn btn-secondary btn-sm" data-filter="illustration">Illustration</button>
+        <button class="btn btn-secondary btn-sm" data-filter="motion">Motion</button>
+      </div>
+
+      <div class="card-grid" id="design-grid">
+        <div class="card" data-tags="ui">
+          <div class="card-tag">UI/UX</div>
+          <h3>WINN Platforms UI</h3>
+          <p>The design system behind this site — dark/light themes, component library, and layout patterns.</p>
+          <div class="card-links">
+            <a href="#" class="btn btn-secondary btn-sm">Figma</a>
+          </div>
+        </div>
+
+        <div class="card" data-tags="brand">
+          <div class="card-tag">Branding</div>
+          <h3>Brand Identity</h3>
+          <p>Logo, typography, color palette, and brand guidelines. Replace with your actual project.</p>
+          <div class="card-links">
+            <a href="#" class="btn btn-secondary btn-sm">View</a>
+          </div>
+        </div>
+
+        <div class="card" data-tags="illustration">
+          <div class="card-tag">Illustration</div>
+          <h3>Illustration Work</h3>
+          <p>Digital illustrations, icons, or visual storytelling. Describe your style and tools here.</p>
+          <div class="card-links">
+            <a href="#" class="btn btn-secondary btn-sm">Gallery</a>
+          </div>
+        </div>
+
+        <div class="card" data-tags="ui">
+          <div class="card-tag">UI/UX</div>
+          <h3>App Redesign</h3>
+          <p>A redesign concept — case study, wireframes, and final mockups. Replace with real work.</p>
+          <div class="card-links">
+            <a href="#" class="btn btn-secondary btn-sm">Case Study</a>
+            <a href="#" class="btn btn-ghost btn-sm">Prototype</a>
+          </div>
+        </div>
+
+        <div class="card" data-tags="motion">
+          <div class="card-tag">Motion</div>
+          <h3>Motion Design</h3>
+          <p>Animation work — UI transitions, explainer animations, or motion graphics.</p>
+          <div class="card-links">
+            <a href="#" class="btn btn-secondary btn-sm">Watch</a>
+          </div>
+        </div>
+
+        <div class="card" data-tags="brand">
+          <div class="card-tag">Branding</div>
+          <h3>Packaging / Print</h3>
+          <p>Print or packaging design work. Describe the project, client, and constraints.</p>
+          <div class="card-links">
+            <a href="#" class="btn btn-secondary btn-sm">View</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <p>© 2026 WINN Platforms</p>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js";
+
+    const themeBtn   = document.getElementById("theme-toggle");
+    const savedTheme = localStorage.getItem("winn-theme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    themeBtn.textContent = savedTheme === "dark" ? "☀️" : "🌙";
+    themeBtn.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      const next    = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("winn-theme", next);
+      themeBtn.textContent = next === "dark" ? "☀️" : "🌙";
+    });
+
+    document.getElementById("nav-hamburger").addEventListener("click", () =>
+      document.getElementById("nav-drawer").classList.toggle("open"));
+
+    initAuth((user, role) => {
+      updateNavUI(user, role);
+      if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
+    });
+
+    document.getElementById("nav-logout").addEventListener("click", async () => {
+      await logout();
+      showToast("Signed out.", "info");
+    });
+
+    document.getElementById("filter-bar").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-filter]");
+      if (!btn) return;
+      document.querySelectorAll("[data-filter]").forEach(b => b.classList.remove("active-filter"));
+      btn.classList.add("active-filter");
+      const filter = btn.dataset.filter;
+      document.querySelectorAll("#design-grid .card").forEach(card => {
+        const tags = card.dataset.tags || "";
+        card.style.display = (filter === "all" || tags.includes(filter)) ? "" : "none";
+      });
+    });
+  </script>
+  <style>
+    .active-filter { background: var(--accent-light) !important; color: var(--accent) !important; border-color: var(--accent) !important; }
+  </style>
+</body>
+</html>

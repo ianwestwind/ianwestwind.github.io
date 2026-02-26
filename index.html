@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WINN Platforms</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <!-- ===== Navigation ===== -->
+  <nav class="nav">
+    <a href="index.html" class="nav-brand">WINN<span> Platforms</span></a>
+    <div class="nav-links">
+      <a href="index.html" class="active">Home</a>
+      <a href="portfolio-software.html">Software</a>
+      <a href="portfolio-design.html">Design</a>
+      <a href="forum.html">Forum</a>
+      <a href="discussion.html">Discussion</a>
+      <a href="announcements.html">Announcements</a>
+    </div>
+    <div class="nav-right">
+      <div class="nav-user" id="nav-user" style="display:none"></div>
+      <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign In</a>
+      <button class="btn btn-ghost btn-sm" id="nav-logout" style="display:none">Sign Out</button>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme">🌙</button>
+    </div>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- Mobile drawer -->
+  <div class="nav-drawer" id="nav-drawer">
+    <a href="index.html">Home</a>
+    <a href="portfolio-software.html">Software Portfolio</a>
+    <a href="portfolio-design.html">Design Portfolio</a>
+    <a href="forum.html">Forum</a>
+    <a href="discussion.html">Discussion</a>
+    <a href="announcements.html">Announcements</a>
+    <a href="login.html" id="drawer-login">Sign In</a>
+  </div>
+
+  <div class="page-wrapper">
+    <!-- ===== Hero ===== -->
+    <section class="hero container">
+      <div class="hero-eyebrow">Portfolio &amp; Community</div>
+      <h1>WINN Platforms</h1>
+      <p class="hero-subtitle">
+        A showcase of software and design work, paired with a community space
+        for discussion, announcements, and collaboration.
+      </p>
+      <div class="hero-actions">
+        <a href="portfolio-software.html" class="btn btn-primary btn-lg">View Software Work</a>
+        <a href="forum.html" class="btn btn-ghost btn-lg">Join the Forum</a>
+      </div>
+    </section>
+
+    <!-- ===== Stats ===== -->
+    <section class="container">
+      <div class="stats-strip" id="stats-strip">
+        <div class="stat-item">
+          <div class="stat-value" id="stat-projects">—</div>
+          <div class="stat-label">Projects</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="stat-posts">—</div>
+          <div class="stat-label">Forum Posts</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="stat-members">—</div>
+          <div class="stat-label">Community Members</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Features ===== -->
+    <section class="section container">
+      <div class="section-header">
+        <h2>What's here</h2>
+        <p>A full-featured community platform, built with Firebase</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">💻</div>
+          <h3>Software Portfolio</h3>
+          <p>Open source projects, tools, and experiments in code.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎨</div>
+          <h3>Design Portfolio</h3>
+          <p>UI/UX, branding, and visual design work on display.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">💬</div>
+          <h3>Community Forum</h3>
+          <p>Threaded discussions for registered members.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📢</div>
+          <h3>Announcements</h3>
+          <p>Official updates from the team, always visible to all.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔐</div>
+          <h3>Role-Based Access</h3>
+          <p>Guest, Regular, Moderator, and Admin tiers with Firestore security rules.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🌙</div>
+          <h3>Dark &amp; Light Mode</h3>
+          <p>Toggle between themes. Your preference is remembered.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== CTA ===== -->
+    <section class="section container" style="text-align:center; padding-bottom: 5rem;">
+      <h2>Ready to join?</h2>
+      <p style="margin: 0.75rem auto 1.75rem; max-width: 480px;">
+        Create a free account to participate in the forum and discussion boards.
+      </p>
+      <a href="login.html" class="btn btn-primary btn-lg">Create Account</a>
+    </section>
+  </div>
+
+  <!-- ===== Footer ===== -->
+  <footer class="footer">
+    <div class="container">
+      <p>© 2026 WINN Platforms &nbsp;·&nbsp;
+        <a href="https://github.com/ianwestwind/ianwestwind.github.io" target="_blank">GitHub</a>
+      </p>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js";
+    import { getDocs, collection, query } from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { db } from "./js/firebase-config.js";
+
+    // Theme
+    const themeBtn = document.getElementById("theme-toggle");
+    const savedTheme = localStorage.getItem("winn-theme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    themeBtn.textContent = savedTheme === "dark" ? "☀️" : "🌙";
+    themeBtn.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      const next    = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("winn-theme", next);
+      themeBtn.textContent = next === "dark" ? "☀️" : "🌙";
+    });
+
+    // Hamburger
+    const hamburger = document.getElementById("nav-hamburger");
+    const drawer    = document.getElementById("nav-drawer");
+    hamburger.addEventListener("click", () => drawer.classList.toggle("open"));
+
+    // Auth
+    initAuth((user, role) => {
+      updateNavUI(user, role);
+      if (user) {
+        const drawerLogin = document.getElementById("drawer-login");
+        if (drawerLogin) drawerLogin.style.display = "none";
+      }
+    });
+
+    document.getElementById("nav-logout").addEventListener("click", async () => {
+      await logout();
+      showToast("Signed out.", "info");
+    });
+
+    // Stats (simple counts)
+    async function loadStats() {
+      try {
+        const [forumSnap, discSnap] = await Promise.all([
+          getDocs(collection(db, "forum_posts")),
+          getDocs(collection(db, "discussion_posts"))
+        ]);
+        const total = forumSnap.size + discSnap.size;
+        document.getElementById("stat-projects").textContent = "10+";
+        document.getElementById("stat-posts").textContent    = total || "0";
+        document.getElementById("stat-members").textContent  = "∞";
+      } catch (_) {
+        // Stats are cosmetic — silently ignore errors
+      }
+    }
+    loadStats();
+  </script>
+</body>
+</html>

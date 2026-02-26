@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Software Portfolio · WINN Platforms</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <nav class="nav">
+    <a href="index.html" class="nav-brand">WINN<span> Platforms</span></a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="portfolio-software.html" class="active">Software</a>
+      <a href="portfolio-design.html">Design</a>
+      <a href="forum.html">Forum</a>
+      <a href="discussion.html">Discussion</a>
+      <a href="announcements.html">Announcements</a>
+    </div>
+    <div class="nav-right">
+      <div class="nav-user" id="nav-user" style="display:none"></div>
+      <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign In</a>
+      <button class="btn btn-ghost btn-sm" id="nav-logout" style="display:none">Sign Out</button>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme">🌙</button>
+    </div>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <div class="nav-drawer" id="nav-drawer">
+    <a href="index.html">Home</a>
+    <a href="portfolio-software.html">Software Portfolio</a>
+    <a href="portfolio-design.html">Design Portfolio</a>
+    <a href="forum.html">Forum</a>
+    <a href="discussion.html">Discussion</a>
+    <a href="announcements.html">Announcements</a>
+    <a href="login.html" id="drawer-login">Sign In</a>
+  </div>
+
+  <div class="page-wrapper">
+    <div class="page-title-bar">
+      <div class="container">
+        <h1>Software Portfolio</h1>
+        <p>Open source projects, tools, and experiments in code</p>
+      </div>
+    </div>
+
+    <section class="section-sm container">
+      <!-- Filter chips -->
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:2rem;" id="filter-bar">
+        <button class="btn btn-secondary btn-sm active-filter" data-filter="all">All</button>
+        <button class="btn btn-secondary btn-sm" data-filter="web">Web</button>
+        <button class="btn btn-secondary btn-sm" data-filter="tool">Tools</button>
+        <button class="btn btn-secondary btn-sm" data-filter="library">Libraries</button>
+        <button class="btn btn-secondary btn-sm" data-filter="game">Games</button>
+      </div>
+
+      <div class="card-grid" id="projects-grid">
+        <!-- Project cards (static content — edit to add your real projects) -->
+        <div class="card" data-tags="web">
+          <div class="card-tag">Web App</div>
+          <h3>WINN Platforms</h3>
+          <p>This very site — a static-hosted community platform with Firebase Auth and Firestore.</p>
+          <div class="card-links">
+            <a href="https://github.com/ianwestwind/ianwestwind.github.io" class="btn btn-secondary btn-sm" target="_blank">GitHub</a>
+            <a href="index.html" class="btn btn-ghost btn-sm">Live Site</a>
+          </div>
+        </div>
+
+        <div class="card" data-tags="tool">
+          <div class="card-tag">CLI Tool</div>
+          <h3>Project Name</h3>
+          <p>A brief description of what this tool does and the problem it solves.</p>
+          <div class="card-links">
+            <a href="#" class="btn btn-secondary btn-sm">GitHub</a>
+          </div>
+        </div>
+
+        <div class="card" data-tags="library">
+          <div class="card-tag">Library</div>
+          <h3>Project Name</h3>
+          <p>A reusable library or package — describe its API and use cases here.</p>
+          <div class="card-links">
+            <a href="#" class="btn btn-secondary btn-sm">GitHub</a>
+            <a href="#" class="btn btn-ghost btn-sm">Docs</a>
+          </div>
+        </div>
+
+        <div class="card" data-tags="web">
+          <div class="card-tag">Web App</div>
+          <h3>Project Name</h3>
+          <p>Another web project — replace this with your real work.</p>
+          <div class="card-links">
+            <a href="#" class="btn btn-secondary btn-sm">GitHub</a>
+            <a href="#" class="btn btn-ghost btn-sm">Demo</a>
+          </div>
+        </div>
+
+        <div class="card" data-tags="game">
+          <div class="card-tag">Game</div>
+          <h3>Project Name</h3>
+          <p>A game project. Describe the tech stack, genre, and status.</p>
+          <div class="card-links">
+            <a href="#" class="btn btn-secondary btn-sm">GitHub</a>
+          </div>
+        </div>
+
+        <div class="card" data-tags="tool">
+          <div class="card-tag">Tool</div>
+          <h3>Project Name</h3>
+          <p>A productivity or dev tool. What does it automate or simplify?</p>
+          <div class="card-links">
+            <a href="#" class="btn btn-secondary btn-sm">GitHub</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <p>© 2026 WINN Platforms</p>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js";
+
+    // Theme
+    const themeBtn   = document.getElementById("theme-toggle");
+    const savedTheme = localStorage.getItem("winn-theme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    themeBtn.textContent = savedTheme === "dark" ? "☀️" : "🌙";
+    themeBtn.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      const next    = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("winn-theme", next);
+      themeBtn.textContent = next === "dark" ? "☀️" : "🌙";
+    });
+
+    document.getElementById("nav-hamburger").addEventListener("click", () =>
+      document.getElementById("nav-drawer").classList.toggle("open"));
+
+    initAuth((user, role) => {
+      updateNavUI(user, role);
+      if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
+    });
+
+    document.getElementById("nav-logout").addEventListener("click", async () => {
+      await logout();
+      showToast("Signed out.", "info");
+    });
+
+    // Filter
+    document.getElementById("filter-bar").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-filter]");
+      if (!btn) return;
+      document.querySelectorAll("[data-filter]").forEach(b => b.classList.remove("active-filter"));
+      btn.classList.add("active-filter");
+      const filter = btn.dataset.filter;
+      document.querySelectorAll("#projects-grid .card").forEach(card => {
+        const tags = card.dataset.tags || "";
+        card.style.display = (filter === "all" || tags.includes(filter)) ? "" : "none";
+      });
+    });
+  </script>
+  <style>
+    .active-filter { background: var(--accent-light) !important; color: var(--accent) !important; border-color: var(--accent) !important; }
+  </style>
+</body>
+</html>

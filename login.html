@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In · WINN Platforms</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <nav class="nav">
+    <a href="index.html" class="nav-brand">WINN<span> Platforms</span></a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="portfolio-software.html">Software</a>
+      <a href="portfolio-design.html">Design</a>
+      <a href="forum.html">Forum</a>
+      <a href="discussion.html">Discussion</a>
+      <a href="announcements.html">Announcements</a>
+    </div>
+    <div class="nav-right">
+      <div class="nav-user" id="nav-user" style="display:none"></div>
+      <a href="login.html" class="btn btn-primary btn-sm active" id="nav-login">Sign In</a>
+      <button class="btn btn-ghost btn-sm" id="nav-logout" style="display:none">Sign Out</button>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme">🌙</button>
+    </div>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <div class="nav-drawer" id="nav-drawer">
+    <a href="index.html">Home</a>
+    <a href="portfolio-software.html">Software Portfolio</a>
+    <a href="portfolio-design.html">Design Portfolio</a>
+    <a href="forum.html">Forum</a>
+    <a href="discussion.html">Discussion</a>
+    <a href="announcements.html">Announcements</a>
+  </div>
+
+  <div class="page-wrapper">
+    <div class="section-sm container-sm">
+
+      <div class="auth-card">
+        <h2>Welcome back</h2>
+        <p class="auth-sub">Sign in to your WINN Platforms account.</p>
+
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tab-login"    data-tab="login">Sign In</button>
+          <button class="auth-tab"        id="tab-register" data-tab="register">Create Account</button>
+        </div>
+
+        <!-- Login form -->
+        <form id="form-login">
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" name="email" autocomplete="email" placeholder="you@example.com" required />
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" name="password" autocomplete="current-password" placeholder="••••••••" required />
+          </div>
+          <p class="form-error" id="login-error"></p>
+          <button type="submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem">Sign In</button>
+        </form>
+
+        <!-- Register form -->
+        <form id="form-register" style="display:none">
+          <div class="form-group">
+            <label for="reg-name">Display Name</label>
+            <input type="text" id="reg-name" name="displayName" autocomplete="name" placeholder="Your name" required />
+          </div>
+          <div class="form-group">
+            <label for="reg-email">Email</label>
+            <input type="email" id="reg-email" name="email" autocomplete="email" placeholder="you@example.com" required />
+          </div>
+          <div class="form-group">
+            <label for="reg-password">Password</label>
+            <input type="password" id="reg-password" name="password" autocomplete="new-password" placeholder="Min. 6 characters" required minlength="6" />
+          </div>
+          <p class="form-error" id="reg-error"></p>
+          <button type="submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem">Create Account</button>
+        </form>
+
+        <div class="auth-divider">or</div>
+        <p style="text-align:center; font-size:0.82rem; color:var(--text-muted)">
+          By signing in you agree to community rules.
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <p>© 2026 WINN Platforms</p>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { initAuth, login, register, logout, updateNavUI, showToast } from "./js/auth.js";
+
+    // Theme
+    const themeBtn   = document.getElementById("theme-toggle");
+    const savedTheme = localStorage.getItem("winn-theme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    themeBtn.textContent = savedTheme === "dark" ? "☀️" : "🌙";
+    themeBtn.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      const next    = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("winn-theme", next);
+      themeBtn.textContent = next === "dark" ? "☀️" : "🌙";
+    });
+
+    // Hamburger
+    document.getElementById("nav-hamburger").addEventListener("click", () =>
+      document.getElementById("nav-drawer").classList.toggle("open"));
+
+    // Redirect if already logged in
+    initAuth((user, role) => {
+      updateNavUI(user, role);
+      if (user) window.location.href = "index.html";
+    });
+
+    document.getElementById("nav-logout").addEventListener("click", async () => {
+      await logout();
+      showToast("Signed out.", "info");
+    });
+
+    // Tabs
+    document.querySelectorAll(".auth-tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".auth-tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        const isLogin = tab.dataset.tab === "login";
+        document.getElementById("form-login").style.display    = isLogin ? "" : "none";
+        document.getElementById("form-register").style.display = isLogin ? "none" : "";
+        document.querySelector(".auth-card h2").textContent    = isLogin ? "Welcome back" : "Create account";
+        document.querySelector(".auth-card .auth-sub").textContent = isLogin
+          ? "Sign in to your WINN Platforms account."
+          : "Join the WINN Platforms community.";
+      });
+    });
+
+    // Login submit
+    document.getElementById("form-login").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email    = e.target.email.value.trim();
+      const password = e.target.password.value;
+      const errorEl  = document.getElementById("login-error");
+      const btn      = e.target.querySelector("[type=submit]");
+
+      errorEl.classList.remove("visible");
+      btn.disabled = true;
+      btn.textContent = "Signing in…";
+      try {
+        await login(email, password);
+        showToast("Signed in!", "success");
+        setTimeout(() => window.location.href = "index.html", 600);
+      } catch (err) {
+        errorEl.textContent = friendlyError(err.code);
+        errorEl.classList.add("visible");
+        btn.disabled = false;
+        btn.textContent = "Sign In";
+      }
+    });
+
+    // Register submit
+    document.getElementById("form-register").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const displayName = e.target.displayName.value.trim();
+      const email       = e.target.email.value.trim();
+      const password    = e.target.password.value;
+      const errorEl     = document.getElementById("reg-error");
+      const btn         = e.target.querySelector("[type=submit]");
+
+      errorEl.classList.remove("visible");
+      btn.disabled = true;
+      btn.textContent = "Creating account…";
+      try {
+        await register(email, password, displayName);
+        showToast("Account created! Welcome!", "success");
+        setTimeout(() => window.location.href = "index.html", 700);
+      } catch (err) {
+        errorEl.textContent = friendlyError(err.code);
+        errorEl.classList.add("visible");
+        btn.disabled = false;
+        btn.textContent = "Create Account";
+      }
+    });
+
+    function friendlyError(code) {
+      const map = {
+        "auth/email-already-in-use":    "That email is already registered.",
+        "auth/invalid-email":           "Invalid email address.",
+        "auth/weak-password":           "Password must be at least 6 characters.",
+        "auth/user-not-found":          "No account found with that email.",
+        "auth/wrong-password":          "Incorrect password.",
+        "auth/invalid-credential":      "Invalid email or password.",
+        "auth/too-many-requests":       "Too many attempts. Please try again later."
+      };
+      return map[code] || "An error occurred. Please try again.";
+    }
+  </script>
+</body>
+</html>
