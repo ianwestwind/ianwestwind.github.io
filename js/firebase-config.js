@@ -16,12 +16,12 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebas
 
 // ↓↓↓ Replace these placeholder values with your Firebase project config ↓↓↓
 const firebaseConfig = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId:             "YOUR_APP_ID"
+  apiKey:            "AIzaSyB5NhAxZqoTK9fHtTm6MsIEJAyKRgts4eM",
+  authDomain:        "winn-website-29cd1.firebaseapp.com",
+  projectId:         "winn-website-29cd1",
+  storageBucket:     "winn-website-29cd1.firebasestorage.app",
+  messagingSenderId: "732720714159",
+  appId:             "1:732720714159:web:81d386f0e486f2c2e09f5a"
 };
 // ↑↑↑ End of config section ↑↑↑
 
