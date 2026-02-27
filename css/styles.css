@@ -218,34 +218,70 @@ p { color: var(--text-secondary); }
 }
 
 /* Top-right bar: user/login + theme + font + font size */
-.top-right-bar {
-  position: fixed;
-  top: 0;
-  right: 0;
-  z-index: 1000;
+/* Right sidebar: user (email, admin, signout) first, then theme, font, size — all left aligned */
+.right-sidebar {
+  width: var(--controls-width);
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border);
+  padding: 1.5rem 0.75rem;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 0.75rem;
-  padding: 0.5rem 1rem;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
-  border-left: 1px solid var(--border);
+  align-items: flex-start;
+  gap: 1.5rem;
   font-size: 0.8rem;
 }
 
-.top-right-user {
+.right-sidebar-user {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  width: 100%;
 }
 
-.top-right-user .nav-user {
+.right-sidebar-user .nav-user {
   font-size: 0.82rem;
   color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 0.4rem;
+}
+
+.right-sidebar-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.right-sidebar-controls .controls-group {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.right-sidebar-controls .controls-group-label {
+  text-align: left;
+}
+
+/* Theme / Font / Font size option buttons in a row, left aligned */
+.right-sidebar-controls .controls-theme,
+.right-sidebar-controls .controls-font,
+.right-sidebar-controls .controls-font-size {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  align-items: flex-start;
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .nav-role-badge {
@@ -269,35 +305,11 @@ p { color: var(--text-secondary); }
 }
 
 .top-right-controls {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.5rem;
+  display: none;
 }
 
-.top-right-controls .controls-group {
-  flex-direction: row;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.top-right-controls .controls-group-label {
-  margin-right: 0.15rem;
-}
-
-.top-right-controls .controls-theme,
-.top-right-controls .controls-font,
-.top-right-controls .controls-font-size {
-  flex-direction: row;
-  gap: 0.2rem;
-}
-
-.main-content {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  padding-top: 10rem;
+.top-right-bar {
+  display: none;
 }
 
 /* Legacy right sidebar — now unused, hidden */
@@ -1834,7 +1846,7 @@ pre.ql-syntax.hljs { border: none; }
     margin-top: 0;
     padding-top: 0;
   }
-  .controls-sidebar {
+  .right-sidebar {
     width: 100%;
     flex-direction: row;
     flex-wrap: wrap;
@@ -1843,14 +1855,25 @@ pre.ql-syntax.hljs { border: none; }
     border-left: none;
     border-top: 1px solid var(--border);
   }
-  .top-right-bar {
-    flex-wrap: wrap;
-    padding: 0.5rem 0.75rem;
+  .right-sidebar-user {
+    flex-direction: row;
     gap: 0.5rem;
   }
-  .top-right-controls {
-    gap: 0.4rem;
+  .right-sidebar-controls {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
+  .right-sidebar-controls .controls-group {
+    flex-direction: row;
+    align-items: center;
+  }
+  .right-sidebar-controls .controls-theme,
+  .right-sidebar-controls .controls-font,
+  .right-sidebar-controls .controls-font-size {
+    flex-direction: row;
+  }
+}
 
 @media (max-width: 768px) {
   .hero { padding: 3.5rem 0 2.5rem; }
