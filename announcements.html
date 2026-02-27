@@ -65,35 +65,33 @@
   </div>
 
   </main>
-  <aside class="right-sidebar">
-    <div class="right-sidebar-user">
-      <div class="nav-user" id="nav-user" style="display:none"></div>
-      <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign In</a>
-      <button class="btn btn-ghost btn-sm" id="nav-logout" style="display:none">Sign Out</button>
+  <aside class="sidebar-user">
+    <div class="nav-user" id="nav-user" style="display:none"></div>
+    <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign In</a>
+    <button class="btn btn-ghost btn-sm" id="nav-logout" style="display:none">Sign Out</button>
+  </aside>
+  <aside class="sidebar-controls">
+    <div class="controls-group">
+      <span class="controls-group-label">Theme</span>
+      <div class="controls-theme">
+        <button type="button" id="theme-light">Light</button>
+        <button type="button" id="theme-dark">Dark</button>
+      </div>
     </div>
-    <div class="right-sidebar-controls">
-      <div class="controls-group">
-        <span class="controls-group-label">Theme</span>
-        <div class="controls-theme">
-          <button type="button" id="theme-light">Light</button>
-          <button type="button" id="theme-dark">Dark</button>
-        </div>
+    <div class="controls-group">
+      <span class="controls-group-label">Font</span>
+      <div class="controls-font">
+        <button type="button" class="font-option" data-font="inter" aria-label="Inter">Aa</button>
+        <button type="button" class="font-option" data-font="georgia" aria-label="Georgia">Aa</button>
+        <button type="button" class="font-option" data-font="system" aria-label="System">Aa</button>
       </div>
-      <div class="controls-group">
-        <span class="controls-group-label">Font</span>
-        <div class="controls-font">
-          <button type="button" class="font-option" data-font="inter" aria-label="Inter">Aa</button>
-          <button type="button" class="font-option" data-font="georgia" aria-label="Georgia">Aa</button>
-          <button type="button" class="font-option" data-font="system" aria-label="System">Aa</button>
-        </div>
-      </div>
-      <div class="controls-group">
-        <span class="controls-group-label">Font Size</span>
-        <div class="controls-font-size">
-          <button type="button" class="font-size-option" data-size="s">S</button>
-          <button type="button" class="font-size-option" data-size="m">M</button>
-          <button type="button" class="font-size-option" data-size="l">L</button>
-        </div>
+    </div>
+    <div class="controls-group">
+      <span class="controls-group-label">Size</span>
+      <div class="controls-font-size">
+        <button type="button" class="font-size-option" data-size="s">S</button>
+        <button type="button" class="font-size-option" data-size="m">M</button>
+        <button type="button" class="font-size-option" data-size="l">L</button>
       </div>
     </div>
   </aside>

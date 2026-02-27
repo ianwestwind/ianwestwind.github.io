@@ -26,7 +26,8 @@
   --danger-hover: #999;
 
   --nav-width: 200px;
-  --controls-width: 420px;
+  --sidebar-user-width: 300px;
+  --controls-width: 200px;
   --radius: 0;
   --radius-lg: 0;
   --shadow: none;
@@ -217,9 +218,30 @@ p { color: var(--text-secondary); }
   color: var(--text-primary);
 }
 
-/* Top-right bar: user/login + theme + font + font size */
-/* Right sidebar: user (email, admin, signout) first, then theme, font, size — all left aligned */
-.right-sidebar {
+/* Two right sidebars: (1) user — email, status, signout on one line; (2) theme, font, size */
+.sidebar-user {
+  width: var(--sidebar-user-width);
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border);
+  padding: 0.75rem 0.75rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.sidebar-user .nav-user {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.sidebar-controls {
   width: var(--controls-width);
   flex-shrink: 0;
   background: var(--bg-secondary);
@@ -228,53 +250,41 @@ p { color: var(--text-secondary); }
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1.5rem;
+  gap: 1rem;
   font-size: 0.8rem;
 }
 
-.right-sidebar-user {
-  display: flex;
+.sidebar-controls .controls-group {
   flex-direction: column;
   align-items: flex-start;
   gap: 0.35rem;
   width: 100%;
 }
 
-.right-sidebar-user .nav-user {
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.right-sidebar-controls {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.75rem;
-  width: 100%;
-}
-
-.right-sidebar-controls .controls-group {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.35rem;
-  width: 100%;
-}
-
-.right-sidebar-controls .controls-group-label {
+.sidebar-controls .controls-group-label {
   text-align: left;
 }
 
-/* Theme / Font / Font size option buttons in a row, left aligned */
-.right-sidebar-controls .controls-theme,
-.right-sidebar-controls .controls-font,
-.right-sidebar-controls .controls-font-size {
+.sidebar-controls .controls-theme,
+.sidebar-controls .controls-font,
+.sidebar-controls .controls-font-size {
   flex-direction: row;
   flex-wrap: wrap;
   gap: 0.2rem;
   align-items: flex-start;
+}
+
+/* Legacy single right sidebar — keep for any old refs, hidden */
+.right-sidebar {
+  display: none;
+}
+
+.right-sidebar-user {
+  display: none;
+}
+
+.right-sidebar-controls {
+  display: none;
 }
 
 .main-content {
@@ -1846,31 +1856,31 @@ pre.ql-syntax.hljs { border: none; }
     margin-top: 0;
     padding-top: 0;
   }
-  .right-sidebar {
+  .sidebar-user {
     width: 100%;
     flex-direction: row;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+  .sidebar-controls {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
     padding: 0.75rem 1rem;
     border-left: none;
     border-top: 1px solid var(--border);
   }
-  .right-sidebar-user {
-    flex-direction: row;
-    gap: 0.5rem;
-  }
-  .right-sidebar-controls {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-  .right-sidebar-controls .controls-group {
+  .sidebar-controls .controls-group {
     flex-direction: row;
     align-items: center;
   }
-  .right-sidebar-controls .controls-theme,
-  .right-sidebar-controls .controls-font,
-  .right-sidebar-controls .controls-font-size {
+  .sidebar-controls .controls-theme,
+  .sidebar-controls .controls-font,
+  .sidebar-controls .controls-font-size {
     flex-direction: row;
   }
 }
