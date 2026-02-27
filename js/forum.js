@@ -12,7 +12,7 @@ import {
   getCurrentUser, getCurrentRole, hasRole, escHtml, showToast, formatDate
 } from "./auth.js";
 import {
-  initEditor, getEditorHTML, initThumbnailZone, initAttachmentZone, renderBody
+  initEditor, getEditorHTML, initThumbnailZone, initAttachmentZone, renderBody, highlightContent
 } from "./editor.js";
 
 const COLLECTION = "forum_posts";
@@ -103,7 +103,9 @@ function _showDetail(id) {
     ${canDelete ? `<div class="post-detail-actions"><button class="btn btn-danger btn-sm" id="detail-delete-btn">Delete Post</button></div>` : ""}
   `;
 
-  document.getElementById(`forum-detail-body-${id}`).innerHTML = renderBody(data.body);
+  const bodyEl = document.getElementById(`forum-detail-body-${id}`);
+  bodyEl.innerHTML = renderBody(data.body);
+  highlightContent(bodyEl);
 
   document.getElementById("back-btn").addEventListener("click", () => { location.hash = ""; });
 

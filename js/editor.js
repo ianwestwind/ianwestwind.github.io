@@ -253,5 +253,15 @@ export function renderBody(html) {
   return `<p style="white-space:pre-wrap">${escLegacy(html)}</p>`;
 }
 
+// ---- Syntax highlighting for rendered detail views ----
+// Highlights Quill code blocks (pre.ql-syntax) and standard pre>code blocks.
+// Call after setting innerHTML on a detail body container.
+export function highlightContent(container) {
+  if (!window.hljs) return;
+  container.querySelectorAll("pre.ql-syntax, pre code").forEach(el => {
+    window.hljs.highlightElement(el);
+  });
+}
+
 function escA(s)      { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function escLegacy(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }

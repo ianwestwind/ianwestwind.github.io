@@ -115,6 +115,42 @@ service cloud.firestore {
     }
 
 
+    // ---- /news_posts/{id} ----
+    match /news_posts/{id} {
+      // Everyone (including unauthenticated) can read published posts
+      allow read: if true;
+
+      // Only moderators and admins can create news posts
+      allow create: if hasRole('moderator')
+        && request.resource.data.authorUid == request.auth.uid;
+
+      // Only admins can update
+      allow update: if hasRole('admin');
+
+      // Moderator+ can delete any; author can delete their own
+      allow delete: if hasRole('moderator')
+        || (isAuth() && resource.data.authorUid == request.auth.uid && hasRole('moderator'));
+    }
+
+
+    // ---- /blog_posts/{id} ----
+    match /blog_posts/{id} {
+      // Everyone can read
+      allow read: if true;
+
+      // Registered users (regular+) can create blog posts
+      allow create: if hasRole('regular')
+        && request.resource.data.authorUid == request.auth.uid;
+
+      // Authors can update their own post
+      allow update: if isOwner(resource.data.authorUid) && hasRole('regular');
+
+      // Moderators can delete any; authors can delete their own
+      allow delete: if hasRole('moderator')
+        || isOwner(resource.data.authorUid);
+    }
+
+
     // ---- Deny all other paths ----
     match /{document=**} {
       allow read, write: if false;
