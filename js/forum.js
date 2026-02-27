@@ -185,22 +185,27 @@ export async function initForumPage() {
     return;
   }
 
+  _handleHash();
+
   const listHeader = document.getElementById("list-header");
   if (listHeader) listHeader.style.display = "";
 
-  // Init editor + zones for signed-in users
+  // Init editor + zones for signed-in users (don't block list display if this fails)
   const role = getCurrentRole();
   if (hasRole(role, "regular")) {
-    _quill      = initEditor("forum-toolbar", "forum-editor", "forum");
-    _thumbZone  = initThumbnailZone("forum-thumb", "forum-thumb-preview", "forum");
-    _attachZone = initAttachmentZone("forum-attach-input", "forum-attach-list", "forum");
-
-    initPreview("forum-preview-btn", "forum-preview-panel", () => ({
-      title:    document.getElementById("post-title")?.value.trim() || "",
-      thread:   document.getElementById("post-thread")?.value.trim() || "",
-      body:     _quill ? getEditorHTML(_quill) : "",
-      thumbUrl: _thumbZone?.getThumbUrl() || null,
-    }));
+    try {
+      _quill      = initEditor("forum-toolbar", "forum-editor", "forum");
+      _thumbZone  = initThumbnailZone("forum-thumb", "forum-thumb-preview", "forum");
+      _attachZone = initAttachmentZone("forum-attach-input", "forum-attach-list", "forum");
+      initPreview("forum-preview-btn", "forum-preview-panel", () => ({
+        title:    document.getElementById("post-title")?.value.trim() || "",
+        thread:   document.getElementById("post-thread")?.value.trim() || "",
+        body:     _quill ? getEditorHTML(_quill) : "",
+        thumbUrl: _thumbZone?.getThumbUrl() || null,
+      }));
+    } catch (e) {
+      console.warn("Forum editor init failed:", e);
+    }
   }
 
   // Toggle form

@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --version)",
+      "Bash(npm --version)",
+      "Bash(python3 -c \"import json,os; d=json.load\\(open\\(os.path.expanduser\\(''~/.config/configstore/firebase-tools.json''\\)\\)\\); print\\(list\\(d.keys\\(\\)\\)[:5]\\)\")",
+      "Bash(git add blog.html css/styles.css firebase.json firestore.rules forum.html index.html js/blog.js js/editor.js js/forum.js js/news.js news.html storage.rules)",
+      "Bash(git commit:*)",
+      "Bash(git push origin main)",
+      "Bash(source ~/.nvm/nvm.sh)",
+      "Bash(nvm --version)",
+      "Bash(nvm ls)",
+      "Bash(npm install -g firebase-tools)",
+      "Bash(firebase --version)",
+      "Bash(firebase login --no-localhost)",
+      "Bash(firebase login:list)"
+    ]
+  }
+}

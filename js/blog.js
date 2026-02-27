@@ -214,20 +214,25 @@ export async function initBlogPage(role) {
     return;
   }
 
+  _handleHash();
+
   const listHeader = document.getElementById("blog-list-header");
   if (listHeader && hasRole(role, "regular")) listHeader.style.display = "";
 
   if (hasRole(role, "regular")) {
-    _quill      = initEditor("blog-toolbar", "blog-editor", "blog");
-    _thumbZone  = initThumbnailZone("blog-thumb", "blog-thumb-preview", "blog");
-    _attachZone = initAttachmentZone("blog-attach-input", "blog-attach-list", "blog");
-
-    initPreview("blog-preview-btn", "blog-preview-panel", () => ({
-      title:    document.getElementById("blog-title")?.value.trim() || "",
-      thread:   "",
-      body:     _quill ? getEditorHTML(_quill) : "",
-      thumbUrl: _thumbZone?.getThumbUrl() || null,
-    }));
+    try {
+      _quill      = initEditor("blog-toolbar", "blog-editor", "blog");
+      _thumbZone  = initThumbnailZone("blog-thumb", "blog-thumb-preview", "blog");
+      _attachZone = initAttachmentZone("blog-attach-input", "blog-attach-list", "blog");
+      initPreview("blog-preview-btn", "blog-preview-panel", () => ({
+        title:    document.getElementById("blog-title")?.value.trim() || "",
+        thread:   "",
+        body:     _quill ? getEditorHTML(_quill) : "",
+        thumbUrl: _thumbZone?.getThumbUrl() || null,
+      }));
+    } catch (e) {
+      console.warn("Blog editor init failed:", e);
+    }
 
     // Set publishAt default to now
     const pa = document.getElementById("blog-publish-at");

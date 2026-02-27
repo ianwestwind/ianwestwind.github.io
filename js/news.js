@@ -203,17 +203,22 @@ export async function initNewsPage(role) {
     return;
   }
 
-  if (hasRole(role, "moderator")) {
-    _quill      = initEditor("news-toolbar", "news-editor", "news");
-    _thumbZone  = initThumbnailZone("news-thumb", "news-thumb-preview", "news");
-    _attachZone = initAttachmentZone("news-attach-input", "news-attach-list", "news");
+  _handleHash();
 
-    initPreview("news-preview-btn", "news-preview-panel", () => ({
-      title:    document.getElementById("news-title")?.value.trim() || "",
-      thread:   "",
-      body:     _quill ? getEditorHTML(_quill) : "",
-      thumbUrl: _thumbZone?.getThumbUrl() || null,
-    }));
+  if (hasRole(role, "moderator")) {
+    try {
+      _quill      = initEditor("news-toolbar", "news-editor", "news");
+      _thumbZone  = initThumbnailZone("news-thumb", "news-thumb-preview", "news");
+      _attachZone = initAttachmentZone("news-attach-input", "news-attach-list", "news");
+      initPreview("news-preview-btn", "news-preview-panel", () => ({
+        title:    document.getElementById("news-title")?.value.trim() || "",
+        thread:   "",
+        body:     _quill ? getEditorHTML(_quill) : "",
+        thumbUrl: _thumbZone?.getThumbUrl() || null,
+      }));
+    } catch (e) {
+      console.warn("News editor init failed:", e);
+    }
 
     // Set publishAt default to now
     const pa = document.getElementById("news-publish-at");
