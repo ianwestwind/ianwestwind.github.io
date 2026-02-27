@@ -191,8 +191,8 @@
   </footer>
 
   <script type="module">
-    import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js";
-    import { initBlogPage, submitBlog } from "./js/blog.js";
+    import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js?v=2";
+    import { initBlogPage, submitBlog } from "./js/blog.js?v=2";
 
     const themeBtn   = document.getElementById("theme-toggle");
     const savedTheme = localStorage.getItem("winn-theme") || "dark";
