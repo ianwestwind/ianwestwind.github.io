@@ -191,7 +191,7 @@
   </footer>
 
   <script type="module">
-    import { initAuth, updateNavUI, logout, hasRole, showToast } from "./js/auth.js";
+    import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js";
     import { initBlogPage, submitBlog } from "./js/blog.js";
 
     const themeBtn   = document.getElementById("theme-toggle");
@@ -218,20 +218,6 @@
     initAuth(async (user, role) => {
       updateNavUI(user, role);
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
-
-      const gate      = document.getElementById("post-gate");
-      const toggleBtn = document.getElementById("blog-toggle-btn");
-
-      if (!hasRole(role, "moderator")) {
-        gate.innerHTML = `
-          <div class="access-gate">
-            <div class="gate-icon">🔒</div>
-            <h3>Moderators only</h3>
-            <p>Only moderators and admins can write here. Everyone can read.</p>
-            <a href="login.html" class="btn btn-primary btn-sm">Sign In</a>
-          </div>`;
-        if (toggleBtn) toggleBtn.style.display = "none";
-      }
 
       await initBlogPage(role);
     });

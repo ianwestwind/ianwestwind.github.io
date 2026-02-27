@@ -87,6 +87,10 @@ export async function logout() {
 }
 
 // ---- Update nav UI with auth state ----
+function roleDisplayName(role) {
+  return role === "regular" ? "WINNer" : role;
+}
+
 export function updateNavUI(user, role) {
   const navUser    = document.getElementById("nav-user");
   const navLogin   = document.getElementById("nav-login");
@@ -99,7 +103,7 @@ export function updateNavUI(user, role) {
     const displayName = user.displayName || user.email;
     navUser.innerHTML = `
       <span>${escHtml(displayName)}</span>
-      <span class="nav-role-badge ${roleBadgeClass}">${escHtml(role)}</span>
+      <span class="nav-role-badge ${roleBadgeClass}">${escHtml(roleDisplayName(role))}</span>
     `;
     navUser.style.display  = "flex";
     if (navLogin)  navLogin.style.display  = "none";
