@@ -197,20 +197,25 @@ export function initThumbnailZone(inputId, previewId, ns) {
     showToast("Uploading thumbnail…", "info");
     try {
       thumbUrl = await storeFile(file, `thumbnails/${ns}/${Date.now()}-${file.name}`);
-      preview.innerHTML = `
-        <div class="thumb-preview">
-          <img src="${escA(thumbUrl)}" alt="Thumbnail preview" />
-          <button type="button" class="thumb-remove" id="remove-thumb-${inputId}">✕ Remove</button>
-        </div>`;
-      document.getElementById(`remove-thumb-${inputId}`).onclick = () => {
-        thumbUrl = null;
-        preview.innerHTML = "";
-      };
+      _showThumb(thumbUrl);
     } catch { showToast("Thumbnail upload failed.", "error"); }
   });
 
+  function _showThumb(url) {
+    preview.innerHTML = `
+      <div class="thumb-preview">
+        <img src="${escA(url)}" alt="Thumbnail preview" />
+        <button type="button" class="thumb-remove" id="remove-thumb-${inputId}">✕ Remove</button>
+      </div>`;
+    document.getElementById(`remove-thumb-${inputId}`).onclick = () => {
+      thumbUrl = null;
+      preview.innerHTML = "";
+    };
+  }
+
   return {
     getThumbUrl: () => thumbUrl,
+    setThumbUrl: (url) => { thumbUrl = url; if (url) _showThumb(url); else preview.innerHTML = ""; },
     reset: () => { thumbUrl = null; preview.innerHTML = ""; }
   };
 }

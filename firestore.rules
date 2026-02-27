@@ -124,8 +124,9 @@ service cloud.firestore {
       allow create: if hasRole('moderator')
         && request.resource.data.authorUid == request.auth.uid;
 
-      // Only admins can update
-      allow update: if hasRole('admin');
+      // Author (who must be a moderator+) can update their own post; admins can update any
+      allow update: if (isOwner(resource.data.authorUid) && hasRole('moderator'))
+        || hasRole('admin');
 
       // Moderator+ can delete any; author can delete their own
       allow delete: if hasRole('moderator')

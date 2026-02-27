@@ -5,7 +5,7 @@
 
 import { db } from "./firebase-config.js";
 import {
-  collection, addDoc, getDocs, deleteDoc, doc,
+  collection, addDoc, getDocs, deleteDoc, doc, updateDoc,
   query, orderBy, serverTimestamp, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
@@ -21,6 +21,7 @@ let _quill      = null;
 let _thumbZone  = null;
 let _attachZone = null;
 let _userRole   = "guest";
+let _editId     = null;
 
 function _snippet(html, max = 130) {
   if (!html) return "";
@@ -116,7 +117,10 @@ function _showDetail(id) {
     </div>
     <div class="post-detail-body rich-content" id="detail-body-${id}"></div>
     ${_attachmentsHTML(data.attachments)}
-    ${canDelete ? `<div class="post-detail-actions"><button class="btn btn-danger btn-sm" id="detail-delete-btn">Delete Post</button></div>` : ""}
+    ${canDelete ? `<div class="post-detail-actions">
+      <button class="btn btn-ghost btn-sm" id="detail-edit-btn">Edit</button>
+      <button class="btn btn-danger btn-sm" id="detail-delete-btn">Delete Post</button>
+    </div>` : ""}
   `;
 
   const bodyEl = document.getElementById(`detail-body-${id}`);
@@ -126,6 +130,7 @@ function _showDetail(id) {
   document.getElementById("back-btn").addEventListener("click", () => { location.hash = ""; });
 
   if (canDelete) {
+    document.getElementById("detail-edit-btn").addEventListener("click", () => _startEdit(id));
     document.getElementById("detail-delete-btn").addEventListener("click", async () => {
       if (!confirm("Delete this post?")) return;
       try {
@@ -136,6 +141,34 @@ function _showDetail(id) {
       } catch (err) { showToast("Delete failed: " + err.message, "error"); }
     });
   }
+}
+
+function _startEdit(id) {
+  const data = _posts.get(id);
+  if (!data) return;
+  _editId = id;
+
+  const form      = document.getElementById("blog-post-form");
+  const toggleBtn = document.getElementById("blog-toggle-btn");
+  location.hash = "";
+  if (form)      form.style.display      = "";
+  if (toggleBtn) toggleBtn.textContent   = "✕ Cancel";
+
+  const titleInput = document.getElementById("blog-title");
+  if (titleInput) titleInput.value = data.title || "";
+  if (_quill) _quill.clipboard.dangerouslyPasteHTML(data.body || "");
+  if (_thumbZone) _thumbZone.setThumbUrl(data.thumbnailUrl || null);
+
+  const paInput = document.getElementById("blog-publish-at");
+  if (paInput && data.publishAt) {
+    const d = new Date(data.publishAt.seconds * 1000);
+    d.setSeconds(0, 0);
+    paInput.value = d.toISOString().slice(0, 16);
+  }
+
+  const submitBtn = document.querySelector("#blog-form [type=submit]");
+  if (submitBtn) submitBtn.textContent = "Update Post";
+  form?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function _attachmentsHTML(attachments) {
@@ -195,11 +228,21 @@ export async function initBlogPage(role) {
     // Toggle form
     const toggleBtn = document.getElementById("blog-toggle-btn");
     const form      = document.getElementById("blog-post-form");
+
+    function _resetFormState() {
+      _editId = null;
+      if (_quill) _quill.setContents([]);
+      if (_thumbZone) _thumbZone.reset();
+      const sb = document.querySelector("#blog-form [type=submit]");
+      if (sb) sb.textContent = "Publish";
+    }
+
     if (toggleBtn && form) {
       toggleBtn.addEventListener("click", () => {
         const hidden = form.style.display === "none" || form.style.display === "";
         form.style.display    = hidden ? "" : "none";
         toggleBtn.textContent = hidden ? "✕ Cancel" : "+ New Post";
+        if (!hidden) _resetFormState();
       });
     }
     const cancelBtn = document.getElementById("blog-cancel-btn");
@@ -208,6 +251,7 @@ export async function initBlogPage(role) {
         form.style.display = "none";
         const tb = document.getElementById("blog-toggle-btn");
         if (tb) tb.textContent = "+ New Post";
+        _resetFormState();
       });
     }
   }
@@ -226,8 +270,9 @@ export async function submitBlog() {
     showToast("You must be signed in to post.", "error"); return;
   }
 
-  const title = titleInput.value.trim();
-  const body  = _quill ? getEditorHTML(_quill) : "";
+  const title  = titleInput.value.trim();
+  const body   = _quill ? getEditorHTML(_quill) : "";
+  const editId = _editId;
 
   if (!title) {
     if (errorEl) { errorEl.textContent = "Title is required."; errorEl.classList.add("visible"); }
@@ -236,45 +281,67 @@ export async function submitBlog() {
 
   if (errorEl) errorEl.classList.remove("visible");
   submitBtn.disabled    = true;
-  submitBtn.textContent = "Publishing…";
+  submitBtn.textContent = editId ? "Updating…" : "Publishing…";
 
-  try {
-    const paInput = document.getElementById("blog-publish-at");
-    const publishAt = paInput?.value
-      ? Timestamp.fromDate(new Date(paInput.value))
-      : Timestamp.fromDate(new Date());
+  const form      = document.getElementById("blog-post-form");
+  const toggleBtn = document.getElementById("blog-toggle-btn");
+  const paInput   = document.getElementById("blog-publish-at");
 
-    const postData = {
-      title,
-      body,
-      thumbnailUrl: _thumbZone?.getThumbUrl() || null,
-      attachments:  _attachZone?.getAttachments() || [],
-      authorUid:    user.uid,
-      authorName:   user.displayName || user.email,
-      publishAt,
-      createdAt:    serverTimestamp(),
-    };
-
-    const newDoc = await addDoc(collection(db, COLLECTION), postData);
-    _posts.set(newDoc.id, { ...postData, createdAt: { seconds: Date.now() / 1000 } });
-
-    // Reset
+  function _closeForm() {
     titleInput.value = "";
     if (_quill) _quill.setContents([]);
     if (_thumbZone) _thumbZone.reset();
     if (_attachZone) _attachZone.reset();
     if (paInput) { const n = new Date(); n.setSeconds(0, 0); paInput.value = n.toISOString().slice(0, 16); }
+    if (form)      form.style.display      = "none";
+    if (toggleBtn) toggleBtn.textContent   = "+ New Post";
+    _editId = null;
+  }
 
-    document.getElementById("blog-post-form").style.display = "none";
-    const tb = document.getElementById("blog-toggle-btn");
-    if (tb) tb.textContent = "+ New Post";
+  try {
+    if (editId) {
+      // Update existing post (preserve attachments, author, createdAt)
+      const publishAt = paInput?.value
+        ? Timestamp.fromDate(new Date(paInput.value))
+        : _posts.get(editId)?.publishAt ?? Timestamp.fromDate(new Date());
 
-    showToast("Blog post published!", "success");
-    _showList();
+      const changes = {
+        title,
+        body,
+        thumbnailUrl: _thumbZone?.getThumbUrl() || null,
+        publishAt,
+      };
+      await updateDoc(doc(db, COLLECTION, editId), changes);
+      _posts.set(editId, { ..._posts.get(editId), ...changes });
+      _closeForm();
+      showToast("Post updated!", "success");
+      location.hash = editId;
+    } else {
+      const publishAt = paInput?.value
+        ? Timestamp.fromDate(new Date(paInput.value))
+        : Timestamp.fromDate(new Date());
+
+      const postData = {
+        title,
+        body,
+        thumbnailUrl: _thumbZone?.getThumbUrl() || null,
+        attachments:  _attachZone?.getAttachments() || [],
+        authorUid:    user.uid,
+        authorName:   user.displayName || user.email,
+        publishAt,
+        createdAt:    serverTimestamp(),
+      };
+
+      const newDoc = await addDoc(collection(db, COLLECTION), postData);
+      _posts.set(newDoc.id, { ...postData, createdAt: { seconds: Date.now() / 1000 } });
+      _closeForm();
+      showToast("Blog post published!", "success");
+      _showList();
+    }
   } catch (err) {
-    showToast("Failed to publish: " + err.message, "error");
+    showToast(`Failed to ${editId ? "update" : "publish"}: ` + err.message, "error");
   } finally {
     submitBtn.disabled    = false;
-    submitBtn.textContent = "Publish";
+    submitBtn.textContent = editId ? "Update Post" : "Publish";
   }
 }

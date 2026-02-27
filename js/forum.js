@@ -5,7 +5,7 @@
 
 import { db } from "./firebase-config.js";
 import {
-  collection, addDoc, getDocs, deleteDoc, doc,
+  collection, addDoc, getDocs, deleteDoc, doc, updateDoc,
   query, orderBy, serverTimestamp, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
@@ -20,6 +20,7 @@ const _posts = new Map();
 let _quill      = null;
 let _thumbZone  = null;
 let _attachZone = null;
+let _editId     = null; // set while editing an existing post
 
 function _updateCount(n) {
   const el = document.getElementById("post-count");
@@ -100,7 +101,10 @@ function _showDetail(id) {
     </div>
     <div class="post-detail-body rich-content" id="forum-detail-body-${id}"></div>
     ${_attachmentsHTML(data.attachments)}
-    ${canDelete ? `<div class="post-detail-actions"><button class="btn btn-danger btn-sm" id="detail-delete-btn">Delete Post</button></div>` : ""}
+    ${canDelete ? `<div class="post-detail-actions">
+      <button class="btn btn-ghost btn-sm" id="detail-edit-btn">Edit</button>
+      <button class="btn btn-danger btn-sm" id="detail-delete-btn">Delete Post</button>
+    </div>` : ""}
   `;
 
   const bodyEl = document.getElementById(`forum-detail-body-${id}`);
@@ -110,6 +114,7 @@ function _showDetail(id) {
   document.getElementById("back-btn").addEventListener("click", () => { location.hash = ""; });
 
   if (canDelete) {
+    document.getElementById("detail-edit-btn").addEventListener("click", () => _startEdit(id));
     document.getElementById("detail-delete-btn").addEventListener("click", async () => {
       if (!confirm("Delete this post?")) return;
       try {
@@ -120,6 +125,29 @@ function _showDetail(id) {
       } catch (err) { showToast("Delete failed: " + err.message, "error"); }
     });
   }
+}
+
+function _startEdit(id) {
+  const data = _posts.get(id);
+  if (!data) return;
+  _editId = id;
+
+  const newForm   = document.getElementById("new-post-form");
+  const toggleBtn = document.getElementById("toggle-form-btn");
+  location.hash = "";
+  if (newForm)   newForm.style.display   = "";
+  if (toggleBtn) toggleBtn.textContent   = "✕ Cancel";
+
+  const titleInput  = document.querySelector("#forum-form [name=title]");
+  const threadInput = document.querySelector("#forum-form [name=thread]");
+  if (titleInput)  titleInput.value  = data.title  || "";
+  if (threadInput) threadInput.value = data.thread || "";
+  if (_quill) _quill.clipboard.dangerouslyPasteHTML(data.body || "");
+  if (_thumbZone) _thumbZone.setThumbUrl(data.thumbnailUrl || null);
+
+  const submitBtn = document.querySelector("#forum-form [type=submit]");
+  if (submitBtn) submitBtn.textContent = "Update Post";
+  newForm?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function _attachmentsHTML(attachments) {
@@ -178,11 +206,20 @@ export async function initForumPage() {
   // Toggle form
   const toggleBtn = document.getElementById("toggle-form-btn");
   const newForm   = document.getElementById("new-post-form");
+  function _resetFormState() {
+    _editId = null;
+    if (_quill) _quill.setContents([]);
+    if (_thumbZone) _thumbZone.reset();
+    const sb = document.querySelector("#forum-form [type=submit]");
+    if (sb) sb.textContent = "Post";
+  }
+
   if (toggleBtn && newForm) {
     toggleBtn.addEventListener("click", () => {
       const hidden = newForm.style.display === "none" || newForm.style.display === "";
-      newForm.style.display    = hidden ? "" : "none";
-      toggleBtn.textContent    = hidden ? "✕ Cancel" : "+ New Post";
+      newForm.style.display = hidden ? "" : "none";
+      toggleBtn.textContent = hidden ? "✕ Cancel" : "+ New Post";
+      if (!hidden) _resetFormState();
     });
   }
   const cancelBtn = document.getElementById("forum-cancel-btn");
@@ -190,6 +227,7 @@ export async function initForumPage() {
     cancelBtn.addEventListener("click", () => {
       newForm.style.display = "none";
       if (toggleBtn) toggleBtn.textContent = "+ New Post";
+      _resetFormState();
     });
   }
 
@@ -220,42 +258,60 @@ export async function submitForumPost() {
   }
 
   if (errorEl) errorEl.classList.remove("visible");
+  const editId = _editId;
   submitBtn.disabled    = true;
-  submitBtn.textContent = "Posting…";
+  submitBtn.textContent = editId ? "Updating…" : "Posting…";
 
-  const postData = {
-    title,
-    body,
-    thread:       thread || null,
-    thumbnailUrl: _thumbZone?.getThumbUrl() || null,
-    attachments:  _attachZone?.getAttachments() || [],
-    authorUid:    user.uid,
-    authorName:   user.displayName || user.email,
-    createdAt:    serverTimestamp()
-  };
+  const newForm   = document.getElementById("new-post-form");
+  const toggleBtn = document.getElementById("toggle-form-btn");
 
-  try {
-    const newDoc = await addDoc(collection(db, COLLECTION), postData);
-    _posts.set(newDoc.id, { ...postData, createdAt: { seconds: Date.now() / 1000 } });
-
-    // Reset form
+  function _closeForm() {
     titleInput.value = "";
     if (threadInput) threadInput.value = "";
     if (_quill) _quill.setContents([]);
     if (_thumbZone) _thumbZone.reset();
-    if (_attachZone) _attachZone.reset();
-
-    const newForm   = document.getElementById("new-post-form");
-    const toggleBtn = document.getElementById("toggle-form-btn");
     if (newForm)   newForm.style.display   = "none";
     if (toggleBtn) toggleBtn.textContent   = "+ New Post";
+    _editId = null;
+  }
 
-    showToast("Post published!", "success");
-    _showList();
+  try {
+    if (editId) {
+      // Update existing post (preserve attachments, author, createdAt)
+      const changes = {
+        title,
+        body,
+        thread:       thread || null,
+        thumbnailUrl: _thumbZone?.getThumbUrl() || null,
+      };
+      await updateDoc(doc(db, COLLECTION, editId), changes);
+      _posts.set(editId, { ..._posts.get(editId), ...changes });
+      _closeForm();
+      showToast("Post updated!", "success");
+      location.hash = editId;
+    } else {
+      // Create new post
+      const postData = {
+        title,
+        body,
+        thread:       thread || null,
+        thumbnailUrl: _thumbZone?.getThumbUrl() || null,
+        attachments:  _attachZone?.getAttachments() || [],
+        authorUid:    user.uid,
+        authorName:   user.displayName || user.email,
+        createdAt:    serverTimestamp()
+      };
+      const newDoc = await addDoc(collection(db, COLLECTION), postData);
+      _posts.set(newDoc.id, { ...postData, createdAt: { seconds: Date.now() / 1000 } });
+      if (_attachZone) _attachZone.reset();
+      _closeForm();
+      showToast("Post published!", "success");
+      _showList();
+    }
   } catch (err) {
-    showToast("Failed to post: " + err.message, "error");
+    showToast(`Failed to ${editId ? "update" : "post"}: ` + err.message, "error");
   } finally {
     submitBtn.disabled    = false;
-    submitBtn.textContent = "Post";
+    submitBtn.textContent = editId ? "Update Post" : "Post";
   }
 }
