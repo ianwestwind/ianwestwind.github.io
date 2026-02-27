@@ -166,7 +166,7 @@ p { color: var(--text-secondary); }
 }
 
 .nav-sidebar .nav-links a.active {
-  color: #000;
+  /* color set by theme rules below */
 }
 
 /* ---------- App layout: left nav, main; top-right bar for user + controls ---------- */
@@ -219,14 +219,14 @@ p { color: var(--text-secondary); }
 }
 
 .nav-sidebar .nav-links a.active {
-  color: #000;
+  /* color set by theme rules below */
 }
 
 [data-theme="light"] .nav-sidebar .nav-links a.active {
   color: #000;
 }
 
-:root .nav-sidebar .nav-links a.active {
+[data-theme="dark"] .nav-sidebar .nav-links a.active {
   color: #fff;
 }
 
