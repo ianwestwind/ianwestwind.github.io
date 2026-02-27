@@ -37,7 +37,7 @@ function _showList() {
   if (!rows) return;
 
   if (_posts.size === 0) {
-    rows.innerHTML = `<div class="empty-state"><div class="empty-icon">💬</div><p>No posts yet. Be the first to start a discussion!</p></div>`;
+    rows.innerHTML = `<div class="empty-state"><div class="empty-icon"></div><p>No posts yet. Be the first to start a discussion!</p></div>`;
     _updateCount(0);
     return;
   }
@@ -53,7 +53,7 @@ function _showList() {
       <div class="post-row-title">
         ${escHtml(data.title || "(untitled)")}
         ${data.thread ? `<span class="post-thread-tag">#${escHtml(data.thread)}</span>` : ""}
-        ${data.thumbnailUrl ? `<span class="post-has-thumb" title="Has thumbnail">🖼</span>` : ""}
+        ${data.thumbnailUrl ? `<span class="post-has-thumb" title="Has thumbnail">Image</span>` : ""}
       </div>
       <div class="post-row-meta">
         <span>${escHtml(data.authorName || "Anonymous")}</span>

@@ -12,37 +12,24 @@
   <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 </head>
 <body>
-  <nav class="nav">
-    <a href="index.html" class="nav-brand">WINN<span> Platforms</span></a>
-    <div class="nav-links">
-      <a href="index.html">Home</a>
-      <a href="portfolio-software.html">Software</a>
-      <a href="portfolio-design.html">Design</a>
-      <a href="forum.html" class="active">WINNers</a>
-      <a href="blog.html">Writing</a>
-      <a href="news.html">News</a>
-    </div>
-    <div class="nav-right">
-      <div class="nav-user" id="nav-user" style="display:none"></div>
-      <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign In</a>
-      <button class="btn btn-ghost btn-sm" id="nav-logout" style="display:none">Sign Out</button>
-      <button class="theme-toggle" id="theme-toggle" title="Toggle theme">🌙</button>
-    </div>
-    <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu">
-      <span></span><span></span><span></span>
-    </button>
-  </nav>
-
-  <div class="nav-drawer" id="nav-drawer">
-    <a href="index.html">Home</a>
-    <a href="portfolio-software.html">Software Portfolio</a>
-    <a href="portfolio-design.html">Design Portfolio</a>
-    <a href="forum.html">WINNers</a>
-    <a href="blog.html">Writing</a>
-    <a href="news.html">News</a>
-    <a href="login.html" id="drawer-login">Sign In</a>
-  </div>
-
+  <div class="app-layout">
+    <aside class="nav-sidebar">
+      <a href="index.html" class="nav-brand">WINN<span> Platforms</span></a>
+      <div class="nav-links">
+        <a href="index.html">About</a>
+        <a href="portfolio-software.html">Software</a>
+        <a href="portfolio-design.html">Design</a>
+        <a href="forum.html" class="active">WINNers</a>
+        <a href="blog.html">Writing</a>
+        <a href="news.html">News</a>
+      </div>
+      <div class="nav-right">
+        <div class="nav-user" id="nav-user" style="display:none"></div>
+        <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign In</a>
+        <button class="btn btn-ghost btn-sm" id="nav-logout" style="display:none">Sign Out</button>
+      </div>
+    </aside>
+    <main class="main-content">
   <div class="page-wrapper">
     <div class="page-title-bar">
       <div class="container">
@@ -146,7 +133,7 @@
             <div class="form-group">
               <label>Thumbnail <span style="color:var(--text-muted)">(optional, max 10 MB)</span></label>
               <label class="file-input-label">
-                🖼 Upload thumbnail
+                Upload thumbnail
                 <input type="file" id="forum-thumb" accept="image/*" />
               </label>
               <div id="forum-thumb-preview"></div>
@@ -156,7 +143,7 @@
             <div class="form-group">
               <label>Attachments <span style="color:var(--text-muted)">(any type, max 25 MB each)</span></label>
               <label class="file-input-label">
-                📎 Add files
+                Add files
                 <input type="file" id="forum-attach-input" multiple />
               </label>
               <div id="forum-attach-list" class="attach-list"></div>
@@ -183,28 +170,44 @@
     </div>
   </div>
 
+  <aside class="controls-sidebar">
+    <div class="controls-group">
+      <span class="controls-group-label">Theme</span>
+      <div class="controls-theme">
+        <button type="button" id="theme-light">Light</button>
+        <button type="button" id="theme-dark">Dark</button>
+      </div>
+    </div>
+    <div class="controls-group">
+      <span class="controls-group-label">Font</span>
+      <div class="controls-font">
+        <button type="button" class="font-option" data-font="inter" aria-label="Inter">Aa</button>
+        <button type="button" class="font-option" data-font="georgia" aria-label="Georgia">Aa</button>
+        <button type="button" class="font-option" data-font="system" aria-label="System">Aa</button>
+      </div>
+    </div>
+    <div class="controls-group">
+      <span class="controls-group-label">Font Size</span>
+      <div class="controls-font-size">
+        <button type="button" class="font-size-option" data-size="s">S</button>
+        <button type="button" class="font-size-option" data-size="m">M</button>
+        <button type="button" class="font-size-option" data-size="l">L</button>
+      </div>
+    </div>
+  </aside>
+  </main>
+  </div>
+
   <footer class="footer">
     <div class="container"><p>© 2026 WINN Platforms</p></div>
   </footer>
 
   <script type="module">
     import { initAuth, updateNavUI, logout, hasRole, showToast } from "./js/auth.js?v=2";
+    import { initLayoutControls } from "./js/layout-controls.js";
     import { initForumPage, submitForumPost } from "./js/forum.js";
 
-    const themeBtn   = document.getElementById("theme-toggle");
-    const savedTheme = localStorage.getItem("winn-theme") || "dark";
-    document.documentElement.setAttribute("data-theme", savedTheme);
-    themeBtn.textContent = savedTheme === "dark" ? "☀️" : "🌙";
-    themeBtn.addEventListener("click", () => {
-      const cur  = document.documentElement.getAttribute("data-theme");
-      const next = cur === "dark" ? "light" : "dark";
-      document.documentElement.setAttribute("data-theme", next);
-      localStorage.setItem("winn-theme", next);
-      themeBtn.textContent = next === "dark" ? "☀️" : "🌙";
-    });
-
-    document.getElementById("nav-hamburger").addEventListener("click", () =>
-      document.getElementById("nav-drawer").classList.toggle("open"));
+    initLayoutControls();
 
     document.getElementById("nav-logout").addEventListener("click", async () => {
       await logout();
@@ -222,7 +225,6 @@
       if (!hasRole(role, "regular")) {
         gate.innerHTML = `
           <div class="access-gate">
-            <div class="gate-icon">🔒</div>
             <h3>Sign in to post</h3>
             <p>You need a registered account to post. All visitors can read.</p>
             <a href="login.html" class="btn btn-primary btn-sm">Sign In / Register</a>

@@ -67,7 +67,7 @@ function _showList() {
   _updateCount(visible.length);
 
   if (visible.length === 0) {
-    rows.innerHTML = `<div class="empty-state"><div class="empty-icon">✍️</div><p>No posts yet. Be the first!</p></div>`;
+    rows.innerHTML = `<div class="empty-state"><div class="empty-icon"></div><p>No posts yet. Be the first!</p></div>`;
     return;
   }
 
@@ -76,7 +76,7 @@ function _showList() {
     const badge = (!isPub && isMod) ? `<span class="scheduled-badge">Scheduled</span>` : "";
     const thumb = data.thumbnailUrl
       ? `<img src="${escHtml(data.thumbnailUrl)}" alt="" class="pub-card-thumb" />`
-      : `<div class="pub-card-thumb pub-card-thumb-placeholder">✍️</div>`;
+      : `<div class="pub-card-thumb pub-card-thumb-placeholder"></div>`;
     return `
       <div class="pub-card" data-id="${escHtml(id)}" role="button" tabindex="0">
         ${thumb}

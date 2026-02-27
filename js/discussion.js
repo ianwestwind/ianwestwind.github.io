@@ -25,7 +25,7 @@ function renderSpinner() {
 
 function renderEmpty() {
   return `<div class="empty-state">
-    <div class="empty-icon">🗨️</div>
+    <div class="empty-icon"></div>
     <p>No discussions yet. Start one!</p>
   </div>`;
 }
