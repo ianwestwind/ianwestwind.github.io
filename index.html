@@ -189,21 +189,25 @@
   <script type="module">
     import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js";
 
-    const themeBtn   = document.getElementById("theme-toggle");
+    const themeBtn = document.getElementById("theme-toggle");
     const savedTheme = localStorage.getItem("winn-theme") || "dark";
     document.documentElement.setAttribute("data-theme", savedTheme);
-    themeBtn.textContent = savedTheme === "dark" ? "☀️" : "🌙";
-    themeBtn.addEventListener("click", () => {
-      const cur  = document.documentElement.getAttribute("data-theme");
-      const next = cur === "dark" ? "light" : "dark";
-      document.documentElement.setAttribute("data-theme", next);
-      localStorage.setItem("winn-theme", next);
-      themeBtn.textContent = next === "dark" ? "☀️" : "🌙";
-    });
+    if (themeBtn) {
+      themeBtn.textContent = savedTheme === "dark" ? "☀️" : "🌙";
+      themeBtn.addEventListener("click", () => {
+        const cur  = document.documentElement.getAttribute("data-theme");
+        const next = cur === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("winn-theme", next);
+        themeBtn.textContent = next === "dark" ? "☀️" : "🌙";
+      });
+    }
 
     const hamburger = document.getElementById("nav-hamburger");
     const drawer    = document.getElementById("nav-drawer");
-    hamburger.addEventListener("click", () => drawer.classList.toggle("open"));
+    if (hamburger && drawer) {
+      hamburger.addEventListener("click", () => drawer.classList.toggle("open"));
+    }
 
     initAuth((user, role) => {
       updateNavUI(user, role);
@@ -213,10 +217,13 @@
       }
     });
 
-    document.getElementById("nav-logout").addEventListener("click", async () => {
-      await logout();
-      showToast("Signed out.", "info");
-    });
+    const logoutBtn = document.getElementById("nav-logout");
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", async () => {
+        await logout();
+        showToast("Signed out.", "info");
+      });
+    }
   </script>
 </body>
 </html>
