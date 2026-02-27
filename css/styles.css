@@ -125,7 +125,7 @@ p { color: var(--text-secondary); }
 .nav-sidebar {
   width: var(--nav-width);
   flex-shrink: 0;
-  background: #fff;
+  background: var(--bg-primary);
   border-right: none;
   padding: 1.5rem 0;
   display: flex;
@@ -135,7 +135,7 @@ p { color: var(--text-secondary); }
 
 .nav-sidebar .nav-brand {
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--text-primary);
   padding: 0 1rem 1rem;
   border-bottom: none;
@@ -155,19 +155,17 @@ p { color: var(--text-secondary); }
 .nav-sidebar .nav-links a {
   color: var(--text-muted);
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 400;
   padding: 0.5rem 1rem;
   border-radius: 0;
   transition: background var(--transition), color var(--transition);
 }
 
 .nav-sidebar .nav-links a:hover {
-  background: var(--accent-light);
   color: var(--text-secondary);
 }
 
 .nav-sidebar .nav-links a.active {
-  background: var(--accent-light);
   color: #000;
 }
 
@@ -180,7 +178,7 @@ p { color: var(--text-secondary); }
 .nav-sidebar {
   width: var(--nav-width);
   flex-shrink: 0;
-  background: #fff;
+  background: var(--bg-primary);
   border-right: none;
   padding: 1.5rem 0;
   display: flex;
@@ -190,7 +188,7 @@ p { color: var(--text-secondary); }
 
 .nav-sidebar .nav-brand {
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--text-primary);
   padding: 0 1rem 1rem;
   border-bottom: none;
@@ -210,19 +208,17 @@ p { color: var(--text-secondary); }
 .nav-sidebar .nav-links a {
   color: var(--text-muted);
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 400;
   padding: 0.5rem 1rem;
   border-radius: 0;
   transition: background var(--transition), color var(--transition);
 }
 
 .nav-sidebar .nav-links a:hover {
-  background: var(--accent-light);
   color: var(--text-secondary);
 }
 
 .nav-sidebar .nav-links a.active {
-  background: var(--accent-light);
   color: #000;
 }
 
@@ -238,7 +234,7 @@ p { color: var(--text-secondary); }
 .sidebar-user {
   width: var(--sidebar-user-width);
   flex-shrink: 0;
-  background: #fff;
+  background: var(--bg-primary);
   border-left: none;
   padding: 1.5rem 0.75rem 0.75rem;
   display: flex;
@@ -261,7 +257,7 @@ p { color: var(--text-secondary); }
 .sidebar-controls {
   width: var(--controls-width);
   flex-shrink: 0;
-  background: #fff;
+  background: var(--bg-primary);
   border-left: none;
   padding: 1.5rem 0.75rem;
   display: flex;
@@ -309,17 +305,23 @@ p { color: var(--text-secondary); }
   min-width: 0;
   display: flex;
   flex-direction: column;
+  background: var(--bg-primary);
 }
 
 .nav-role-badge {
-  font-size: 0.7rem;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: 400;
   text-transform: uppercase;
-  padding: 0.15rem 0.5rem;
+  padding: 0.3rem 0.7rem;
   letter-spacing: 0.05em;
   background: var(--bg-input);
   color: var(--text-secondary);
   border: 1px solid var(--border);
+  line-height: 1.4;
+  box-sizing: border-box;
+  border-radius: var(--radius);
 }
 
 .badge-admin,
@@ -1219,7 +1221,7 @@ p { color: var(--text-secondary); }
 
 /* ---------- Page title bar ---------- */
 .page-title-bar {
-  background: var(--bg-secondary);
+  background: var(--bg-primary);
   border-bottom: 1px solid var(--border);
   padding: 1.75rem 0 1.25rem;
   margin-bottom: 2rem;
