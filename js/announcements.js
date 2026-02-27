@@ -1,29 +1,19 @@
 // ============================================================
 // WINN Platforms — announcements.js
-// Announcements: all can read; moderator/admin can post/delete
+// Hash-routed list/detail; moderator/admin can post/delete
 // ============================================================
 
 import { db } from "./firebase-config.js";
 import {
-  collection,
-  addDoc,
-  getDocs,
-  deleteDoc,
-  doc,
-  query,
-  orderBy,
-  serverTimestamp
+  collection, addDoc, getDocs, deleteDoc, doc,
+  query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
-  getCurrentUser,
-  getCurrentRole,
-  hasRole,
-  escHtml,
-  showToast,
-  formatDate
+  getCurrentUser, getCurrentRole, hasRole, escHtml, showToast, formatDate
 } from "./auth.js";
 
 const COLLECTION = "announcements";
+const _items = new Map(); // id → data
 
 function renderSpinner() {
   return `<div class="spinner"><div class="spinner-ring"></div></div>`;
@@ -36,53 +26,132 @@ function renderEmpty() {
   </div>`;
 }
 
-function renderAnnouncement(id, data, role) {
-  const canDelete = hasRole(role, "moderator");
-  const deleteBtn = canDelete
-    ? `<button class="btn btn-danger btn-sm" data-delete="${escHtml(id)}" style="margin-top:0.5rem">Delete</button>`
-    : "";
-  return `
-    <div class="announcement-item" id="ann-${escHtml(id)}">
-      <div class="announcement-title">${escHtml(data.title || "(untitled)")}</div>
-      <div class="announcement-body">${escHtml(data.body || "")}</div>
-      <div class="announcement-meta">
-        Posted by <strong>${escHtml(data.authorName || "Staff")}</strong>
-        &nbsp;·&nbsp; ${formatDate(data.createdAt)}
-      </div>
-      ${deleteBtn}
-    </div>
-  `;
+function _snippet(text, max = 120) {
+  if (!text) return "";
+  return text.length > max ? text.slice(0, max) + "…" : text;
 }
 
-export async function loadAnnouncements(containerId) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
+function _updateCount(n) {
+  const countEl = document.getElementById("ann-count");
+  if (countEl) countEl.textContent = `${n} announcement${n !== 1 ? "s" : ""}`;
+}
 
-  container.innerHTML = renderSpinner();
+function _showList() {
+  const listView   = document.getElementById("list-view");
+  const detailView = document.getElementById("detail-view");
+  if (listView)   listView.style.display   = "";
+  if (detailView) detailView.style.display = "none";
+
+  const rows = document.getElementById("announcements-rows");
+  if (!rows) return;
+
+  if (_items.size === 0) {
+    rows.innerHTML = renderEmpty();
+    _updateCount(0);
+    return;
+  }
+
+  const sorted = [..._items.entries()].sort((a, b) => {
+    const ta = a[1].createdAt?.seconds ?? 0;
+    const tb = b[1].createdAt?.seconds ?? 0;
+    return tb - ta;
+  });
+
+  rows.innerHTML = sorted.map(([id, data]) => `
+    <div class="announcement-row" data-id="${escHtml(id)}" role="button" tabindex="0">
+      <div class="announcement-row-title">${escHtml(data.title || "(untitled)")}</div>
+      <div class="announcement-row-snippet">${escHtml(_snippet(data.body))}</div>
+      <div class="announcement-row-meta">
+        <span>${escHtml(data.authorName || "Staff")}</span>
+        <span>·</span>
+        <span>${formatDate(data.createdAt)}</span>
+      </div>
+    </div>
+  `).join("");
+
+  rows.querySelectorAll(".announcement-row").forEach(row => {
+    const openDetail = () => { location.hash = row.dataset.id; };
+    row.addEventListener("click", openDetail);
+    row.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDetail(); }
+    });
+  });
+
+  _updateCount(_items.size);
+}
+
+function _showDetail(id) {
+  const data = _items.get(id);
+  if (!data) { location.hash = ""; return; }
+
+  const listView   = document.getElementById("list-view");
+  const detailView = document.getElementById("detail-view");
+  if (listView)   listView.style.display   = "none";
+  if (detailView) detailView.style.display = "";
+
+  const role     = getCurrentRole();
+  const canDelete = hasRole(role, "moderator");
+
+  detailView.innerHTML = `
+    <div class="post-detail-header">
+      <button class="back-btn" id="back-btn">← Back</button>
+    </div>
+    <div class="post-detail-title">${escHtml(data.title || "(untitled)")}</div>
+    <div class="post-detail-meta">
+      <span>${escHtml(data.authorName || "Staff")}</span>
+      <span>·</span>
+      <span>${formatDate(data.createdAt)}</span>
+    </div>
+    <div class="post-detail-body">${escHtml(data.body || "")}</div>
+    ${canDelete ? `<div class="post-detail-actions"><button class="btn btn-danger btn-sm" id="detail-delete-btn">Delete Announcement</button></div>` : ""}
+  `;
+
+  document.getElementById("back-btn").addEventListener("click", () => { location.hash = ""; });
+
+  if (canDelete) {
+    document.getElementById("detail-delete-btn").addEventListener("click", async () => {
+      if (!confirm("Delete this announcement?")) return;
+      try {
+        await deleteDoc(doc(db, COLLECTION, id));
+        _items.delete(id);
+        showToast("Announcement deleted.", "info");
+        location.hash = "";
+      } catch (err) {
+        showToast("Delete failed: " + err.message, "error");
+      }
+    });
+  }
+}
+
+function _handleHash() {
+  const id = location.hash.slice(1);
+  if (id && _items.has(id)) {
+    _showDetail(id);
+  } else {
+    _showList();
+  }
+}
+
+export async function initAnnouncementsPage() {
+  window.addEventListener("hashchange", _handleHash);
+
+  const rows = document.getElementById("announcements-rows");
+  if (rows) rows.innerHTML = renderSpinner();
 
   try {
     const q    = query(collection(db, COLLECTION), orderBy("createdAt", "desc"));
     const snap = await getDocs(q);
-    const role = getCurrentRole();
-
-    if (snap.empty) {
-      container.innerHTML = renderEmpty();
-      return;
-    }
-
-    container.innerHTML = snap.docs
-      .map(d => renderAnnouncement(d.id, d.data(), role))
-      .join("");
-
-    container.querySelectorAll("[data-delete]").forEach(btn => {
-      btn.addEventListener("click", () => deleteAnnouncement(btn.dataset.delete));
-    });
+    _items.clear();
+    snap.docs.forEach(d => _items.set(d.id, d.data()));
   } catch (err) {
-    container.innerHTML = `<p style="color:var(--danger)">Error loading announcements: ${escHtml(err.message)}</p>`;
+    if (rows) rows.innerHTML = `<p style="color:var(--danger)">Error loading announcements: ${escHtml(err.message)}</p>`;
+    return;
   }
+
+  _handleHash();
 }
 
-export async function submitAnnouncement(formId, listContainerId) {
+export async function submitAnnouncement(formId) {
   const form       = document.getElementById(formId);
   const titleInput = form.querySelector("[name=title]");
   const bodyInput  = form.querySelector("[name=body]");
@@ -110,37 +179,25 @@ export async function submitAnnouncement(formId, listContainerId) {
   submitBtn.textContent = "Posting…";
 
   try {
-    await addDoc(collection(db, COLLECTION), {
+    const postData = {
       title,
       body,
       authorUid:  user.uid,
       authorName: user.displayName || user.email,
       createdAt:  serverTimestamp()
-    });
+    };
 
-    titleInput.value = "";
-    bodyInput.value  = "";
+    const newDoc = await addDoc(collection(db, COLLECTION), postData);
+    _items.set(newDoc.id, { ...postData, createdAt: { seconds: Date.now() / 1000 } });
+
+    form.reset();
 
     showToast("Announcement published!", "success");
-    await loadAnnouncements(listContainerId);
+    _showList();
   } catch (err) {
     showToast("Failed to post: " + err.message, "error");
   } finally {
     submitBtn.disabled    = false;
     submitBtn.textContent = "Post Announcement";
-  }
-}
-
-export async function deleteAnnouncement(annId) {
-  const role = getCurrentRole();
-  if (!hasRole(role, "moderator")) return;
-  if (!confirm("Delete this announcement?")) return;
-
-  try {
-    await deleteDoc(doc(db, COLLECTION, annId));
-    document.getElementById(`ann-${annId}`)?.remove();
-    showToast("Announcement deleted.", "info");
-  } catch (err) {
-    showToast("Delete failed: " + err.message, "error");
   }
 }

@@ -49,27 +49,50 @@
 
     <div class="section-sm container-sm">
 
-      <div id="post-gate"></div>
+      <!-- List view -->
+      <div id="list-view">
 
-      <div class="post-form" id="new-post-form" style="display:none">
-        <h3>Start a Discussion</h3>
-        <form id="discussion-form">
-          <div class="form-group">
-            <label for="disc-title">Title</label>
-            <input type="text" id="disc-title" name="title" placeholder="What's on your mind?" required />
-          </div>
-          <div class="form-group">
-            <label for="disc-body">Body</label>
-            <textarea id="disc-body" name="body" placeholder="Write your post here…" required></textarea>
-          </div>
-          <p class="form-error" id="disc-form-error"></p>
-          <button type="submit" class="btn btn-primary">Post</button>
-        </form>
-      </div>
+        <!-- Auth gate (guests) -->
+        <div id="post-gate"></div>
 
-      <div id="discussion-posts">
-        <div class="spinner"><div class="spinner-ring"></div></div>
-      </div>
+        <!-- List header: count + new post toggle -->
+        <div class="list-header" id="list-header" style="display:none">
+          <span id="post-count" class="list-header-count"></span>
+          <button class="btn btn-ghost btn-sm" id="toggle-form-btn">+ New Post</button>
+        </div>
+
+        <!-- New post form (collapsed by default) -->
+        <div id="new-post-form" class="post-form" style="display:none">
+          <form id="discussion-form">
+            <div class="form-group">
+              <label for="disc-title">Title</label>
+              <input type="text" id="disc-title" name="title" placeholder="What's on your mind?" required />
+            </div>
+            <div class="form-group">
+              <label for="disc-body">Body</label>
+              <textarea id="disc-body" name="body" placeholder="Write your post here…" required></textarea>
+            </div>
+            <div class="form-group">
+              <label class="file-input-label">
+                📎 Attach image (optional)
+                <input type="file" id="post-image" name="image" accept="image/*" />
+              </label>
+              <div id="image-preview-container"></div>
+            </div>
+            <p class="form-error" id="disc-form-error"></p>
+            <button type="submit" class="btn btn-primary btn-sm">Post</button>
+          </form>
+        </div>
+
+        <!-- Post rows -->
+        <div id="posts-rows">
+          <div class="spinner"><div class="spinner-ring"></div></div>
+        </div>
+
+      </div><!-- /#list-view -->
+
+      <!-- Detail view (rendered by JS) -->
+      <div id="detail-view" style="display:none"></div>
 
     </div>
   </div>
@@ -82,8 +105,9 @@
 
   <script type="module">
     import { initAuth, updateNavUI, logout, hasRole, showToast } from "./js/auth.js";
-    import { loadDiscussionPosts, submitDiscussionPost } from "./js/discussion.js";
+    import { initDiscussionPage, submitDiscussionPost } from "./js/discussion.js";
 
+    // Theme
     const themeBtn   = document.getElementById("theme-toggle");
     const savedTheme = localStorage.getItem("winn-theme") || "dark";
     document.documentElement.setAttribute("data-theme", savedTheme);
@@ -96,41 +120,44 @@
       themeBtn.textContent = next === "dark" ? "☀️" : "🌙";
     });
 
+    // Hamburger
     document.getElementById("nav-hamburger").addEventListener("click", () =>
       document.getElementById("nav-drawer").classList.toggle("open"));
 
+    // Logout
     document.getElementById("nav-logout").addEventListener("click", async () => {
       await logout();
       showToast("Signed out.", "info");
       window.location.reload();
     });
 
+    // Auth → init page
     initAuth(async (user, role) => {
       updateNavUI(user, role);
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
 
-      const gate     = document.getElementById("post-gate");
-      const postForm = document.getElementById("new-post-form");
+      const gate      = document.getElementById("post-gate");
+      const toggleBtn = document.getElementById("toggle-form-btn");
 
-      if (hasRole(role, "regular")) {
-        postForm.style.display = "";
-      } else {
+      if (!hasRole(role, "regular")) {
         gate.innerHTML = `
           <div class="access-gate">
             <div class="gate-icon">🔒</div>
             <h3>Sign in to participate</h3>
             <p>Register or log in to join the discussion.</p>
-            <a href="login.html" class="btn btn-primary">Sign In / Register</a>
+            <a href="login.html" class="btn btn-primary btn-sm">Sign In / Register</a>
           </div>
         `;
+        if (toggleBtn) toggleBtn.style.display = "none";
       }
 
-      await loadDiscussionPosts("discussion-posts");
+      await initDiscussionPage();
     });
 
-    document.getElementById("discussion-form").addEventListener("submit", async (e) => {
+    // Form submit
+    document.getElementById("discussion-form").addEventListener("submit", async e => {
       e.preventDefault();
-      await submitDiscussionPost("discussion-form", "discussion-posts");
+      await submitDiscussionPost("discussion-form");
     });
   </script>
 </body>

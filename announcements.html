@@ -49,27 +49,35 @@
 
     <div class="section-sm container-sm">
 
-      <!-- Post form (moderator/admin only) -->
-      <div class="post-form" id="ann-post-form" style="display:none">
-        <h3>New Announcement</h3>
-        <form id="ann-form">
-          <div class="form-group">
-            <label for="ann-title">Title</label>
-            <input type="text" id="ann-title" name="title" placeholder="Announcement title" required />
-          </div>
-          <div class="form-group">
-            <label for="ann-body">Body</label>
-            <textarea id="ann-body" name="body" placeholder="Write the announcement…" required></textarea>
-          </div>
-          <p class="form-error" id="ann-form-error"></p>
-          <button type="submit" class="btn btn-primary">Post Announcement</button>
-        </form>
-      </div>
+      <!-- List view -->
+      <div id="list-view">
 
-      <!-- Announcements list -->
-      <div id="announcements-list">
-        <div class="spinner"><div class="spinner-ring"></div></div>
-      </div>
+        <!-- Post form (moderator/admin only, shown by JS) -->
+        <div id="ann-post-form" class="post-form" style="display:none">
+          <h3>New Announcement</h3>
+          <form id="ann-form">
+            <div class="form-group">
+              <label for="ann-title">Title</label>
+              <input type="text" id="ann-title" name="title" placeholder="Announcement title" required />
+            </div>
+            <div class="form-group">
+              <label for="ann-body">Body</label>
+              <textarea id="ann-body" name="body" placeholder="Write the announcement…" required></textarea>
+            </div>
+            <p class="form-error" id="ann-form-error"></p>
+            <button type="submit" class="btn btn-primary btn-sm">Post Announcement</button>
+          </form>
+        </div>
+
+        <!-- Announcement rows -->
+        <div id="announcements-rows">
+          <div class="spinner"><div class="spinner-ring"></div></div>
+        </div>
+
+      </div><!-- /#list-view -->
+
+      <!-- Detail view (rendered by JS) -->
+      <div id="detail-view" style="display:none"></div>
 
     </div>
   </div>
@@ -82,8 +90,9 @@
 
   <script type="module">
     import { initAuth, updateNavUI, logout, hasRole, showToast } from "./js/auth.js";
-    import { loadAnnouncements, submitAnnouncement } from "./js/announcements.js";
+    import { initAnnouncementsPage, submitAnnouncement } from "./js/announcements.js";
 
+    // Theme
     const themeBtn   = document.getElementById("theme-toggle");
     const savedTheme = localStorage.getItem("winn-theme") || "dark";
     document.documentElement.setAttribute("data-theme", savedTheme);
@@ -96,15 +105,18 @@
       themeBtn.textContent = next === "dark" ? "☀️" : "🌙";
     });
 
+    // Hamburger
     document.getElementById("nav-hamburger").addEventListener("click", () =>
       document.getElementById("nav-drawer").classList.toggle("open"));
 
+    // Logout
     document.getElementById("nav-logout").addEventListener("click", async () => {
       await logout();
       showToast("Signed out.", "info");
       window.location.reload();
     });
 
+    // Auth → init page
     initAuth(async (user, role) => {
       updateNavUI(user, role);
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
@@ -114,12 +126,13 @@
         document.getElementById("ann-post-form").style.display = "";
       }
 
-      await loadAnnouncements("announcements-list");
+      await initAnnouncementsPage();
     });
 
-    document.getElementById("ann-form").addEventListener("submit", async (e) => {
+    // Form submit
+    document.getElementById("ann-form").addEventListener("submit", async e => {
       e.preventDefault();
-      await submitAnnouncement("ann-form", "announcements-list");
+      await submitAnnouncement("ann-form");
     });
   </script>
 </body>
