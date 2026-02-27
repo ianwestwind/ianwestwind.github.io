@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Forum · WINN Platforms</title>
+  <title>News · WINN Platforms</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet" />
@@ -16,9 +16,9 @@
       <a href="index.html">Home</a>
       <a href="portfolio-software.html">Software</a>
       <a href="portfolio-design.html">Design</a>
-      <a href="forum.html" class="active">Forum</a>
+      <a href="forum.html">Forum</a>
       <a href="blog.html">Blog</a>
-      <a href="news.html">News</a>
+      <a href="news.html" class="active">News</a>
     </div>
     <div class="nav-right">
       <div class="nav-user" id="nav-user" style="display:none"></div>
@@ -44,40 +44,33 @@
   <div class="page-wrapper">
     <div class="page-title-bar">
       <div class="container">
-        <h1>Forum</h1>
-        <p>Community discussions — threaded by topic</p>
+        <h1>News</h1>
+        <p>Official updates from the WINN Platforms team</p>
       </div>
     </div>
 
     <div class="section-sm container-sm">
       <div id="list-view">
 
-        <!-- Auth gate (guests) -->
-        <div id="post-gate"></div>
-
-        <!-- List header -->
-        <div class="list-header" id="list-header" style="display:none">
-          <span id="post-count" class="list-header-count"></span>
-          <button class="btn btn-ghost btn-sm" id="toggle-form-btn">+ New Post</button>
+        <!-- List header (mod/admin only) -->
+        <div class="list-header" id="news-list-header" style="display:none">
+          <span id="news-count" class="list-header-count"></span>
+          <button class="btn btn-ghost btn-sm" id="news-toggle-btn">+ New Post</button>
         </div>
 
-        <!-- New post form (collapsed by default) -->
-        <div id="new-post-form" class="post-form" style="display:none">
-          <form id="forum-form">
+        <!-- Post form (mod/admin only, collapsed by default) -->
+        <div id="news-post-form" class="post-form" style="display:none">
+          <h3>New News Post</h3>
+          <form id="news-form">
             <div class="form-group">
-              <label for="post-title">Title</label>
-              <input type="text" id="post-title" name="title" placeholder="What's your topic?" required />
-            </div>
-
-            <div class="form-group">
-              <label for="post-thread">Thread / Tag <span style="color:var(--text-muted)">(optional)</span></label>
-              <input type="text" id="post-thread" name="thread" placeholder="e.g. general, dev, design" />
+              <label for="news-title">Title</label>
+              <input type="text" id="news-title" name="title" placeholder="News headline" required />
             </div>
 
             <div class="form-group">
               <label>Body</label>
               <div class="editor-wrapper">
-                <div id="forum-toolbar">
+                <div id="news-toolbar">
                   <span class="ql-formats">
                     <select class="ql-font">
                       <option selected>Inter</option>
@@ -136,18 +129,18 @@
                     <button class="ql-clean"></button>
                   </span>
                 </div>
-                <div id="forum-editor" class="editor-content"></div>
+                <div id="news-editor" class="editor-content"></div>
               </div>
             </div>
 
             <!-- Thumbnail -->
             <div class="form-group">
-              <label>Thumbnail <span style="color:var(--text-muted)">(optional, max 10 MB)</span></label>
+              <label>Thumbnail</label>
               <label class="file-input-label">
-                🖼 Upload thumbnail
-                <input type="file" id="forum-thumb" accept="image/*" />
+                🖼 Upload thumbnail (max 10 MB)
+                <input type="file" id="news-thumb" accept="image/*" />
               </label>
-              <div id="forum-thumb-preview"></div>
+              <div id="news-thumb-preview"></div>
             </div>
 
             <!-- File attachments -->
@@ -155,21 +148,28 @@
               <label>Attachments <span style="color:var(--text-muted)">(any type, max 25 MB each)</span></label>
               <label class="file-input-label">
                 📎 Add files
-                <input type="file" id="forum-attach-input" multiple />
+                <input type="file" id="news-attach-input" multiple />
               </label>
-              <div id="forum-attach-list" class="attach-list"></div>
+              <div id="news-attach-list" class="attach-list"></div>
             </div>
 
-            <p class="form-error" id="forum-form-error"></p>
+            <!-- Schedule -->
+            <div class="form-group">
+              <label for="news-publish-at">Publish Date &amp; Time</label>
+              <input type="datetime-local" id="news-publish-at" name="publishAt" />
+              <span class="form-hint">Leave at current time to publish immediately, set a future date to schedule, or a past date for backdated posting.</span>
+            </div>
+
+            <p class="form-error" id="news-form-error"></p>
             <div style="display:flex;gap:.5rem;align-items:center">
-              <button type="submit" class="btn btn-primary btn-sm">Post</button>
-              <button type="button" class="btn btn-ghost btn-sm" id="forum-cancel-btn">Cancel</button>
+              <button type="submit" class="btn btn-primary btn-sm">Publish</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="news-cancel-btn">Cancel</button>
             </div>
           </form>
         </div>
 
-        <!-- Post rows -->
-        <div id="posts-rows">
+        <!-- News rows -->
+        <div id="news-rows">
           <div class="spinner"><div class="spinner-ring"></div></div>
         </div>
 
@@ -185,7 +185,7 @@
 
   <script type="module">
     import { initAuth, updateNavUI, logout, hasRole, showToast } from "./js/auth.js";
-    import { initForumPage, submitForumPost } from "./js/forum.js";
+    import { initNewsPage, submitNews } from "./js/news.js";
 
     const themeBtn   = document.getElementById("theme-toggle");
     const savedTheme = localStorage.getItem("winn-theme") || "dark";
@@ -212,26 +212,16 @@
       updateNavUI(user, role);
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
 
-      const gate      = document.getElementById("post-gate");
-      const toggleBtn = document.getElementById("toggle-form-btn");
-
-      if (!hasRole(role, "regular")) {
-        gate.innerHTML = `
-          <div class="access-gate">
-            <div class="gate-icon">🔒</div>
-            <h3>Sign in to post</h3>
-            <p>You need a registered account to post. All visitors can read.</p>
-            <a href="login.html" class="btn btn-primary btn-sm">Sign In / Register</a>
-          </div>`;
-        if (toggleBtn) toggleBtn.style.display = "none";
+      if (hasRole(role, "moderator")) {
+        document.getElementById("news-list-header").style.display = "";
       }
 
-      await initForumPage();
+      await initNewsPage(role);
     });
 
-    document.getElementById("forum-form").addEventListener("submit", async e => {
+    document.getElementById("news-form").addEventListener("submit", async e => {
       e.preventDefault();
-      await submitForumPost();
+      await submitNews();
     });
   </script>
 </body>

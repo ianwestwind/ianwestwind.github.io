@@ -1,37 +1,29 @@
 // ============================================================
 // WINN Platforms — forum.js
-// Hash-routed list/detail view with image attachment support
+// Forum posts with rich editor, thumbnails, and attachments
 // ============================================================
 
-import { db, storage } from "./firebase-config.js";
+import { db } from "./firebase-config.js";
 import {
   collection, addDoc, getDocs, deleteDoc, doc,
   query, orderBy, serverTimestamp, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
-  ref, uploadBytes, getDownloadURL
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-import {
   getCurrentUser, getCurrentRole, hasRole, escHtml, showToast, formatDate
 } from "./auth.js";
+import {
+  initEditor, getEditorHTML, initThumbnailZone, initAttachmentZone, renderBody
+} from "./editor.js";
 
 const COLLECTION = "forum_posts";
-const _posts = new Map(); // id → data
-
-function renderSpinner() {
-  return `<div class="spinner"><div class="spinner-ring"></div></div>`;
-}
-
-function renderEmpty() {
-  return `<div class="empty-state">
-    <div class="empty-icon">💬</div>
-    <p>No posts yet. Be the first to start a discussion!</p>
-  </div>`;
-}
+const _posts = new Map();
+let _quill      = null;
+let _thumbZone  = null;
+let _attachZone = null;
 
 function _updateCount(n) {
-  const countEl = document.getElementById("post-count");
-  if (countEl) countEl.textContent = `${n} post${n !== 1 ? "s" : ""}`;
+  const el = document.getElementById("post-count");
+  if (el) el.textContent = `${n} post${n !== 1 ? "s" : ""}`;
 }
 
 function _showList() {
@@ -44,7 +36,7 @@ function _showList() {
   if (!rows) return;
 
   if (_posts.size === 0) {
-    rows.innerHTML = renderEmpty();
+    rows.innerHTML = `<div class="empty-state"><div class="empty-icon">💬</div><p>No posts yet. Be the first to start a discussion!</p></div>`;
     _updateCount(0);
     return;
   }
@@ -60,6 +52,7 @@ function _showList() {
       <div class="post-row-title">
         ${escHtml(data.title || "(untitled)")}
         ${data.thread ? `<span class="post-thread-tag">#${escHtml(data.thread)}</span>` : ""}
+        ${data.thumbnailUrl ? `<span class="post-has-thumb" title="Has thumbnail">🖼</span>` : ""}
       </div>
       <div class="post-row-meta">
         <span>${escHtml(data.authorName || "Anonymous")}</span>
@@ -70,11 +63,9 @@ function _showList() {
   `).join("");
 
   rows.querySelectorAll(".post-row").forEach(row => {
-    const openDetail = () => { location.hash = row.dataset.id; };
-    row.addEventListener("click", openDetail);
-    row.addEventListener("keydown", e => {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDetail(); }
-    });
+    const open = () => { location.hash = row.dataset.id; };
+    row.addEventListener("click", open);
+    row.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
   });
 
   _updateCount(_posts.size);
@@ -89,14 +80,15 @@ function _showDetail(id) {
   if (listView)   listView.style.display   = "none";
   if (detailView) detailView.style.display = "";
 
-  const role = getCurrentRole();
-  const user = getCurrentUser();
+  const role      = getCurrentRole();
+  const user      = getCurrentUser();
   const canDelete = hasRole(role, "moderator") || (user && user.uid === data.authorUid);
 
   detailView.innerHTML = `
     <div class="post-detail-header">
       <button class="back-btn" id="back-btn">← Back</button>
     </div>
+    ${data.thumbnailUrl ? `<div class="post-detail-thumb"><img src="${escHtml(data.thumbnailUrl)}" alt="" /></div>` : ""}
     <div class="post-detail-title">
       ${escHtml(data.title || "(untitled)")}
       ${data.thread ? `<span class="post-thread-tag">#${escHtml(data.thread)}</span>` : ""}
@@ -106,10 +98,12 @@ function _showDetail(id) {
       <span>·</span>
       <span>${formatDate(data.createdAt)}</span>
     </div>
-    <div class="post-detail-body">${escHtml(data.body || "")}</div>
-    ${data.imageUrl ? `<div class="post-detail-image"><img src="${escHtml(data.imageUrl)}" alt="Post image" /></div>` : ""}
+    <div class="post-detail-body rich-content" id="forum-detail-body-${id}"></div>
+    ${_attachmentsHTML(data.attachments)}
     ${canDelete ? `<div class="post-detail-actions"><button class="btn btn-danger btn-sm" id="detail-delete-btn">Delete Post</button></div>` : ""}
   `;
+
+  document.getElementById(`forum-detail-body-${id}`).innerHTML = renderBody(data.body);
 
   document.getElementById("back-btn").addEventListener("click", () => { location.hash = ""; });
 
@@ -121,27 +115,35 @@ function _showDetail(id) {
         _posts.delete(id);
         showToast("Post deleted.", "info");
         location.hash = "";
-      } catch (err) {
-        showToast("Delete failed: " + err.message, "error");
-      }
+      } catch (err) { showToast("Delete failed: " + err.message, "error"); }
     });
   }
 }
 
+function _attachmentsHTML(attachments) {
+  if (!attachments?.length) return "";
+  return `
+    <div class="attach-section">
+      <div class="attach-section-title">Attachments</div>
+      ${attachments.map(a => `
+        <div class="attach-item">
+          <a href="${escHtml(a.url)}" target="_blank" rel="noopener" class="attach-link">${escHtml(a.name)}</a>
+          <span class="attach-size">${Math.round((a.size || 0) / 1024)} KB</span>
+        </div>`).join("")}
+    </div>`;
+}
+
 function _handleHash() {
   const id = location.hash.slice(1);
-  if (id && _posts.has(id)) {
-    _showDetail(id);
-  } else {
-    _showList();
-  }
+  if (id && _posts.has(id)) _showDetail(id);
+  else _showList();
 }
 
 export async function initForumPage() {
   window.addEventListener("hashchange", _handleHash);
 
   const rows = document.getElementById("posts-rows");
-  if (rows) rows.innerHTML = renderSpinner();
+  if (rows) rows.innerHTML = `<div class="spinner"><div class="spinner-ring"></div></div>`;
 
   try {
     const q    = query(collection(db, COLLECTION), orderBy("createdAt", "desc"));
@@ -153,75 +155,58 @@ export async function initForumPage() {
     return;
   }
 
-  // Reveal list header after load
   const listHeader = document.getElementById("list-header");
   if (listHeader) listHeader.style.display = "";
 
-  // Toggle new post form
+  // Init editor + zones for signed-in users
+  const role = getCurrentRole();
+  if (hasRole(role, "regular")) {
+    _quill      = initEditor("forum-toolbar", "forum-editor", "forum");
+    _thumbZone  = initThumbnailZone("forum-thumb", "forum-thumb-preview", "forum");
+    _attachZone = initAttachmentZone("forum-attach-input", "forum-attach-list", "forum");
+  }
+
+  // Toggle form
   const toggleBtn = document.getElementById("toggle-form-btn");
   const newForm   = document.getElementById("new-post-form");
   if (toggleBtn && newForm) {
     toggleBtn.addEventListener("click", () => {
-      const isHidden = newForm.style.display === "none" || newForm.style.display === "";
-      newForm.style.display = isHidden ? "" : "none";
-      toggleBtn.textContent = isHidden ? "✕ Cancel" : "+ New Post";
+      const hidden = newForm.style.display === "none" || newForm.style.display === "";
+      newForm.style.display    = hidden ? "" : "none";
+      toggleBtn.textContent    = hidden ? "✕ Cancel" : "+ New Post";
     });
   }
-
-  // Image preview
-  const fileInput = document.getElementById("post-image");
-  if (fileInput) {
-    fileInput.addEventListener("change", () => {
-      const file    = fileInput.files[0];
-      const preview = document.getElementById("image-preview-container");
-      if (!preview) return;
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = ev => {
-          preview.innerHTML = `
-            <div class="image-preview">
-              <img src="${escHtml(ev.target.result)}" alt="Preview" />
-              <button type="button" class="image-preview-remove" id="remove-image">✕</button>
-            </div>
-          `;
-          document.getElementById("remove-image").addEventListener("click", () => {
-            fileInput.value = "";
-            preview.innerHTML = "";
-          });
-        };
-        reader.readAsDataURL(file);
-      } else {
-        preview.innerHTML = "";
-      }
+  const cancelBtn = document.getElementById("forum-cancel-btn");
+  if (cancelBtn && newForm) {
+    cancelBtn.addEventListener("click", () => {
+      newForm.style.display = "none";
+      if (toggleBtn) toggleBtn.textContent = "+ New Post";
     });
   }
 
   _handleHash();
 }
 
-export async function submitForumPost(formId) {
-  const form        = document.getElementById(formId);
+export async function submitForumPost() {
+  const form        = document.getElementById("forum-form");
   const titleInput  = form.querySelector("[name=title]");
-  const bodyInput   = form.querySelector("[name=body]");
   const threadInput = form.querySelector("[name=thread]");
-  const fileInput   = document.getElementById("post-image");
   const submitBtn   = form.querySelector("[type=submit]");
-  const errorEl     = form.querySelector(".form-error");
+  const errorEl     = document.getElementById("forum-form-error");
 
   const role = getCurrentRole();
   const user = getCurrentUser();
 
   if (!hasRole(role, "regular")) {
-    showToast("You must be logged in as a registered user to post.", "error");
-    return;
+    showToast("You must be logged in as a registered user to post.", "error"); return;
   }
 
   const title  = titleInput.value.trim();
-  const body   = bodyInput.value.trim();
   const thread = threadInput ? threadInput.value.trim() : "";
+  const body   = _quill ? getEditorHTML(_quill) : "";
 
-  if (!title || !body) {
-    if (errorEl) { errorEl.textContent = "Title and body are required."; errorEl.classList.add("visible"); }
+  if (!title) {
+    if (errorEl) { errorEl.textContent = "Title is required."; errorEl.classList.add("visible"); }
     return;
   }
 
@@ -232,52 +217,29 @@ export async function submitForumPost(formId) {
   const postData = {
     title,
     body,
-    thread:     thread || null,
-    authorUid:  user.uid,
-    authorName: user.displayName || user.email,
-    createdAt:  serverTimestamp()
+    thread:       thread || null,
+    thumbnailUrl: _thumbZone?.getThumbUrl() || null,
+    attachments:  _attachZone?.getAttachments() || [],
+    authorUid:    user.uid,
+    authorName:   user.displayName || user.email,
+    createdAt:    serverTimestamp()
   };
 
-  const file = fileInput?.files[0];
-
   try {
-    let newId;
-    let imageUrl = null;
-
-    if (file) {
-      try {
-        const newRef     = doc(collection(db, COLLECTION));
-        newId            = newRef.id;
-        const storageRef = ref(storage, `post-images/${newId}/${Date.now()}-${file.name}`);
-        await uploadBytes(storageRef, file);
-        imageUrl         = await getDownloadURL(storageRef);
-        await setDoc(newRef, { ...postData, imageUrl });
-      } catch (uploadErr) {
-        showToast("Image upload failed; posting without image.", "error");
-        const newDoc = await addDoc(collection(db, COLLECTION), postData);
-        newId = newDoc.id;
-        imageUrl = null;
-      }
-    } else {
-      const newDoc = await addDoc(collection(db, COLLECTION), postData);
-      newId = newDoc.id;
-    }
-
-    // Add to local map with approximate timestamp for immediate re-render
-    const localEntry = { ...postData, createdAt: { seconds: Date.now() / 1000 } };
-    if (imageUrl) localEntry.imageUrl = imageUrl;
-    _posts.set(newId, localEntry);
+    const newDoc = await addDoc(collection(db, COLLECTION), postData);
+    _posts.set(newDoc.id, { ...postData, createdAt: { seconds: Date.now() / 1000 } });
 
     // Reset form
-    form.reset();
-    const preview = document.getElementById("image-preview-container");
-    if (preview) preview.innerHTML = "";
+    titleInput.value = "";
+    if (threadInput) threadInput.value = "";
+    if (_quill) _quill.setContents([]);
+    if (_thumbZone) _thumbZone.reset();
+    if (_attachZone) _attachZone.reset();
 
-    // Collapse form
-    const toggleBtn = document.getElementById("toggle-form-btn");
     const newForm   = document.getElementById("new-post-form");
-    if (newForm)   newForm.style.display = "none";
-    if (toggleBtn) toggleBtn.textContent = "+ New Post";
+    const toggleBtn = document.getElementById("toggle-form-btn");
+    if (newForm)   newForm.style.display   = "none";
+    if (toggleBtn) toggleBtn.textContent   = "+ New Post";
 
     showToast("Post published!", "success");
     _showList();

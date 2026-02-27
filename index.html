@@ -3,22 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WINN Platforms</title>
+  <title>Ian Kim · WINN Platforms</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 </head>
 <body>
+
   <!-- ===== Navigation ===== -->
   <nav class="nav">
     <a href="index.html" class="nav-brand">WINN<span> Platforms</span></a>
     <div class="nav-links">
-      <a href="index.html" class="active">Home</a>
+      <a href="index.html" class="active">About</a>
       <a href="portfolio-software.html">Software</a>
       <a href="portfolio-design.html">Design</a>
       <a href="forum.html">Forum</a>
-      <a href="discussion.html">Discussion</a>
-      <a href="announcements.html">Announcements</a>
+      <a href="blog.html">Blog</a>
+      <a href="news.html">News</a>
     </div>
     <div class="nav-right">
       <div class="nav-user" id="nav-user" style="display:none"></div>
@@ -31,134 +32,206 @@
     </button>
   </nav>
 
-  <!-- Mobile drawer -->
   <div class="nav-drawer" id="nav-drawer">
-    <a href="index.html">Home</a>
+    <a href="index.html">About</a>
     <a href="portfolio-software.html">Software Portfolio</a>
     <a href="portfolio-design.html">Design Portfolio</a>
     <a href="forum.html">Forum</a>
-    <a href="discussion.html">Discussion</a>
-    <a href="announcements.html">Announcements</a>
+    <a href="blog.html">Blog</a>
+    <a href="news.html">News</a>
     <a href="login.html" id="drawer-login">Sign In</a>
   </div>
 
   <div class="page-wrapper">
-    <!-- ===== Hero ===== -->
-    <section class="hero container">
-      <div class="hero-eyebrow">Portfolio &amp; Community</div>
-      <h1>WINN Platforms</h1>
-      <p class="hero-subtitle">
-        A showcase of software and design work, paired with a community space
-        for discussion, announcements, and collaboration.
-      </p>
-      <div class="hero-actions">
-        <a href="portfolio-software.html" class="btn btn-primary btn-lg">View Software Work</a>
-        <a href="forum.html" class="btn btn-ghost btn-lg">Join the Forum</a>
+
+    <!-- ===== Profile ===== -->
+    <section class="about-hero container">
+      <div class="about-profile">
+
+        <!-- Photo -->
+        <div class="profile-photo-wrap">
+          <div class="profile-photo-placeholder" aria-label="Profile photo placeholder">
+            <!-- Replace with: <img src="assets/ian-kim.jpg" alt="Ian Kim" class="profile-photo-img" /> -->
+            IK
+          </div>
+        </div>
+
+        <!-- Bio -->
+        <div class="profile-bio">
+          <div class="profile-eyebrow">Stanford Medicine · Department of Pediatrics</div>
+          <h1 class="profile-name">Ian Kim</h1>
+          <p class="profile-role">Senior Research Scientist &nbsp;·&nbsp; PhD, Preventive Medicine</p>
+          <p class="profile-text">
+            Ian Kim is a Senior Research Scientist in the Department of Pediatrics at Stanford Medicine.
+            His work applies dynamical systems theory and artificial neural networks to identify
+            behavioral patterns in individuals with, or at elevated risk for, chronic conditions.
+          </p>
+          <p class="profile-text">
+            He designs computational models of behavior change and health intervention applications
+            that bring precision medicine and behavioral science together. He holds a PhD in Preventive
+            Medicine from the University of Southern California (Keck School of Medicine) and an
+            MFA in New Media from Penn State. Outside research, Ian is a long-distance runner who
+            participates in endurance events in support of charitable causes.
+          </p>
+          <div class="profile-tags">
+            <span class="profile-tag">Dynamical Systems</span>
+            <span class="profile-tag">Neural Networks</span>
+            <span class="profile-tag">Behavior Change</span>
+            <span class="profile-tag">Precision Medicine</span>
+            <span class="profile-tag">Chronic Disease</span>
+          </div>
+          <div class="profile-links">
+            <a href="https://iankim.people.stanford.edu/" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Stanford Profile ↗</a>
+            <a href="portfolio-software.html" class="btn btn-ghost btn-sm">Software Work</a>
+            <a href="portfolio-design.html" class="btn btn-ghost btn-sm">Design Work</a>
+          </div>
+        </div>
+
       </div>
     </section>
 
-    <!-- ===== Stats ===== -->
-    <section class="container">
-      <div class="stats-strip" id="stats-strip">
-        <div class="stat-item">
-          <div class="stat-value" id="stat-projects">—</div>
-          <div class="stat-label">Projects</div>
+    <!-- ===== Collaborators ===== -->
+    <section class="about-section">
+      <div class="container">
+        <div class="about-section-header">
+          <h2>Collaborators</h2>
+          <p>Research partners and colleagues</p>
         </div>
-        <div class="stat-item">
-          <div class="stat-value" id="stat-posts">—</div>
-          <div class="stat-label">Forum Posts</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value" id="stat-members">—</div>
-          <div class="stat-label">Community Members</div>
+        <div class="collab-grid">
+
+          <div class="collab-card">
+            <div class="collab-photo-placeholder">A</div>
+            <div class="collab-info">
+              <div class="collab-name">Collaborator Name</div>
+              <div class="collab-inst">Institution · Role</div>
+            </div>
+          </div>
+
+          <div class="collab-card">
+            <div class="collab-photo-placeholder">B</div>
+            <div class="collab-info">
+              <div class="collab-name">Collaborator Name</div>
+              <div class="collab-inst">Institution · Role</div>
+            </div>
+          </div>
+
+          <div class="collab-card">
+            <div class="collab-photo-placeholder">C</div>
+            <div class="collab-info">
+              <div class="collab-name">Collaborator Name</div>
+              <div class="collab-inst">Institution · Role</div>
+            </div>
+          </div>
+
+          <div class="collab-card">
+            <div class="collab-photo-placeholder">D</div>
+            <div class="collab-info">
+              <div class="collab-name">Collaborator Name</div>
+              <div class="collab-inst">Institution · Role</div>
+            </div>
+          </div>
+
+          <div class="collab-card">
+            <div class="collab-photo-placeholder">E</div>
+            <div class="collab-info">
+              <div class="collab-name">Collaborator Name</div>
+              <div class="collab-inst">Institution · Role</div>
+            </div>
+          </div>
+
+          <div class="collab-card">
+            <div class="collab-photo-placeholder">F</div>
+            <div class="collab-info">
+              <div class="collab-name">Collaborator Name</div>
+              <div class="collab-inst">Institution · Role</div>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
 
-    <!-- ===== Features ===== -->
-    <section class="section container">
-      <div class="section-header">
-        <h2>What's here</h2>
-        <p>A full-featured community platform, built with Firebase</p>
-      </div>
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">💻</div>
-          <h3>Software Portfolio</h3>
-          <p>Open source projects, tools, and experiments in code.</p>
+    <!-- ===== Selected Projects ===== -->
+    <section class="about-section" style="padding-bottom: 5rem;">
+      <div class="container">
+        <div class="about-section-header">
+          <h2>Selected Projects</h2>
+          <p>Research work and applications</p>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon">🎨</div>
-          <h3>Design Portfolio</h3>
-          <p>UI/UX, branding, and visual design work on display.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">💬</div>
-          <h3>Community Forum</h3>
-          <p>Threaded discussions for registered members.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">📢</div>
-          <h3>Announcements</h3>
-          <p>Official updates from the team, always visible to all.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🔐</div>
-          <h3>Role-Based Access</h3>
-          <p>Guest, Regular, Moderator, and Admin tiers with Firestore security rules.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🌙</div>
-          <h3>Dark &amp; Light Mode</h3>
-          <p>Toggle between themes. Your preference is remembered.</p>
+        <div class="projects-list">
+
+          <div class="project-item">
+            <div class="project-thumb-placeholder">▤</div>
+            <div class="project-info">
+              <div class="project-title">Behavioral Trajectory Modeling</div>
+              <div class="project-desc">
+                A computational framework using dynamical systems and deep neural networks
+                to model individual health trajectories for patients managing chronic conditions,
+                enabling personalized intervention timing.
+              </div>
+            </div>
+          </div>
+
+          <div class="project-item">
+            <div class="project-thumb-placeholder">◈</div>
+            <div class="project-info">
+              <div class="project-title">Precision Health Intervention Platform</div>
+              <div class="project-desc">
+                An AI-assisted platform that synthesizes multimodal clinical and behavioral
+                data to recommend context-specific interventions for chronic disease management
+                across diverse patient populations.
+              </div>
+            </div>
+          </div>
+
+          <div class="project-item">
+            <div class="project-thumb-placeholder">◉</div>
+            <div class="project-info">
+              <div class="project-title">Multimodal Data Infrastructure</div>
+              <div class="project-desc">
+                Scalable data science infrastructure designed to integrate high-dimensional,
+                multi-timescale clinical datasets, enabling frontier machine learning pipelines
+                for behavioral health research.
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
 
-    <!-- ===== CTA ===== -->
-    <section class="section container" style="text-align:center; padding-bottom: 5rem;">
-      <h2>Ready to join?</h2>
-      <p style="margin: 0.75rem auto 1.75rem; max-width: 480px;">
-        Create a free account to participate in the forum and discussion boards.
-      </p>
-      <a href="login.html" class="btn btn-primary btn-lg">Create Account</a>
-    </section>
-  </div>
+  </div><!-- /.page-wrapper -->
 
   <!-- ===== Footer ===== -->
   <footer class="footer">
     <div class="container">
       <p>© 2026 WINN Platforms &nbsp;·&nbsp;
-        <a href="https://github.com/ianwestwind/ianwestwind.github.io" target="_blank">GitHub</a>
+        <a href="https://ianwestwind.github.io" target="_blank" rel="noopener">ianwestwind.github.io</a>
+        &nbsp;·&nbsp;
+        <a href="https://iansulin.github.io" target="_blank" rel="noopener">iansulin.github.io</a>
       </p>
     </div>
   </footer>
 
   <script type="module">
     import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js";
-    import { getDocs, collection, query } from
-      "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { db } from "./js/firebase-config.js";
 
-    // Theme
-    const themeBtn = document.getElementById("theme-toggle");
+    const themeBtn   = document.getElementById("theme-toggle");
     const savedTheme = localStorage.getItem("winn-theme") || "dark";
     document.documentElement.setAttribute("data-theme", savedTheme);
     themeBtn.textContent = savedTheme === "dark" ? "☀️" : "🌙";
     themeBtn.addEventListener("click", () => {
-      const current = document.documentElement.getAttribute("data-theme");
-      const next    = current === "dark" ? "light" : "dark";
+      const cur  = document.documentElement.getAttribute("data-theme");
+      const next = cur === "dark" ? "light" : "dark";
       document.documentElement.setAttribute("data-theme", next);
       localStorage.setItem("winn-theme", next);
       themeBtn.textContent = next === "dark" ? "☀️" : "🌙";
     });
 
-    // Hamburger
     const hamburger = document.getElementById("nav-hamburger");
     const drawer    = document.getElementById("nav-drawer");
     hamburger.addEventListener("click", () => drawer.classList.toggle("open"));
 
-    // Auth
     initAuth((user, role) => {
       updateNavUI(user, role);
       if (user) {
@@ -171,23 +244,6 @@
       await logout();
       showToast("Signed out.", "info");
     });
-
-    // Stats (simple counts)
-    async function loadStats() {
-      try {
-        const [forumSnap, discSnap] = await Promise.all([
-          getDocs(collection(db, "forum_posts")),
-          getDocs(collection(db, "discussion_posts"))
-        ]);
-        const total = forumSnap.size + discSnap.size;
-        document.getElementById("stat-projects").textContent = "10+";
-        document.getElementById("stat-posts").textContent    = total || "0";
-        document.getElementById("stat-members").textContent  = "∞";
-      } catch (_) {
-        // Stats are cosmetic — silently ignore errors
-      }
-    }
-    loadStats();
   </script>
 </body>
 </html>
