@@ -1,6 +1,6 @@
 // ============================================================
 // WINN Platforms — blog.js
-// Blog posts (regular+ can post); thumbnail cards + scheduling
+// Blog posts (moderator+ can post); thumbnail cards + scheduling
 // ============================================================
 
 import { db } from "./firebase-config.js";
@@ -67,7 +67,7 @@ function _showList() {
   _updateCount(visible.length);
 
   if (visible.length === 0) {
-    rows.innerHTML = `<div class="empty-state"><div class="empty-icon">✍️</div><p>No blog posts yet. Be the first!</p></div>`;
+    rows.innerHTML = `<div class="empty-state"><div class="empty-icon">✍️</div><p>No posts yet. Be the first!</p></div>`;
     return;
   }
 
@@ -217,9 +217,9 @@ export async function initBlogPage(role) {
   _handleHash();
 
   const listHeader = document.getElementById("blog-list-header");
-  if (listHeader && hasRole(role, "regular")) listHeader.style.display = "";
+  if (listHeader && hasRole(role, "moderator")) listHeader.style.display = "";
 
-  if (hasRole(role, "regular")) {
+  if (hasRole(role, "moderator")) {
     try {
       _quill      = initEditor("blog-toolbar", "blog-editor", "blog");
       _thumbZone  = initThumbnailZone("blog-thumb", "blog-thumb-preview", "blog");
@@ -279,8 +279,8 @@ export async function submitBlog() {
   const role       = getCurrentRole();
   const user       = getCurrentUser();
 
-  if (!hasRole(role, "regular")) {
-    showToast("You must be signed in to post.", "error"); return;
+  if (!hasRole(role, "moderator")) {
+    showToast("Only moderators and admins can post on the blog.", "error"); return;
   }
 
   const title  = titleInput.value.trim();
@@ -348,7 +348,7 @@ export async function submitBlog() {
       const newDoc = await addDoc(collection(db, COLLECTION), postData);
       _posts.set(newDoc.id, { ...postData, createdAt: { seconds: Date.now() / 1000 } });
       _closeForm();
-      showToast("Blog post published!", "success");
+      showToast("Post published!", "success");
       _showList();
     }
   } catch (err) {

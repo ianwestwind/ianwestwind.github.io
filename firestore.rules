@@ -139,12 +139,12 @@ service cloud.firestore {
       // Everyone can read
       allow read: if true;
 
-      // Registered users (regular+) can create blog posts
-      allow create: if hasRole('regular')
+      // Only moderators and admins can create blog posts
+      allow create: if hasRole('moderator')
         && request.resource.data.authorUid == request.auth.uid;
 
-      // Authors can update their own post
-      allow update: if isOwner(resource.data.authorUid) && hasRole('regular');
+      // Authors can update their own post (authors are moderator+)
+      allow update: if isOwner(resource.data.authorUid) && hasRole('moderator');
 
       // Moderators can delete any; authors can delete their own
       allow delete: if hasRole('moderator')
