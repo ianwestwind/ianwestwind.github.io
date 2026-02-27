@@ -3,9 +3,9 @@
 // Hash-routed list/detail view with image attachment support
 // ============================================================
 
-import { db, storage } from "./firebase-config.js";
+import { db, storage, auth } from "./firebase-config.js";
 import {
-  collection, addDoc, getDocs, deleteDoc, doc,
+  collection, addDoc, getDocs, deleteDoc, doc, updateDoc,
   query, orderBy, serverTimestamp, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
@@ -17,6 +17,7 @@ import {
 
 const COLLECTION = "discussion_posts";
 const _posts = new Map(); // id → data
+let _editId = null;
 
 function renderSpinner() {
   return `<div class="spinner"><div class="spinner-ring"></div></div>`;
@@ -86,9 +87,12 @@ function _showDetail(id) {
   if (listView)   listView.style.display   = "none";
   if (detailView) detailView.style.display = "";
 
-  const role = getCurrentRole();
-  const user = getCurrentUser();
-  const canDelete = hasRole(role, "moderator") || (user && user.uid === data.authorUid);
+  const role      = getCurrentRole();
+  const user      = getCurrentUser() || auth.currentUser;
+  const authorUid = data.authorUid != null ? String(data.authorUid) : "";
+  const isAuthor  = user && authorUid && String(user.uid) === authorUid
+    || (user && !authorUid && (user.displayName === data.authorName || (user.email && user.email === data.authorName)));
+  const canDelete = hasRole(role, "moderator") || isAuthor;
 
   detailView.innerHTML = `
     <div class="post-detail-header">
@@ -102,13 +106,14 @@ function _showDetail(id) {
     </div>
     <div class="post-detail-body">${escHtml(data.body || "")}</div>
     ${data.imageUrl ? `<div class="post-detail-image"><img src="${escHtml(data.imageUrl)}" alt="Post image" /></div>` : ""}
-    ${canDelete ? `<div class="post-detail-actions"><button class="btn btn-danger btn-sm" id="detail-delete-btn">Delete Post</button></div>` : ""}
+    ${canDelete ? `<div class="post-detail-actions"><button type="button" class="btn btn-primary btn-sm" id="discussion-edit-${id}">Edit</button><button type="button" class="btn btn-danger btn-sm" id="discussion-delete-${id}">Delete Post</button></div>` : ""}
   `;
 
   document.getElementById("back-btn").addEventListener("click", () => { location.hash = ""; });
 
   if (canDelete) {
-    document.getElementById("detail-delete-btn").addEventListener("click", async () => {
+    document.getElementById(`discussion-edit-${id}`).addEventListener("click", () => _startEdit(id));
+    document.getElementById(`discussion-delete-${id}`).addEventListener("click", async () => {
       if (!confirm("Delete this post?")) return;
       try {
         await deleteDoc(doc(db, COLLECTION, id));
@@ -120,6 +125,27 @@ function _showDetail(id) {
       }
     });
   }
+}
+
+function _startEdit(id) {
+  const data = _posts.get(id);
+  if (!data) return;
+  _editId = id;
+
+  const newForm   = document.getElementById("new-post-form");
+  const toggleBtn = document.getElementById("toggle-form-btn");
+  location.hash = "";
+  if (newForm)   newForm.style.display = "";
+  if (toggleBtn) toggleBtn.textContent = "✕ Cancel";
+
+  const titleInput = document.querySelector("#discussion-form [name=title]");
+  const bodyInput  = document.querySelector("#discussion-form [name=body]");
+  if (titleInput) titleInput.value = data.title || "";
+  if (bodyInput)  bodyInput.value  = data.body  || "";
+
+  const submitBtn = document.querySelector("#discussion-form [type=submit]");
+  if (submitBtn) submitBtn.textContent = "Update Post";
+  newForm?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function _handleHash() {
@@ -154,11 +180,17 @@ export async function initDiscussionPage() {
   // Toggle new post form
   const toggleBtn = document.getElementById("toggle-form-btn");
   const newForm   = document.getElementById("new-post-form");
+  function _resetFormState() {
+    _editId = null;
+    const sb = document.querySelector("#discussion-form [type=submit]");
+    if (sb) sb.textContent = "Post";
+  }
   if (toggleBtn && newForm) {
     toggleBtn.addEventListener("click", () => {
       const isHidden = newForm.style.display === "none" || newForm.style.display === "";
       newForm.style.display = isHidden ? "" : "none";
       toggleBtn.textContent = isHidden ? "✕ Cancel" : "+ New Post";
+      if (!isHidden) _resetFormState();
     });
   }
 
@@ -218,8 +250,22 @@ export async function submitDiscussionPost(formId) {
   }
 
   if (errorEl) errorEl.classList.remove("visible");
+  const editId = _editId;
   submitBtn.disabled    = true;
-  submitBtn.textContent = "Posting…";
+  submitBtn.textContent = editId ? "Updating…" : "Posting…";
+
+  const newForm   = document.getElementById("new-post-form");
+  const toggleBtn = document.getElementById("toggle-form-btn");
+  function _closeForm() {
+    _editId = null;
+    form.reset();
+    const preview = document.getElementById("image-preview-container");
+    if (preview) preview.innerHTML = "";
+    if (newForm)   newForm.style.display = "none";
+    if (toggleBtn) toggleBtn.textContent = "+ New Post";
+    const sb = form.querySelector("[type=submit]");
+    if (sb) sb.textContent = "Post";
+  }
 
   const postData = {
     title,
@@ -232,6 +278,26 @@ export async function submitDiscussionPost(formId) {
   const file = fileInput?.files[0];
 
   try {
+    if (editId) {
+      const changes = { title, body };
+      if (file) {
+        try {
+          const storageRef = ref(storage, `post-images/${editId}/${Date.now()}-${file.name}`);
+          await uploadBytes(storageRef, file);
+          const imageUrl = await getDownloadURL(storageRef);
+          changes.imageUrl = imageUrl;
+        } catch (uploadErr) {
+          showToast("Image upload failed; updating without new image.", "error");
+        }
+      }
+      await updateDoc(doc(db, COLLECTION, editId), changes);
+      _posts.set(editId, { ..._posts.get(editId), ...changes });
+      _closeForm();
+      showToast("Post updated!", "success");
+      location.hash = editId;
+      return;
+    }
+
     let newId;
     let imageUrl = null;
 
@@ -258,21 +324,13 @@ export async function submitDiscussionPost(formId) {
     if (imageUrl) localEntry.imageUrl = imageUrl;
     _posts.set(newId, localEntry);
 
-    form.reset();
-    const preview = document.getElementById("image-preview-container");
-    if (preview) preview.innerHTML = "";
-
-    const toggleBtn = document.getElementById("toggle-form-btn");
-    const newForm   = document.getElementById("new-post-form");
-    if (newForm)   newForm.style.display = "none";
-    if (toggleBtn) toggleBtn.textContent = "+ New Post";
-
+    _closeForm();
     showToast("Discussion posted!", "success");
     _showList();
   } catch (err) {
-    showToast("Failed to post: " + err.message, "error");
+    showToast(editId ? "Failed to update: " + err.message : "Failed to post: " + err.message, "error");
   } finally {
     submitBtn.disabled    = false;
-    submitBtn.textContent = "Post";
+    submitBtn.textContent = editId ? "Update Post" : "Post";
   }
 }

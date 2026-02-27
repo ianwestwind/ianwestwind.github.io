@@ -3,7 +3,7 @@
 // Forum posts with rich editor, thumbnails, and attachments
 // ============================================================
 
-import { db } from "./firebase-config.js";
+import { db, auth } from "./firebase-config.js";
 import {
   collection, addDoc, getDocs, deleteDoc, doc, updateDoc,
   query, orderBy, serverTimestamp, setDoc
@@ -82,8 +82,11 @@ function _showDetail(id) {
   if (detailView) detailView.style.display = "";
 
   const role      = getCurrentRole();
-  const user      = getCurrentUser();
-  const canDelete = hasRole(role, "moderator") || (user && user.uid === data.authorUid);
+  const user      = getCurrentUser() || auth.currentUser;
+  const authorUid = data.authorUid != null ? String(data.authorUid) : "";
+  const isAuthor  = user && authorUid && String(user.uid) === authorUid
+    || (user && !authorUid && (user.displayName === data.authorName || (user.email && user.email === data.authorName)));
+  const canDelete = hasRole(role, "moderator") || isAuthor;
 
   detailView.innerHTML = `
     <div class="post-detail-header">
@@ -101,10 +104,7 @@ function _showDetail(id) {
     </div>
     <div class="post-detail-body rich-content" id="forum-detail-body-${id}"></div>
     ${_attachmentsHTML(data.attachments)}
-    ${canDelete ? `<div class="post-detail-actions">
-      <button class="btn btn-secondary btn-sm" id="detail-edit-btn">Edit</button>
-      <button class="btn btn-danger btn-sm" id="detail-delete-btn">Delete Post</button>
-    </div>` : ""}
+    ${canDelete ? `<div class="post-detail-actions"><button type="button" class="btn btn-primary btn-sm" id="forum-edit-${id}">Edit</button><button type="button" class="btn btn-danger btn-sm" id="forum-delete-${id}">Delete Post</button></div>` : ""}
   `;
 
   const bodyEl = document.getElementById(`forum-detail-body-${id}`);
@@ -114,8 +114,8 @@ function _showDetail(id) {
   document.getElementById("back-btn").addEventListener("click", () => { location.hash = ""; });
 
   if (canDelete) {
-    document.getElementById("detail-edit-btn").addEventListener("click", () => _startEdit(id));
-    document.getElementById("detail-delete-btn").addEventListener("click", async () => {
+    document.getElementById(`forum-edit-${id}`).addEventListener("click", () => _startEdit(id));
+    document.getElementById(`forum-delete-${id}`).addEventListener("click", async () => {
       if (!confirm("Delete this post?")) return;
       try {
         await deleteDoc(doc(db, COLLECTION, id));
@@ -302,7 +302,17 @@ export async function submitForumPost() {
         createdAt:    serverTimestamp()
       };
       const newDoc = await addDoc(collection(db, COLLECTION), postData);
-      _posts.set(newDoc.id, { ...postData, createdAt: { seconds: Date.now() / 1000 } });
+      const nowSec = Math.floor(Date.now() / 1000);
+      _posts.set(newDoc.id, {
+        title:            postData.title,
+        body:             postData.body,
+        thread:           postData.thread,
+        thumbnailUrl:     postData.thumbnailUrl,
+        attachments:      postData.attachments,
+        authorUid:        postData.authorUid,
+        authorName:       postData.authorName,
+        createdAt:        { seconds: nowSec }
+      });
       if (_attachZone) _attachZone.reset();
       _closeForm();
       showToast("Post published!", "success");

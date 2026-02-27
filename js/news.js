@@ -97,7 +97,8 @@ function _showDetail(id) {
   document.getElementById("detail-view").style.display = "";
 
   const role      = getCurrentRole();
-  const canDelete = hasRole(role, "moderator");
+  const user      = getCurrentUser();
+  const canDelete = hasRole(role, "moderator") || (user && user.uid === data.authorUid);
   const isMod     = hasRole(role, "moderator");
   const scheduled = !_isPublished(data) && isMod;
 
@@ -116,10 +117,7 @@ function _showDetail(id) {
     </div>
     <div class="post-detail-body rich-content" id="detail-body-${id}"></div>
     ${_attachmentsHTML(data.attachments)}
-    ${canDelete ? `<div class="post-detail-actions">
-      <button class="btn btn-secondary btn-sm" id="detail-edit-btn">Edit</button>
-      <button class="btn btn-danger btn-sm" id="detail-delete-btn">Delete Post</button>
-    </div>` : ""}
+    ${canDelete ? `<div class="post-detail-actions"><button type="button" class="btn btn-primary btn-sm" id="news-edit-${id}">Edit</button><button type="button" class="btn btn-danger btn-sm" id="news-delete-${id}">Delete Post</button></div>` : ""}
   `;
 
   const bodyEl = document.getElementById(`detail-body-${id}`);
@@ -129,8 +127,8 @@ function _showDetail(id) {
   document.getElementById("back-btn").addEventListener("click", () => { location.hash = ""; });
 
   if (canDelete) {
-    document.getElementById("detail-edit-btn").addEventListener("click", () => _startEdit(id));
-    document.getElementById("detail-delete-btn").addEventListener("click", async () => {
+    document.getElementById(`news-edit-${id}`).addEventListener("click", () => _startEdit(id));
+    document.getElementById(`news-delete-${id}`).addEventListener("click", async () => {
       if (!confirm("Delete this post?")) return;
       try {
         await deleteDoc(doc(db, COLLECTION, id));

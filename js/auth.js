@@ -141,10 +141,26 @@ export function showToast(message, type = "info", duration = 3500) {
 }
 
 export function formatDate(ts) {
-  if (!ts) return "";
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleDateString("en-US", {
+  if (ts == null) return "";
+  let sec = 0;
+  if (typeof ts === "number") {
+    sec = ts < 1e10 ? ts : ts / 1000;
+  } else if (ts && typeof ts.toDate === "function") {
+    sec = ts.toDate().getTime() / 1000;
+  } else if (ts && typeof ts.seconds === "number") {
+    sec = ts.seconds;
+  } else if (ts && typeof ts._seconds === "number") {
+    sec = ts._seconds;
+  } else {
+    const d = new Date(ts);
+    if (!Number.isNaN(d.getTime())) sec = d.getTime() / 1000;
+  }
+  if (!(sec > 0)) return "";
+  const d = new Date(sec * 1000);
+  if (Number.isNaN(d.getTime())) return "";
+  const str = d.toLocaleDateString("en-US", {
     year: "numeric", month: "short", day: "numeric",
     hour: "2-digit", minute: "2-digit"
   });
+  return str === "Invalid Date" ? "" : str;
 }
