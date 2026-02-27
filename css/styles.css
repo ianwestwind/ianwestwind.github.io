@@ -166,23 +166,86 @@ p { color: var(--text-secondary); }
   color: var(--text-primary);
 }
 
-.nav-sidebar .nav-right {
+/* ---------- App layout: left nav, main; top-right bar for user + controls ---------- */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.nav-sidebar {
+  width: var(--nav-width);
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 0;
+  display: flex;
   flex-direction: column;
-  align-items: stretch;
-  padding: 0 1rem;
-  gap: 0.35rem;
-  border-top: 1px solid var(--border);
-  padding-top: 1rem;
-  margin-top: 0.5rem;
+  gap: 0.25rem;
 }
 
-.nav-sidebar .nav-right .btn,
-.nav-sidebar .nav-right .nav-user {
-  justify-content: flex-start;
-  width: 100%;
+.nav-sidebar .nav-brand {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  padding: 0 1rem 1rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
 }
 
-.nav-sidebar .nav-user { margin-bottom: 0.25rem; }
+.nav-sidebar .nav-brand span { color: var(--text-primary); }
+
+.nav-sidebar .nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex: 1;
+}
+
+.nav-sidebar .nav-links a {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0;
+  transition: background var(--transition), color var(--transition);
+}
+
+.nav-sidebar .nav-links a:hover,
+.nav-sidebar .nav-links a.active {
+  background: var(--accent-light);
+  color: var(--text-primary);
+}
+
+/* Top-right bar: user/login + theme + font + font size */
+.top-right-bar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+
+.top-right-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.top-right-user .nav-user {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
 
 .nav-role-badge {
   font-size: 0.7rem;
@@ -204,24 +267,41 @@ p { color: var(--text-secondary); }
   border: 1px solid var(--border);
 }
 
+.top-right-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.top-right-controls .controls-group {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.top-right-controls .controls-group-label {
+  margin-right: 0.15rem;
+}
+
+.top-right-controls .controls-theme,
+.top-right-controls .controls-font,
+.top-right-controls .controls-font-size {
+  flex-direction: row;
+  gap: 0.2rem;
+}
+
 .main-content {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  padding-top: 48px;
 }
 
+/* Legacy right sidebar — now unused, hidden */
 .controls-sidebar {
-  width: var(--controls-width);
-  flex-shrink: 0;
-  background: var(--bg-secondary);
-  border-left: 1px solid var(--border);
-  padding: 1.5rem 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  font-size: 0.8rem;
-  color: var(--text-muted);
+  display: none;
 }
 
 .controls-group {
@@ -1762,18 +1842,14 @@ pre.ql-syntax.hljs { border: none; }
     border-left: none;
     border-top: 1px solid var(--border);
   }
-  .controls-group {
-    flex-direction: row;
-    align-items: center;
+  .top-right-bar {
+    flex-wrap: wrap;
+    padding: 0.5rem 0.75rem;
+    gap: 0.75rem;
+  }
+  .top-right-controls {
     gap: 0.5rem;
   }
-  .controls-theme,
-  .controls-font,
-  .controls-font-size {
-    flex-direction: row;
-    gap: 0.25rem;
-  }
-}
 
 @media (max-width: 768px) {
   .hero { padding: 3.5rem 0 2.5rem; }

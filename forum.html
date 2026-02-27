@@ -12,6 +12,39 @@
   <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 </head>
 <body>
+  <div class="top-right-bar">
+    <div class="top-right-user">
+      <div class="nav-user" id="nav-user" style="display:none"></div>
+      <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign In</a>
+      <button class="btn btn-ghost btn-sm" id="nav-logout" style="display:none">Sign Out</button>
+    </div>
+    <div class="top-right-controls">
+      <div class="controls-group">
+        <span class="controls-group-label">Theme</span>
+        <div class="controls-theme">
+          <button type="button" id="theme-light">Light</button>
+          <button type="button" id="theme-dark">Dark</button>
+        </div>
+      </div>
+      <div class="controls-group">
+        <span class="controls-group-label">Font</span>
+        <div class="controls-font">
+          <button type="button" class="font-option" data-font="inter" aria-label="Inter">Aa</button>
+          <button type="button" class="font-option" data-font="georgia" aria-label="Georgia">Aa</button>
+          <button type="button" class="font-option" data-font="system" aria-label="System">Aa</button>
+        </div>
+      </div>
+      <div class="controls-group">
+        <span class="controls-group-label">Font Size</span>
+        <div class="controls-font-size">
+          <button type="button" class="font-size-option" data-size="s">S</button>
+          <button type="button" class="font-size-option" data-size="m">M</button>
+          <button type="button" class="font-size-option" data-size="l">L</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="app-layout">
     <aside class="nav-sidebar">
       <a href="index.html" class="nav-brand">WINN<span> Platforms</span></a>
@@ -22,11 +55,6 @@
         <a href="forum.html" class="active">WINNers</a>
         <a href="blog.html">Writing</a>
         <a href="news.html">News</a>
-      </div>
-      <div class="nav-right">
-        <div class="nav-user" id="nav-user" style="display:none"></div>
-        <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign In</a>
-        <button class="btn btn-ghost btn-sm" id="nav-logout" style="display:none">Sign Out</button>
       </div>
     </aside>
     <main class="main-content">
@@ -168,34 +196,6 @@
 
       <div id="detail-view" style="display:none"></div>
     </div>
-  </div>
-
-  <aside class="controls-sidebar">
-    <div class="controls-group">
-      <span class="controls-group-label">Theme</span>
-      <div class="controls-theme">
-        <button type="button" id="theme-light">Light</button>
-        <button type="button" id="theme-dark">Dark</button>
-      </div>
-    </div>
-    <div class="controls-group">
-      <span class="controls-group-label">Font</span>
-      <div class="controls-font">
-        <button type="button" class="font-option" data-font="inter" aria-label="Inter">Aa</button>
-        <button type="button" class="font-option" data-font="georgia" aria-label="Georgia">Aa</button>
-        <button type="button" class="font-option" data-font="system" aria-label="System">Aa</button>
-      </div>
-    </div>
-    <div class="controls-group">
-      <span class="controls-group-label">Font Size</span>
-      <div class="controls-font-size">
-        <button type="button" class="font-size-option" data-size="s">S</button>
-        <button type="button" class="font-size-option" data-size="m">M</button>
-        <button type="button" class="font-size-option" data-size="l">L</button>
-      </div>
-    </div>
-  </aside>
-  </main>
   </div>
 
   <footer class="footer">
