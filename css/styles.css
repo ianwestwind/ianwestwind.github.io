@@ -26,7 +26,7 @@
   --danger-hover: #999;
 
   --nav-width: 200px;
-  --sidebar-user-width: 300px;
+  --sidebar-user-width: 370px;
   --controls-width: 200px;
   --radius: 0;
   --radius-lg: 0;
@@ -125,8 +125,8 @@ p { color: var(--text-secondary); }
 .nav-sidebar {
   width: var(--nav-width);
   flex-shrink: 0;
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border);
+  background: #fff;
+  border-right: none;
   padding: 1.5rem 0;
   display: flex;
   flex-direction: column;
@@ -138,7 +138,7 @@ p { color: var(--text-secondary); }
   font-weight: 700;
   color: var(--text-primary);
   padding: 0 1rem 1rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: none;
   margin-bottom: 0.5rem;
   letter-spacing: -0.02em;
 }
@@ -153,7 +153,7 @@ p { color: var(--text-secondary); }
 }
 
 .nav-sidebar .nav-links a {
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-size: 0.9rem;
   font-weight: 500;
   padding: 0.5rem 1rem;
@@ -161,10 +161,14 @@ p { color: var(--text-secondary); }
   transition: background var(--transition), color var(--transition);
 }
 
-.nav-sidebar .nav-links a:hover,
+.nav-sidebar .nav-links a:hover {
+  background: var(--accent-light);
+  color: var(--text-secondary);
+}
+
 .nav-sidebar .nav-links a.active {
   background: var(--accent-light);
-  color: var(--text-primary);
+  color: #000;
 }
 
 /* ---------- App layout: left nav, main; top-right bar for user + controls ---------- */
@@ -176,8 +180,8 @@ p { color: var(--text-secondary); }
 .nav-sidebar {
   width: var(--nav-width);
   flex-shrink: 0;
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border);
+  background: #fff;
+  border-right: none;
   padding: 1.5rem 0;
   display: flex;
   flex-direction: column;
@@ -189,7 +193,7 @@ p { color: var(--text-secondary); }
   font-weight: 700;
   color: var(--text-primary);
   padding: 0 1rem 1rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: none;
   margin-bottom: 0.5rem;
   letter-spacing: -0.02em;
 }
@@ -204,7 +208,7 @@ p { color: var(--text-secondary); }
 }
 
 .nav-sidebar .nav-links a {
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-size: 0.9rem;
   font-weight: 500;
   padding: 0.5rem 1rem;
@@ -212,22 +216,35 @@ p { color: var(--text-secondary); }
   transition: background var(--transition), color var(--transition);
 }
 
-.nav-sidebar .nav-links a:hover,
+.nav-sidebar .nav-links a:hover {
+  background: var(--accent-light);
+  color: var(--text-secondary);
+}
+
 .nav-sidebar .nav-links a.active {
   background: var(--accent-light);
-  color: var(--text-primary);
+  color: #000;
+}
+
+[data-theme="light"] .nav-sidebar .nav-links a.active {
+  color: #000;
+}
+
+:root .nav-sidebar .nav-links a.active {
+  color: #fff;
 }
 
 /* Two right sidebars: (1) user — email, status, signout on one line; (2) theme, font, size */
 .sidebar-user {
   width: var(--sidebar-user-width);
   flex-shrink: 0;
-  background: var(--bg-secondary);
-  border-left: 1px solid var(--border);
-  padding: 0.75rem 0.75rem;
+  background: #fff;
+  border-left: none;
+  padding: 1.5rem 0.75rem 0.75rem;
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: flex-end;
   gap: 0.5rem;
   font-size: 0.8rem;
 }
@@ -244,8 +261,8 @@ p { color: var(--text-secondary); }
 .sidebar-controls {
   width: var(--controls-width);
   flex-shrink: 0;
-  background: var(--bg-secondary);
-  border-left: 1px solid var(--border);
+  background: #fff;
+  border-left: none;
   padding: 1.5rem 0.75rem;
   display: flex;
   flex-direction: column;

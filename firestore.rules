@@ -19,14 +19,19 @@ service cloud.firestore {
     // Fetch the caller's role from the users collection (safe if doc missing)
     function callerRole() {
       let path = /databases/$(database)/documents/users/$(request.auth.uid);
-      return exists(path) ? get(path).data.get('role', 'regular') : 'guest';
+      if (!exists(path)) {
+        return 'guest';
+      }
+      let data = get(path).data;
+      return 'role' in data ? data.role : 'regular';
     }
 
     // Role hierarchy check: caller's role must be >= required
     // Roles: guest(0) < regular(1) < moderator(2) < admin(3)
     function hasRole(required) {
       let rank = {'guest': 0, 'regular': 1, 'moderator': 2, 'admin': 3};
-      return isAuth() && rank.get(callerRole(), 0) >= rank.get(required, 0);
+      let role = callerRole();
+      return isAuth() && role in rank && required in rank && rank[role] >= rank[required];
     }
 
     // Is the caller the owner of the document?
