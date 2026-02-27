@@ -248,9 +248,49 @@ export function getEditorHTML(quill) {
 // ---- Body renderer (HTML or legacy plain-text) ----
 export function renderBody(html) {
   if (!html) return "";
-  if (html.trimStart().startsWith("<")) return html;
-  // Legacy plain-text body
-  return `<p style="white-space:pre-wrap">${escLegacy(html)}</p>`;
+  if (!html.trimStart().startsWith("<")) {
+    // Legacy plain-text body
+    return `<p style="white-space:pre-wrap">${escLegacy(html)}</p>`;
+  }
+  // Convert markdown-style ```lang fences that were typed into Quill as plain text.
+  // Quill stores each line as <p>…</p>, so a fence looks like:
+  //   <p>```python</p><p>code</p><p>```</p>
+  return _convertCodeFences(html);
+}
+
+// Finds ```lang … ``` patterns in Quill-saved HTML and converts them to
+// <pre class="ql-syntax language-lang"> blocks that hljs can highlight.
+function _convertCodeFences(html) {
+  return html.replace(
+    /<p[^>]*>\s*```(\w*)\s*<\/p>([\s\S]*?)<p[^>]*>\s*```\s*<\/p>/g,
+    (_, lang, body) => {
+      const lines = [];
+      const lineRe = /<p[^>]*>([\s\S]*?)<\/p>/g;
+      let m;
+      while ((m = lineRe.exec(body)) !== null) {
+        const raw = m[1];
+        // Empty paragraph (<p><br></p> or <p></p>)
+        if (!raw || /^(<br\s*\/?>)?\s*$/.test(raw)) {
+          lines.push("");
+        } else {
+          // Decode Quill-escaped HTML entities, strip any inline tags
+          lines.push(
+            raw.replace(/<br\s*\/?>/gi, "\n")
+               .replace(/<[^>]+>/g, "")
+               .replace(/&amp;/g, "&").replace(/&lt;/g, "<")
+               .replace(/&gt;/g, ">").replace(/&quot;/g, '"')
+               .replace(/&#39;/g, "'").replace(/&nbsp;/g, " ")
+          );
+        }
+      }
+      // Trim leading/trailing blank lines from the block
+      const code = lines.join("\n").replace(/^\n+|\n+$/, "");
+      // Re-encode for safe innerHTML insertion
+      const escaped = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const cls = "ql-syntax" + (lang ? ` language-${lang}` : "");
+      return `<pre class="${cls}" spellcheck="false">${escaped}</pre>`;
+    }
+  );
 }
 
 // ---- Syntax highlighting for rendered detail views ----
