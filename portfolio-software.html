@@ -63,6 +63,53 @@
     </div>
 
     <section class="section-sm container">
+      <!-- List header (admin only) -->
+      <div class="list-header" id="software-list-header" style="display:none">
+        <span id="software-count" class="list-header-count"></span>
+        <button type="button" class="btn btn-ghost btn-sm" id="software-toggle-form-btn">+ New Project</button>
+      </div>
+
+      <!-- New project form (admin only, collapsed by default) -->
+      <div id="software-project-form-wrap" class="post-form" style="display:none">
+        <h3>New software project</h3>
+        <form id="software-project-form">
+          <div class="form-group">
+            <label for="software-tag">Tag</label>
+            <select id="software-tag" name="tag" required>
+              <option value="web">Web App</option>
+              <option value="tool">CLI Tool</option>
+              <option value="library">Library</option>
+              <option value="game">Game</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="software-title">Title</label>
+            <input type="text" id="software-title" name="title" placeholder="Project name" required />
+          </div>
+          <div class="form-group">
+            <label for="software-desc">Description</label>
+            <textarea id="software-desc" name="description" placeholder="Brief description" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="software-github">GitHub URL <span style="color:var(--text-muted)">(optional)</span></label>
+            <input type="url" id="software-github" name="githubUrl" placeholder="https://github.com/..." />
+          </div>
+          <div class="form-group">
+            <label for="software-link">Other link URL <span style="color:var(--text-muted)">(optional)</span></label>
+            <input type="url" id="software-link" name="linkUrl" placeholder="https://..." />
+          </div>
+          <div class="form-group">
+            <label for="software-link-label">Link label <span style="color:var(--text-muted)">(e.g. Demo, Docs)</span></label>
+            <input type="text" id="software-link-label" name="linkLabel" placeholder="e.g. Live Site" />
+          </div>
+          <p class="form-error" id="software-form-error"></p>
+          <div style="display:flex;gap:0.5rem;align-items:center">
+            <button type="submit" class="btn btn-primary btn-sm">Add project</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="software-cancel-btn">Cancel</button>
+          </div>
+        </form>
+      </div>
+
       <!-- Filter chips -->
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:2rem;" id="filter-bar">
         <button class="btn btn-secondary btn-sm active-filter" data-filter="all">All</button>
@@ -141,19 +188,133 @@
   </footer>
 
   <script type="module">
-    import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js?v=2";
+    import { auth, db } from "./js/firebase-config.js";
+    import { initAuth, updateNavUI, logout, showToast, hasRole } from "./js/auth.js?v=2";
     import { initLayoutControls } from "./js/layout-controls.js";
+    import { collection, getDocs, addDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     initLayoutControls();
 
-    initAuth((user, role) => {
+    const LIST_HEADER_ID = "software-list-header";
+    const TOGGLE_BTN_ID = "software-toggle-form-btn";
+    const FORM_WRAP_ID = "software-project-form-wrap";
+    const FORM_ID = "software-project-form";
+    const GRID_ID = "projects-grid";
+    const COUNT_ID = "software-count";
+    const TAG_LABELS = { web: "Web App", tool: "CLI Tool", library: "Library", game: "Game" };
+
+    function renderSoftwareCard(docSnap) {
+      const d = docSnap.data();
+      const id = docSnap.id;
+      const tag = d.tag || "web";
+      const tagLabel = TAG_LABELS[tag] || tag;
+      const title = d.title || "Project";
+      const desc = d.description || "";
+      const github = d.githubUrl || "";
+      const linkUrl = d.linkUrl || "#";
+      const linkLabel = d.linkLabel || "View";
+      const card = document.createElement("div");
+      card.className = "card";
+      card.dataset.tags = tag;
+      card.dataset.docId = id;
+      card.innerHTML = `
+        <div class="card-tag">${tagLabel}</div>
+        <h3>${escapeHtml(title)}</h3>
+        <p>${escapeHtml(desc)}</p>
+        <div class="card-links">
+          ${github ? `<a href="${escapeHtml(github)}" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">GitHub</a>` : ""}
+          ${linkUrl && linkUrl !== "#" ? `<a href="${escapeHtml(linkUrl)}" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">${escapeHtml(linkLabel)}</a>` : ""}
+        </div>`;
+      return card;
+    }
+
+    function escapeHtml(s) {
+      if (!s) return "";
+      const div = document.createElement("div");
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    async function loadSoftwareProjects() {
+      const grid = document.getElementById(GRID_ID);
+      const countEl = document.getElementById(COUNT_ID);
+      try {
+        const q = query(collection(db, "software_projects"), orderBy("createdAt", "desc"));
+        const snap = await getDocs(q);
+        const existingCards = Array.from(grid.querySelectorAll(".card[data-doc-id]"));
+        existingCards.forEach(c => c.remove());
+        snap.docs.forEach(docSnap => grid.insertBefore(renderSoftwareCard(docSnap), grid.firstChild));
+        if (countEl) countEl.textContent = (grid.querySelectorAll(".card").length) + " projects";
+      } catch (e) {
+        console.warn("loadSoftwareProjects", e);
+        if (countEl) countEl.textContent = "";
+      }
+    }
+
+    initAuth(async (user, role) => {
       updateNavUI(user, role);
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
+
+      if (hasRole(role, "admin")) {
+        document.getElementById(LIST_HEADER_ID).style.display = "";
+      }
+
+      await loadSoftwareProjects();
+
+      const toggleBtn = document.getElementById(TOGGLE_BTN_ID);
+      const formWrap = document.getElementById(FORM_WRAP_ID);
+      const cancelBtn = document.getElementById("software-cancel-btn");
+      if (toggleBtn && formWrap) {
+        toggleBtn.addEventListener("click", () => {
+          const show = formWrap.style.display !== "block";
+          formWrap.style.display = show ? "block" : "none";
+        });
+      }
+      if (cancelBtn && formWrap) {
+        cancelBtn.addEventListener("click", () => { formWrap.style.display = "none"; });
+      }
     });
 
     document.getElementById("nav-logout").addEventListener("click", async () => {
       await logout();
       showToast("Signed out.", "info");
+    });
+
+    document.getElementById(FORM_ID).addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById("software-form-error");
+      errEl.textContent = "";
+      errEl.classList.remove("visible");
+      const user = auth.currentUser;
+      if (!user) {
+        errEl.textContent = "You must be signed in.";
+        errEl.classList.add("visible");
+        return;
+      }
+      const tag = document.getElementById("software-tag").value;
+      const title = document.getElementById("software-title").value.trim();
+      const description = document.getElementById("software-desc").value.trim();
+      const githubUrl = document.getElementById("software-github").value.trim() || null;
+      const linkUrl = document.getElementById("software-link").value.trim() || null;
+      const linkLabel = document.getElementById("software-link-label").value.trim() || "View";
+      try {
+        await addDoc(collection(db, "software_projects"), {
+          tag,
+          title,
+          description,
+          githubUrl: githubUrl || null,
+          linkUrl: linkUrl || null,
+          linkLabel: linkLabel || "View",
+          createdAt: serverTimestamp()
+        });
+        showToast("Project added.", "success");
+        document.getElementById(FORM_WRAP_ID).style.display = "none";
+        document.getElementById(FORM_ID).reset();
+        await loadSoftwareProjects();
+      } catch (err) {
+        errEl.textContent = err.message || "Failed to add project.";
+        errEl.classList.add("visible");
+      }
     });
 
     // Filter

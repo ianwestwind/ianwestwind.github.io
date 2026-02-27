@@ -63,6 +63,49 @@
     </div>
 
     <section class="section-sm container">
+      <!-- List header (admin only) -->
+      <div class="list-header" id="design-list-header" style="display:none">
+        <span id="design-count" class="list-header-count"></span>
+        <button type="button" class="btn btn-ghost btn-sm" id="design-toggle-form-btn">+ New Project</button>
+      </div>
+
+      <!-- New project form (admin only, collapsed by default) -->
+      <div id="design-project-form-wrap" class="post-form" style="display:none">
+        <h3>New design project</h3>
+        <form id="design-project-form">
+          <div class="form-group">
+            <label for="design-tag">Tag</label>
+            <select id="design-tag" name="tag" required>
+              <option value="ui">UI/UX</option>
+              <option value="brand">Branding</option>
+              <option value="illustration">Illustration</option>
+              <option value="motion">Motion</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="design-title">Title</label>
+            <input type="text" id="design-title" name="title" placeholder="Project name" required />
+          </div>
+          <div class="form-group">
+            <label for="design-desc">Description</label>
+            <textarea id="design-desc" name="description" placeholder="Brief description" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="design-link">Link URL <span style="color:var(--text-muted)">(optional)</span></label>
+            <input type="url" id="design-link" name="linkUrl" placeholder="https://..." />
+          </div>
+          <div class="form-group">
+            <label for="design-link-label">Link label <span style="color:var(--text-muted)">(e.g. View, Figma)</span></label>
+            <input type="text" id="design-link-label" name="linkLabel" placeholder="e.g. View" />
+          </div>
+          <p class="form-error" id="design-form-error"></p>
+          <div style="display:flex;gap:0.5rem;align-items:center">
+            <button type="submit" class="btn btn-primary btn-sm">Add project</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="design-cancel-btn">Cancel</button>
+          </div>
+        </form>
+      </div>
+
       <!-- Category filter -->
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:2rem;" id="filter-bar">
         <button class="btn btn-secondary btn-sm active-filter" data-filter="all">All</button>
@@ -138,19 +181,129 @@
   </footer>
 
   <script type="module">
-    import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js?v=2";
+    import { auth, db } from "./js/firebase-config.js";
+    import { initAuth, updateNavUI, logout, showToast, hasRole } from "./js/auth.js?v=2";
     import { initLayoutControls } from "./js/layout-controls.js";
+    import { collection, getDocs, addDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     initLayoutControls();
 
-    initAuth((user, role) => {
+    const LIST_HEADER_ID = "design-list-header";
+    const TOGGLE_BTN_ID = "design-toggle-form-btn";
+    const FORM_WRAP_ID = "design-project-form-wrap";
+    const FORM_ID = "design-project-form";
+    const GRID_ID = "design-grid";
+    const COUNT_ID = "design-count";
+    const TAG_LABELS = { ui: "UI/UX", brand: "Branding", illustration: "Illustration", motion: "Motion" };
+
+    function renderDesignCard(docSnap) {
+      const d = docSnap.data();
+      const id = docSnap.id;
+      const tag = d.tag || "ui";
+      const tagLabel = TAG_LABELS[tag] || tag;
+      const title = d.title || "Project";
+      const desc = d.description || "";
+      const linkUrl = d.linkUrl || "#";
+      const linkLabel = d.linkLabel || "View";
+      const card = document.createElement("div");
+      card.className = "card";
+      card.dataset.tags = tag;
+      card.dataset.docId = id;
+      card.innerHTML = `
+        <div class="card-tag">${tagLabel}</div>
+        <h3>${escapeHtml(title)}</h3>
+        <p>${escapeHtml(desc)}</p>
+        <div class="card-links">
+          ${linkUrl && linkUrl !== "#" ? `<a href="${escapeHtml(linkUrl)}" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">${escapeHtml(linkLabel)}</a>` : ""}
+        </div>`;
+      return card;
+    }
+
+    function escapeHtml(s) {
+      if (!s) return "";
+      const div = document.createElement("div");
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    async function loadDesignProjects() {
+      const grid = document.getElementById(GRID_ID);
+      const countEl = document.getElementById(COUNT_ID);
+      try {
+        const q = query(collection(db, "design_projects"), orderBy("createdAt", "desc"));
+        const snap = await getDocs(q);
+        const existingCards = Array.from(grid.querySelectorAll(".card[data-doc-id]"));
+        existingCards.forEach(c => c.remove());
+        snap.docs.forEach(docSnap => grid.insertBefore(renderDesignCard(docSnap), grid.firstChild));
+        if (countEl) countEl.textContent = (grid.querySelectorAll(".card").length) + " projects";
+      } catch (e) {
+        console.warn("loadDesignProjects", e);
+        if (countEl) countEl.textContent = "";
+      }
+    }
+
+    initAuth(async (user, role) => {
       updateNavUI(user, role);
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
+
+      if (hasRole(role, "admin")) {
+        document.getElementById(LIST_HEADER_ID).style.display = "";
+      }
+
+      await loadDesignProjects();
+
+      const toggleBtn = document.getElementById(TOGGLE_BTN_ID);
+      const formWrap = document.getElementById(FORM_WRAP_ID);
+      const cancelBtn = document.getElementById("design-cancel-btn");
+      if (toggleBtn && formWrap) {
+        toggleBtn.addEventListener("click", () => {
+          const show = formWrap.style.display !== "block";
+          formWrap.style.display = show ? "block" : "none";
+        });
+      }
+      if (cancelBtn && formWrap) {
+        cancelBtn.addEventListener("click", () => { formWrap.style.display = "none"; });
+      }
     });
 
     document.getElementById("nav-logout").addEventListener("click", async () => {
       await logout();
       showToast("Signed out.", "info");
+    });
+
+    document.getElementById(FORM_ID).addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById("design-form-error");
+      errEl.textContent = "";
+      errEl.classList.remove("visible");
+      const user = auth.currentUser;
+      if (!user) {
+        errEl.textContent = "You must be signed in.";
+        errEl.classList.add("visible");
+        return;
+      }
+      const tag = document.getElementById("design-tag").value;
+      const title = document.getElementById("design-title").value.trim();
+      const description = document.getElementById("design-desc").value.trim();
+      const linkUrl = document.getElementById("design-link").value.trim() || null;
+      const linkLabel = document.getElementById("design-link-label").value.trim() || "View";
+      try {
+        await addDoc(collection(db, "design_projects"), {
+          tag,
+          title,
+          description,
+          linkUrl: linkUrl || null,
+          linkLabel: linkLabel || "View",
+          createdAt: serverTimestamp()
+        });
+        showToast("Project added.", "success");
+        document.getElementById(FORM_WRAP_ID).style.display = "none";
+        document.getElementById(FORM_ID).reset();
+        await loadDesignProjects();
+      } catch (err) {
+        errEl.textContent = err.message || "Failed to add project.";
+        errEl.classList.add("visible");
+      }
     });
 
     document.getElementById("filter-bar").addEventListener("click", (e) => {

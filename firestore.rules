@@ -152,6 +152,20 @@ service cloud.firestore {
     }
 
 
+    // ---- /software_projects/{id} ----
+    match /software_projects/{id} {
+      allow read: if true;
+      allow create, update, delete: if hasRole('admin');
+    }
+
+
+    // ---- /design_projects/{id} ----
+    match /design_projects/{id} {
+      allow read: if true;
+      allow create, update, delete: if hasRole('admin');
+    }
+
+
     // ---- Deny all other paths ----
     match /{document=**} {
       allow read, write: if false;
