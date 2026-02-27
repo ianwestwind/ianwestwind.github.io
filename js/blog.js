@@ -118,7 +118,7 @@ function _showDetail(id) {
     <div class="post-detail-body rich-content" id="detail-body-${id}"></div>
     ${_attachmentsHTML(data.attachments)}
     ${canDelete ? `<div class="post-detail-actions">
-      <button class="btn btn-ghost btn-sm" id="detail-edit-btn">Edit</button>
+      <button class="btn btn-secondary btn-sm" id="detail-edit-btn">Edit</button>
       <button class="btn btn-danger btn-sm" id="detail-delete-btn">Delete Post</button>
     </div>` : ""}
   `;
