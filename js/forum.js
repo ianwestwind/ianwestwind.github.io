@@ -12,7 +12,7 @@ import {
   getCurrentUser, getCurrentRole, hasRole, escHtml, showToast, formatDate
 } from "./auth.js";
 import {
-  initEditor, getEditorHTML, initThumbnailZone, initAttachmentZone, renderBody, highlightContent
+  initEditor, getEditorHTML, initThumbnailZone, initAttachmentZone, renderBody, highlightContent, initPreview
 } from "./editor.js";
 
 const COLLECTION = "forum_posts";
@@ -166,6 +166,13 @@ export async function initForumPage() {
     _quill      = initEditor("forum-toolbar", "forum-editor", "forum");
     _thumbZone  = initThumbnailZone("forum-thumb", "forum-thumb-preview", "forum");
     _attachZone = initAttachmentZone("forum-attach-input", "forum-attach-list", "forum");
+
+    initPreview("forum-preview-btn", "forum-preview-panel", () => ({
+      title:    document.getElementById("post-title")?.value.trim() || "",
+      thread:   document.getElementById("post-thread")?.value.trim() || "",
+      body:     _quill ? getEditorHTML(_quill) : "",
+      thumbUrl: _thumbZone?.getThumbUrl() || null,
+    }));
   }
 
   // Toggle form

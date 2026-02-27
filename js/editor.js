@@ -293,6 +293,45 @@ function _convertCodeFences(html) {
   );
 }
 
+// ---- Post preview ----
+// btnId: id of the Preview toggle button
+// panelId: id of the preview container div
+// getContent(): returns { title, thread, body, thumbUrl }
+export function initPreview(btnId, panelId, getContent) {
+  const btn   = document.getElementById(btnId);
+  const panel = document.getElementById(panelId);
+  if (!btn || !panel) return;
+
+  btn.addEventListener("click", () => {
+    if (panel.dataset.open === "1") {
+      panel.dataset.open = "";
+      panel.style.display = "none";
+      btn.textContent = "Preview";
+      return;
+    }
+
+    const { title, thread, body, thumbUrl } = getContent();
+    const thumbHtml  = thumbUrl ? `<div class="post-detail-thumb"><img src="${escA(thumbUrl)}" alt="" /></div>` : "";
+    const threadHtml = thread   ? ` <span class="post-thread-tag">#${escA(thread)}</span>` : "";
+
+    panel.innerHTML = `
+      <div class="preview-banner">Preview</div>
+      ${thumbHtml}
+      <div class="post-detail-title">${escA(title || "(untitled)")}${threadHtml}</div>
+      <div class="post-detail-body rich-content"></div>
+    `;
+
+    const bodyEl = panel.querySelector(".post-detail-body");
+    bodyEl.innerHTML = renderBody(body);
+    highlightContent(bodyEl);
+
+    panel.dataset.open = "1";
+    panel.style.display = "";
+    btn.textContent = "Close Preview";
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+}
+
 // ---- Syntax highlighting for rendered detail views ----
 // Highlights Quill code blocks (pre.ql-syntax) and standard pre>code blocks.
 // Call after setting innerHTML on a detail body container.

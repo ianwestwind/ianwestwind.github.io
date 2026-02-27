@@ -12,7 +12,7 @@ import {
   getCurrentUser, getCurrentRole, hasRole, escHtml, showToast, formatDate
 } from "./auth.js";
 import {
-  initEditor, getEditorHTML, initThumbnailZone, initAttachmentZone, renderBody, highlightContent
+  initEditor, getEditorHTML, initThumbnailZone, initAttachmentZone, renderBody, highlightContent, initPreview
 } from "./editor.js";
 
 const COLLECTION = "blog_posts";
@@ -180,6 +180,13 @@ export async function initBlogPage(role) {
     _quill      = initEditor("blog-toolbar", "blog-editor", "blog");
     _thumbZone  = initThumbnailZone("blog-thumb", "blog-thumb-preview", "blog");
     _attachZone = initAttachmentZone("blog-attach-input", "blog-attach-list", "blog");
+
+    initPreview("blog-preview-btn", "blog-preview-panel", () => ({
+      title:    document.getElementById("blog-title")?.value.trim() || "",
+      thread:   "",
+      body:     _quill ? getEditorHTML(_quill) : "",
+      thumbUrl: _thumbZone?.getThumbUrl() || null,
+    }));
 
     // Set publishAt default to now
     const pa = document.getElementById("blog-publish-at");

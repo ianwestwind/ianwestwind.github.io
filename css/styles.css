@@ -1588,6 +1588,29 @@ p { color: var(--text-secondary); }
 }
 
 /* ============================================================
+   Post preview panel
+   ============================================================ */
+
+.preview-panel {
+  margin-top: 1.5rem;
+  padding: 1.5rem 1.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+}
+
+.preview-banner {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ============================================================
    Highlight.js — code block rendering in detail views
    ============================================================ */
 

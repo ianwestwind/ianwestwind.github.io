@@ -12,7 +12,7 @@ import {
   getCurrentUser, getCurrentRole, hasRole, escHtml, showToast, formatDate
 } from "./auth.js";
 import {
-  initEditor, getEditorHTML, initThumbnailZone, initAttachmentZone, renderBody, highlightContent
+  initEditor, getEditorHTML, initThumbnailZone, initAttachmentZone, renderBody, highlightContent, initPreview
 } from "./editor.js";
 
 const COLLECTION = "news_posts";
@@ -176,6 +176,13 @@ export async function initNewsPage(role) {
     _quill      = initEditor("news-toolbar", "news-editor", "news");
     _thumbZone  = initThumbnailZone("news-thumb", "news-thumb-preview", "news");
     _attachZone = initAttachmentZone("news-attach-input", "news-attach-list", "news");
+
+    initPreview("news-preview-btn", "news-preview-panel", () => ({
+      title:    document.getElementById("news-title")?.value.trim() || "",
+      thread:   "",
+      body:     _quill ? getEditorHTML(_quill) : "",
+      thumbUrl: _thumbZone?.getThumbUrl() || null,
+    }));
 
     // Set publishAt default to now
     const pa = document.getElementById("news-publish-at");
