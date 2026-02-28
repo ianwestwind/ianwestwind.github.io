@@ -21,7 +21,9 @@ import {
 const ROLE_RANK = { guest: 0, regular: 1, moderator: 2, admin: 3 };
 
 export function hasRole(userRole, required) {
-  return (ROLE_RANK[userRole] ?? 0) >= (ROLE_RANK[required] ?? 0);
+  const r = typeof userRole === "string" ? userRole.toLowerCase() : "";
+  const q = typeof required === "string" ? required.toLowerCase() : "";
+  return (ROLE_RANK[r] ?? 0) >= (ROLE_RANK[q] ?? 0);
 }
 
 // ---- Session state (module-level cache) ----
