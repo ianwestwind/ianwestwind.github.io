@@ -28,8 +28,9 @@ service cloud.firestore {
 
     // Role hierarchy check: caller's role must be >= required
     // Roles: guest(0) < regular(1) < moderator(2) < admin(3)
+    // Accepts lowercase or capitalized role (e.g. "admin" or "Admin")
     function hasRole(required) {
-      let rank = {'guest': 0, 'regular': 1, 'moderator': 2, 'admin': 3};
+      let rank = {'guest': 0, 'regular': 1, 'moderator': 2, 'Moderator': 2, 'admin': 3, 'Admin': 3};
       let role = callerRole();
       return isAuth() && role in rank && required in rank && rank[role] >= rank[required];
     }
