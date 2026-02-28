@@ -146,7 +146,8 @@ async function _loadAndRenderComments(postId) {
     const snap = await getDocs(q);
     comments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   } catch (err) {
-    section.innerHTML = `<p style="color:var(--danger)">Error loading comments.</p>`;
+    console.error("Comments load error:", err);
+    section.innerHTML = `<p style="color:var(--danger)">Error loading comments: ${escHtml(err.message)}</p>`;
     return;
   }
 

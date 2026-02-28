@@ -19,11 +19,9 @@ service cloud.firestore {
     // Fetch the caller's role from the users collection (safe if doc missing)
     function callerRole() {
       let path = /databases/$(database)/documents/users/$(request.auth.uid);
-      if (!exists(path)) {
-        return 'guest';
-      }
-      let data = get(path).data;
-      return 'role' in data ? data.role : 'regular';
+      return !exists(path)
+        ? 'guest'
+        : get(path).data.get('role', 'regular');
     }
 
     // Role hierarchy check: caller's role must be >= required
