@@ -2023,3 +2023,18 @@ pre.ql-syntax.hljs { border: none; }
   gap: 0.5rem;
   margin-top: 0.5rem;
 }
+
+.comment-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+}
+
+.comment-is-deleted { opacity: 0.6; }
+
+.comment-deleted-msg {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 0.25rem 0;
+}

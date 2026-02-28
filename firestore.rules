@@ -108,8 +108,9 @@ service cloud.firestore {
       allow read: if true;
       allow create: if hasRole('regular')
         && request.resource.data.authorUid == request.auth.uid;
-      allow update: if isOwner(resource.data.authorUid) && hasRole('regular');
-      allow delete: if hasRole('moderator') || isOwner(resource.data.authorUid);
+      allow update: if (isOwner(resource.data.authorUid) && hasRole('regular'))
+        || hasRole('admin');
+      allow delete: if hasRole('admin') || isOwner(resource.data.authorUid);
     }
 
 

@@ -135,6 +135,7 @@ async function _loadAndRenderComments(postId) {
   if (!section) return;
 
   const role = getCurrentRole();
+  const user = getCurrentUser();
   const canComment = hasRole(role, "regular");
 
   let comments = [];
@@ -157,8 +158,10 @@ async function _loadAndRenderComments(postId) {
     (repliesByParent[r.parentId] ??= []).push(r);
   });
 
+  const visibleCount = comments.filter(c => !c.deleted).length;
+
   section.innerHTML = `
-    <div class="comments-header">Comments (${comments.length})</div>
+    <div class="comments-header">Comments (${visibleCount})</div>
     <div id="forum-comments-list-${postId}"></div>
     ${canComment ? `
       <div class="comment-form">
@@ -170,7 +173,7 @@ async function _loadAndRenderComments(postId) {
     ` : ""}
   `;
 
-  _renderCommentsList(postId, topLevel, repliesByParent, canComment);
+  _renderCommentsList(postId, topLevel, repliesByParent, canComment, user, role);
 
   if (canComment) {
     document.getElementById(`forum-submit-comment-${postId}`)?.addEventListener("click", async () => {
@@ -186,43 +189,64 @@ async function _loadAndRenderComments(postId) {
   }
 }
 
-function _renderCommentsList(postId, topLevel, repliesByParent, canComment) {
+function _renderCommentsList(postId, topLevel, repliesByParent, canComment, user, role) {
   const list = document.getElementById(`forum-comments-list-${postId}`);
   if (!list) return;
 
   if (topLevel.length === 0) {
     list.innerHTML = `<p class="comments-empty">No comments yet. Be the first!</p>`;
   } else {
-    list.innerHTML = topLevel.map(c => `
-      <div class="comment" data-id="${escHtml(c.id)}">
-        <div class="comment-meta">
-          <span class="comment-author">${escHtml(c.authorName || "Anonymous")}</span>
-          <span class="comment-date">· ${formatDate(c.createdAt)}</span>
-        </div>
-        <div class="comment-body">${escHtml(c.body || "")}</div>
-        ${canComment ? `<button class="btn btn-ghost btn-sm reply-btn" data-comment-id="${escHtml(c.id)}">Reply</button>` : ""}
-        <div class="comment-replies">
-          ${(repliesByParent[c.id] || []).map(r => `
-            <div class="comment comment-reply">
-              <div class="comment-meta">
-                <span class="comment-author">${escHtml(r.authorName || "Anonymous")}</span>
-                <span class="comment-date">· ${formatDate(r.createdAt)}</span>
-              </div>
-              <div class="comment-body">${escHtml(r.body || "")}</div>
+    list.innerHTML = topLevel.map(c => {
+      const replies = repliesByParent[c.id] || [];
+      const isDeleted = c.deleted === true;
+      const canDeleteC = hasRole(role, "admin") || (user && user.uid === c.authorUid);
+
+      return `
+        <div class="comment${isDeleted ? " comment-is-deleted" : ""}" data-id="${escHtml(c.id)}">
+          ${isDeleted ? `
+            <div class="comment-deleted-msg">[comment deleted]</div>
+          ` : `
+            <div class="comment-meta">
+              <span class="comment-author">${escHtml(c.authorName || "Anonymous")}</span>
+              <span class="comment-date">· ${formatDate(c.createdAt)}</span>
             </div>
-          `).join("")}
-        </div>
-        ${canComment ? `
-          <div class="reply-form" id="reply-form-${escHtml(c.id)}" style="display:none">
-            <textarea class="comment-textarea" placeholder="Write a reply…" rows="2"></textarea>
-            <div class="comment-form-actions">
-              <button class="btn btn-primary btn-sm submit-reply-btn" data-comment-id="${escHtml(c.id)}">Post Reply</button>
-              <button class="btn btn-ghost btn-sm cancel-reply-btn" data-comment-id="${escHtml(c.id)}">Cancel</button>
+            <div class="comment-body">${escHtml(c.body || "")}</div>
+            <div class="comment-actions">
+              ${canComment ? `<button class="btn btn-ghost btn-sm reply-btn" data-comment-id="${escHtml(c.id)}">Reply</button>` : ""}
+              ${canDeleteC ? `<button class="btn btn-ghost btn-sm delete-comment-btn" data-comment-id="${escHtml(c.id)}" data-has-replies="${replies.length > 0}">Delete</button>` : ""}
             </div>
+          `}
+          <div class="comment-replies">
+            ${replies.map(r => {
+              const canDeleteR = hasRole(role, "admin") || (user && user.uid === r.authorUid);
+              return `
+                <div class="comment comment-reply">
+                  <div class="comment-meta">
+                    <span class="comment-author">${escHtml(r.authorName || "Anonymous")}</span>
+                    <span class="comment-date">· ${formatDate(r.createdAt)}</span>
+                  </div>
+                  <div class="comment-body">${escHtml(r.body || "")}</div>
+                  ${canDeleteR ? `
+                    <div class="comment-actions">
+                      <button class="btn btn-ghost btn-sm delete-comment-btn" data-comment-id="${escHtml(r.id)}" data-has-replies="false">Delete</button>
+                    </div>
+                  ` : ""}
+                </div>
+              `;
+            }).join("")}
           </div>
-        ` : ""}
-      </div>
-    `).join("");
+          ${canComment && !isDeleted ? `
+            <div class="reply-form" id="reply-form-${escHtml(c.id)}" style="display:none">
+              <textarea class="comment-textarea" placeholder="Write a reply…" rows="2"></textarea>
+              <div class="comment-form-actions">
+                <button class="btn btn-primary btn-sm submit-reply-btn" data-comment-id="${escHtml(c.id)}">Post Reply</button>
+                <button class="btn btn-ghost btn-sm cancel-reply-btn" data-comment-id="${escHtml(c.id)}">Cancel</button>
+              </div>
+            </div>
+          ` : ""}
+        </div>
+      `;
+    }).join("");
   }
 
   if (canComment) {
@@ -252,6 +276,28 @@ function _renderCommentsList(postId, topLevel, repliesByParent, canComment) {
         if (form) form.style.display = "none";
       });
     });
+  }
+
+  list.querySelectorAll(".delete-comment-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      await _deleteComment(postId, btn.dataset.commentId, btn.dataset.hasReplies === "true");
+    });
+  });
+}
+
+async function _deleteComment(postId, commentId, hasReplies) {
+  if (!confirm("Delete this comment?")) return;
+  try {
+    if (hasReplies) {
+      // Soft delete: keep as tombstone so replies still have context
+      await updateDoc(doc(db, COLLECTION, postId, "comments", commentId), { deleted: true });
+    } else {
+      await deleteDoc(doc(db, COLLECTION, postId, "comments", commentId));
+    }
+    showToast("Comment deleted.", "info");
+    await _loadAndRenderComments(postId);
+  } catch (err) {
+    showToast("Failed to delete: " + err.message, "error");
   }
 }
 
