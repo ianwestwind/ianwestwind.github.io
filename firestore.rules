@@ -185,6 +185,14 @@ service cloud.firestore {
     }
 
 
+    // ---- /site_config/{docId} ----
+    // Public site configuration (profile, collaborators, etc.)
+    match /site_config/{docId} {
+      allow read: if true;
+      allow write: if hasRole('admin');
+    }
+
+
     // ---- Deny all other paths ----
     match /{document=**} {
       allow read, write: if false;

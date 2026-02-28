@@ -169,15 +169,7 @@
           </form>
         </div>
 
-        <div class="collab-list" id="collab-list">
-          <!-- Rendered by JS; static fallback shown until Firestore loads -->
-          <div class="collab-entry"><span class="collab-entry-name">Collaborator Name</span><span class="collab-entry-inst">Institution · Role</span></div>
-          <div class="collab-entry"><span class="collab-entry-name">Collaborator Name</span><span class="collab-entry-inst">Institution · Role</span></div>
-          <div class="collab-entry"><span class="collab-entry-name">Collaborator Name</span><span class="collab-entry-inst">Institution · Role</span></div>
-          <div class="collab-entry"><span class="collab-entry-name">Collaborator Name</span><span class="collab-entry-inst">Institution · Role</span></div>
-          <div class="collab-entry"><span class="collab-entry-name">Collaborator Name</span><span class="collab-entry-inst">Institution · Role</span></div>
-          <div class="collab-entry"><span class="collab-entry-name">Collaborator Name</span><span class="collab-entry-inst">Institution · Role</span></div>
-        </div>
+        <div class="collab-list" id="collab-list"></div>
       </div>
     </section>
 
@@ -425,11 +417,9 @@
     async function loadProfile() {
       try {
         const snap = await getDoc(PROFILE_DOC);
-        if (snap.exists()) {
-          _profileData = snap.data();
-          _renderProfile(_profileData);
-          _renderCollabs(_profileData.collaborators || []);
-        }
+        _profileData = snap.exists() ? snap.data() : null;
+        if (_profileData) _renderProfile(_profileData);
+        _renderCollabs(_profileData?.collaborators || []);
       } catch (e) { console.warn("loadProfile", e); }
     }
 
