@@ -92,7 +92,6 @@ function _showDetail(id) {
     <div class="post-detail-header">
       <button class="back-btn" id="back-btn">← Back</button>
     </div>
-    ${data.thumbnailUrl ? `<div class="post-detail-thumb"><img src="${escHtml(data.thumbnailUrl)}" alt="" /></div>` : ""}
     <div class="post-detail-title">
       ${escHtml(data.title || "(untitled)")}
       ${data.thread ? `<span class="post-thread-tag">#${escHtml(data.thread)}</span>` : ""}
@@ -218,19 +217,23 @@ function _renderCommentsList(postId, topLevel, repliesByParent, canComment, user
           `}
           <div class="comment-replies">
             ${replies.map(r => {
+              const isDeletedR = r.deleted === true;
               const canDeleteR = hasRole(role, "admin") || (user && user.uid === r.authorUid);
               return `
-                <div class="comment comment-reply">
-                  <div class="comment-meta">
-                    <span class="comment-author">${escHtml(r.authorName || "Anonymous")}</span>
-                    <span class="comment-date">· ${formatDate(r.createdAt)}</span>
-                  </div>
-                  <div class="comment-body">${escHtml(r.body || "")}</div>
-                  ${canDeleteR ? `
-                    <div class="comment-actions">
-                      <button class="btn btn-ghost btn-sm delete-comment-btn" data-comment-id="${escHtml(r.id)}" data-has-replies="false">Delete</button>
+                <div class="comment comment-reply${isDeletedR ? " comment-is-deleted" : ""}">
+                  ${isDeletedR ? `
+                    <div class="comment-deleted-msg">[comment deleted]</div>
+                  ` : `
+                    <div class="comment-meta">
+                      <span class="comment-author">${escHtml(r.authorName || "Anonymous")}</span>
+                      <span class="comment-date">· ${formatDate(r.createdAt)}</span>
                     </div>
-                  ` : ""}
+                    <div class="comment-body">${escHtml(r.body || "")}</div>
+                    <div class="comment-actions">
+                      ${canComment ? `<button class="btn btn-ghost btn-sm reply-to-reply-btn" data-parent-id="${escHtml(c.id)}" data-reply-to="${escHtml(r.authorName || "Anonymous")}">Reply</button>` : ""}
+                      ${canDeleteR ? `<button class="btn btn-ghost btn-sm delete-comment-btn" data-comment-id="${escHtml(r.id)}" data-has-replies="false">Delete</button>` : ""}
+                    </div>
+                  `}
                 </div>
               `;
             }).join("")}
@@ -254,6 +257,20 @@ function _renderCommentsList(postId, topLevel, repliesByParent, canComment, user
       btn.addEventListener("click", () => {
         const form = document.getElementById(`reply-form-${btn.dataset.commentId}`);
         if (form) form.style.display = form.style.display === "none" ? "" : "none";
+      });
+    });
+    list.querySelectorAll(".reply-to-reply-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const form = document.getElementById(`reply-form-${btn.dataset.parentId}`);
+        if (form) {
+          form.style.display = "";
+          const ta = form.querySelector("textarea");
+          if (ta) {
+            ta.value = `@${btn.dataset.replyTo} `;
+            ta.focus();
+            ta.setSelectionRange(ta.value.length, ta.value.length);
+          }
+        }
       });
     });
     list.querySelectorAll(".submit-reply-btn").forEach(btn => {

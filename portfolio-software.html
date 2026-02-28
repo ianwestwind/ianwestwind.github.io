@@ -6,6 +6,10 @@
   <title>Software Portfolio · WINN Platforms</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 </head>
 <body>
   <div class="app-layout">
@@ -41,33 +45,83 @@
         <h3>New software project</h3>
         <form id="software-project-form">
           <div class="form-group">
-            <label for="software-tag">Tag</label>
-            <select id="software-tag" name="tag" required>
-              <option value="web">Web App</option>
-              <option value="tool">CLI Tool</option>
-              <option value="library">Library</option>
-              <option value="game">Game</option>
-            </select>
+            <label for="software-tag-input">Tag</label>
+            <input type="text" id="software-tag-input" name="tag" list="software-tags-datalist"
+              placeholder="e.g. web, tool, library…" required autocomplete="off" />
+            <datalist id="software-tags-datalist">
+              <option value="web">
+              <option value="tool">
+              <option value="library">
+              <option value="game">
+            </datalist>
           </div>
           <div class="form-group">
             <label for="software-title">Title</label>
             <input type="text" id="software-title" name="title" placeholder="Project name" required />
           </div>
           <div class="form-group">
-            <label for="software-desc">Description</label>
+            <label for="software-desc">Description <span style="color:var(--text-muted)">(short summary shown on card)</span></label>
             <textarea id="software-desc" name="description" placeholder="Brief description" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Body <span style="color:var(--text-muted)">(optional – rich text, images, code)</span></label>
+            <div class="editor-wrapper">
+              <div id="sw-toolbar">
+                <span class="ql-formats">
+                  <select class="ql-header">
+                    <option value="2">H2</option>
+                    <option value="3">H3</option>
+                    <option selected>Body</option>
+                  </select>
+                </span>
+                <span class="ql-formats">
+                  <button class="ql-bold"></button>
+                  <button class="ql-italic"></button>
+                  <button class="ql-underline"></button>
+                </span>
+                <span class="ql-formats">
+                  <button class="ql-list" value="ordered"></button>
+                  <button class="ql-list" value="bullet"></button>
+                </span>
+                <span class="ql-formats">
+                  <button class="ql-blockquote"></button>
+                  <button class="ql-code-block"></button>
+                </span>
+                <span class="ql-formats">
+                  <button class="ql-link"></button>
+                  <button class="ql-image" title="Insert Image"></button>
+                </span>
+                <span class="ql-formats">
+                  <button class="ql-clean"></button>
+                </span>
+              </div>
+              <div id="sw-editor" class="editor-content"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Thumbnail <span style="color:var(--text-muted)">(optional, max 10 MB)</span></label>
+            <label class="file-input-label">
+              Upload thumbnail
+              <input type="file" id="sw-thumb" accept="image/*" />
+            </label>
+            <div id="sw-thumb-preview"></div>
+          </div>
+          <div class="form-group">
+            <label>Attachments <span style="color:var(--text-muted)">(any type, max 25 MB each)</span></label>
+            <label class="file-input-label">
+              Add files
+              <input type="file" id="sw-attach-input" multiple />
+            </label>
+            <div id="sw-attach-list" class="attach-list"></div>
           </div>
           <div class="form-group">
             <label for="software-github">GitHub URL <span style="color:var(--text-muted)">(optional)</span></label>
             <input type="url" id="software-github" name="githubUrl" placeholder="https://github.com/..." />
           </div>
           <div class="form-group">
-            <label for="software-link">Other link URL <span style="color:var(--text-muted)">(optional)</span></label>
-            <input type="url" id="software-link" name="linkUrl" placeholder="https://..." />
-          </div>
-          <div class="form-group">
-            <label for="software-link-label">Link label <span style="color:var(--text-muted)">(e.g. Demo, Docs)</span></label>
-            <input type="text" id="software-link-label" name="linkLabel" placeholder="e.g. Live Site" />
+            <label>Links <span style="color:var(--text-muted)">(optional — add as many as needed)</span></label>
+            <div id="sw-links-container"></div>
+            <button type="button" class="btn btn-ghost btn-sm" id="sw-add-link-btn" style="margin-top:0.5rem">+ Add Link</button>
           </div>
           <p class="form-error" id="software-form-error"></p>
           <div style="display:flex;gap:0.5rem;align-items:center">
@@ -77,7 +131,7 @@
         </form>
       </div>
 
-      <!-- Filter chips -->
+      <!-- Filter chips (built dynamically) -->
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:2rem;" id="filter-bar">
         <button class="btn btn-secondary btn-sm active-filter" data-filter="all">All</button>
         <button class="btn btn-secondary btn-sm" data-filter="web">Web</button>
@@ -87,7 +141,7 @@
       </div>
 
       <div class="card-grid" id="projects-grid">
-        <!-- Project cards (static content — edit to add your real projects) -->
+        <!-- Static placeholder cards -->
         <div class="card" data-tags="web">
           <div class="card-tag">Web App</div>
           <h3>WINN Platforms</h3>
@@ -191,88 +245,208 @@
     import { auth, db } from "./js/firebase-config.js";
     import { initAuth, updateNavUI, logout, showToast, hasRole } from "./js/auth.js?v=3";
     import { initLayoutControls } from "./js/layout-controls.js";
-    import { collection, getDocs, addDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { collection, getDocs, addDoc, serverTimestamp, query, orderBy }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { initEditor, getEditorHTML, initThumbnailZone, initAttachmentZone, renderBody, highlightContent }
+      from "./js/editor.js";
 
     initLayoutControls();
 
-    const LIST_HEADER_ID = "software-list-header";
-    const TOGGLE_BTN_ID = "software-toggle-form-btn";
+    const GRID_ID    = "projects-grid";
+    const COUNT_ID   = "software-count";
     const FORM_WRAP_ID = "software-project-form-wrap";
-    const FORM_ID = "software-project-form";
-    const GRID_ID = "projects-grid";
-    const COUNT_ID = "software-count";
-    const TAG_LABELS = { web: "Web App", tool: "CLI Tool", library: "Library", game: "Game" };
+    const FORM_ID    = "software-project-form";
+    const SW_TAG_LABELS = { web: "Web App", tool: "CLI Tool", library: "Library", game: "Game" };
 
+    let _swQuill = null, _swThumbZone = null, _swAttachZone = null;
+    let _editorInited = false;
+    const _allTags = new Set(["web", "tool", "library", "game"]);
+
+    // ---- Tag datalist population ----
+    function _populateTagDatalist() {
+      const dl = document.getElementById("software-tags-datalist");
+      if (!dl) return;
+      const existing = new Set([...dl.querySelectorAll("option")].map(o => o.value));
+      _allTags.forEach(t => {
+        if (!existing.has(t)) {
+          const opt = document.createElement("option");
+          opt.value = t;
+          dl.appendChild(opt);
+        }
+      });
+    }
+
+    // ---- Filter bar ----
+    function _buildFilterBar() {
+      const bar = document.getElementById("filter-bar");
+      if (!bar) return;
+      const active = bar.querySelector(".active-filter")?.dataset.filter || "all";
+      bar.innerHTML = "";
+      const allBtn = document.createElement("button");
+      allBtn.className = "btn btn-secondary btn-sm" + (active === "all" ? " active-filter" : "");
+      allBtn.dataset.filter = "all";
+      allBtn.textContent = "All";
+      bar.appendChild(allBtn);
+      [..._allTags].sort().forEach(t => {
+        const btn = document.createElement("button");
+        btn.className = "btn btn-secondary btn-sm" + (active === t ? " active-filter" : "");
+        btn.dataset.filter = t;
+        btn.textContent = SW_TAG_LABELS[t] || (t.charAt(0).toUpperCase() + t.slice(1));
+        bar.appendChild(btn);
+      });
+    }
+
+    // ---- Multi-link rows ----
+    function _addLinkRow(container, url = "", label = "") {
+      const row = document.createElement("div");
+      row.className = "link-row";
+      row.innerHTML = `
+        <input type="url" class="link-url" placeholder="https://..." />
+        <input type="text" class="link-label" placeholder="Label (e.g. Demo)" />
+        <button type="button" class="btn btn-ghost btn-sm remove-link-btn">✕</button>
+      `;
+      row.querySelector(".link-url").value = url;
+      row.querySelector(".link-label").value = label;
+      row.querySelector(".remove-link-btn").addEventListener("click", () => row.remove());
+      container.appendChild(row);
+    }
+
+    function _getLinks() {
+      const links = [];
+      document.querySelectorAll("#sw-links-container .link-row").forEach(row => {
+        const url   = row.querySelector(".link-url")?.value.trim();
+        const label = row.querySelector(".link-label")?.value.trim();
+        if (url) links.push({ url, label: label || "View" });
+      });
+      return links;
+    }
+
+    // ---- Escape helper ----
+    function esc(s) {
+      if (!s) return "";
+      const d = document.createElement("div");
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    // ---- Card renderer ----
     function renderSoftwareCard(docSnap) {
-      const d = docSnap.data();
-      const id = docSnap.id;
+      const d   = docSnap.data();
+      const id  = docSnap.id;
       const tag = d.tag || "web";
-      const tagLabel = TAG_LABELS[tag] || tag;
-      const title = d.title || "Project";
-      const desc = d.description || "";
-      const github = d.githubUrl || "";
-      const linkUrl = d.linkUrl || "#";
-      const linkLabel = d.linkLabel || "View";
+      const tagLabel = SW_TAG_LABELS[tag] || (tag.charAt(0).toUpperCase() + tag.slice(1));
+      // Support both new links array and legacy linkUrl/linkLabel
+      const links = Array.isArray(d.links) ? d.links
+        : (d.linkUrl ? [{ url: d.linkUrl, label: d.linkLabel || "View" }] : []);
+      const attachments = Array.isArray(d.attachments) ? d.attachments : [];
+
       const card = document.createElement("div");
       card.className = "card";
-      card.dataset.tags = tag;
+      card.dataset.tags  = tag;
       card.dataset.docId = id;
+
+      const thumbHtml = d.thumbnailUrl
+        ? `<img src="${esc(d.thumbnailUrl)}" alt="" class="card-thumb" />`
+        : "";
+
+      const githubHtml = d.githubUrl
+        ? `<a href="${esc(d.githubUrl)}" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">GitHub</a>`
+        : "";
+
+      const linksHtml = links.map(l =>
+        `<a href="${esc(l.url)}" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">${esc(l.label || "View")}</a>`
+      ).join("");
+
+      const attachHtml = attachments.length ? `
+        <div class="card-attachments">
+          ${attachments.map(a => `
+            <a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.name)}</a>
+            <span>${Math.round((a.size || 0) / 1024)} KB</span>
+          `).join("")}
+        </div>` : "";
+
       card.innerHTML = `
+        ${thumbHtml}
         <div class="card-tag">${tagLabel}</div>
-        <h3>${escapeHtml(title)}</h3>
-        <p>${escapeHtml(desc)}</p>
-        <div class="card-links">
-          ${github ? `<a href="${escapeHtml(github)}" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">GitHub</a>` : ""}
-          ${linkUrl && linkUrl !== "#" ? `<a href="${escapeHtml(linkUrl)}" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">${escapeHtml(linkLabel)}</a>` : ""}
-        </div>`;
+        <h3>${esc(d.title || "Project")}</h3>
+        <p>${esc(d.description || "")}</p>
+        ${d.body ? `<div class="card-body rich-content"></div>` : ""}
+        ${attachHtml}
+        <div class="card-links">${githubHtml}${linksHtml}</div>
+      `;
+
+      if (d.body) {
+        const bodyEl = card.querySelector(".card-body");
+        if (bodyEl) { bodyEl.innerHTML = renderBody(d.body); highlightContent(bodyEl); }
+      }
+
       return card;
     }
 
-    function escapeHtml(s) {
-      if (!s) return "";
-      const div = document.createElement("div");
-      div.textContent = s;
-      return div.innerHTML;
-    }
-
+    // ---- Load projects ----
     async function loadSoftwareProjects() {
-      const grid = document.getElementById(GRID_ID);
+      const grid    = document.getElementById(GRID_ID);
       const countEl = document.getElementById(COUNT_ID);
       try {
-        const q = query(collection(db, "software_projects"), orderBy("createdAt", "desc"));
-        const snap = await getDocs(q);
-        const existingCards = Array.from(grid.querySelectorAll(".card[data-doc-id]"));
-        existingCards.forEach(c => c.remove());
-        snap.docs.forEach(docSnap => grid.insertBefore(renderSoftwareCard(docSnap), grid.firstChild));
-        if (countEl) countEl.textContent = (grid.querySelectorAll(".card").length) + " projects";
+        const snap = await getDocs(query(collection(db, "software_projects"), orderBy("createdAt", "desc")));
+        grid.querySelectorAll(".card[data-doc-id]").forEach(c => c.remove());
+        snap.docs.forEach(docSnap => {
+          const tag = docSnap.data().tag;
+          if (tag) _allTags.add(tag);
+          grid.insertBefore(renderSoftwareCard(docSnap), grid.firstChild);
+        });
+        // Collect tags from static placeholder cards too
+        grid.querySelectorAll(".card[data-tags]:not([data-doc-id])").forEach(card => {
+          if (card.dataset.tags) _allTags.add(card.dataset.tags);
+        });
+        _buildFilterBar();
+        _populateTagDatalist();
+        if (countEl) countEl.textContent = grid.querySelectorAll(".card").length + " projects";
       } catch (e) {
         console.warn("loadSoftwareProjects", e);
-        if (countEl) countEl.textContent = "";
       }
     }
 
+    // ---- Lazy editor init ----
+    function _ensureEditorInit() {
+      if (_editorInited) return;
+      _editorInited = true;
+      try {
+        _swQuill     = initEditor("sw-toolbar", "sw-editor", "software");
+        _swThumbZone = initThumbnailZone("sw-thumb", "sw-thumb-preview", "software");
+        _swAttachZone = initAttachmentZone("sw-attach-input", "sw-attach-list", "software");
+      } catch (e) { console.warn("Software editor init failed:", e); }
+    }
+
+    // ---- Auth / setup ----
     initAuth(async (user, role) => {
       updateNavUI(user, role);
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
 
       if (hasRole(role, "admin")) {
-        document.getElementById(LIST_HEADER_ID).style.display = "";
+        document.getElementById("software-list-header").style.display = "";
       }
 
       await loadSoftwareProjects();
 
-      const toggleBtn = document.getElementById(TOGGLE_BTN_ID);
-      const formWrap = document.getElementById(FORM_WRAP_ID);
+      const toggleBtn = document.getElementById("software-toggle-form-btn");
+      const formWrap  = document.getElementById(FORM_WRAP_ID);
       const cancelBtn = document.getElementById("software-cancel-btn");
+
       if (toggleBtn && formWrap) {
         toggleBtn.addEventListener("click", () => {
-          const show = formWrap.style.display !== "block";
+          const show = formWrap.style.display === "none" || formWrap.style.display === "";
           formWrap.style.display = show ? "block" : "none";
+          if (show) _ensureEditorInit();
         });
       }
       if (cancelBtn && formWrap) {
         cancelBtn.addEventListener("click", () => { formWrap.style.display = "none"; });
       }
+
+      document.getElementById("sw-add-link-btn")?.addEventListener("click", () => {
+        _addLinkRow(document.getElementById("sw-links-container"));
+      });
     });
 
     document.getElementById("nav-logout").addEventListener("click", async () => {
@@ -280,58 +454,91 @@
       showToast("Signed out.", "info");
     });
 
+    // ---- Form submit ----
     document.getElementById(FORM_ID).addEventListener("submit", async (e) => {
       e.preventDefault();
       const errEl = document.getElementById("software-form-error");
       errEl.textContent = "";
       errEl.classList.remove("visible");
+
       const user = auth.currentUser;
       if (!user) {
         errEl.textContent = "You must be signed in.";
         errEl.classList.add("visible");
         return;
       }
-      const tag = document.getElementById("software-tag").value;
-      const title = document.getElementById("software-title").value.trim();
+
+      const tag         = document.getElementById("software-tag-input").value.trim();
+      const title       = document.getElementById("software-title").value.trim();
       const description = document.getElementById("software-desc").value.trim();
-      const githubUrl = document.getElementById("software-github").value.trim() || null;
-      const linkUrl = document.getElementById("software-link").value.trim() || null;
-      const linkLabel = document.getElementById("software-link-label").value.trim() || "View";
+      const body        = _swQuill ? getEditorHTML(_swQuill) : "";
+      const thumbnailUrl = _swThumbZone?.getThumbUrl() || null;
+      const attachments  = _swAttachZone?.getAttachments() || [];
+      const githubUrl    = document.getElementById("software-github").value.trim() || null;
+      const links        = _getLinks();
+
+      if (!tag || !title) {
+        errEl.textContent = "Tag and title are required.";
+        errEl.classList.add("visible");
+        return;
+      }
+
+      const submitBtn = e.target.querySelector("[type=submit]");
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Adding…";
+
       try {
         await addDoc(collection(db, "software_projects"), {
-          tag,
-          title,
-          description,
+          tag, title, description,
+          body: body || null,
+          thumbnailUrl,
+          attachments,
           githubUrl: githubUrl || null,
-          linkUrl: linkUrl || null,
-          linkLabel: linkLabel || "View",
-          createdAt: serverTimestamp()
+          links,
+          authorUid: user.uid,
+          createdAt: serverTimestamp(),
         });
         showToast("Project added.", "success");
         document.getElementById(FORM_WRAP_ID).style.display = "none";
-        document.getElementById(FORM_ID).reset();
+        e.target.reset();
+        if (_swQuill)     _swQuill.setContents([]);
+        if (_swThumbZone) _swThumbZone.reset();
+        if (_swAttachZone) _swAttachZone.reset();
+        document.getElementById("sw-links-container").innerHTML = "";
+        _allTags.add(tag);
         await loadSoftwareProjects();
       } catch (err) {
         errEl.textContent = err.message || "Failed to add project.";
         errEl.classList.add("visible");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Add project";
       }
     });
 
-    // Filter
+    // ---- Filter ----
     document.getElementById("filter-bar").addEventListener("click", (e) => {
       const btn = e.target.closest("[data-filter]");
       if (!btn) return;
-      document.querySelectorAll("[data-filter]").forEach(b => b.classList.remove("active-filter"));
+      document.querySelectorAll("#filter-bar [data-filter]").forEach(b => b.classList.remove("active-filter"));
       btn.classList.add("active-filter");
       const filter = btn.dataset.filter;
       document.querySelectorAll("#projects-grid .card").forEach(card => {
-        const tags = card.dataset.tags || "";
-        card.style.display = (filter === "all" || tags.includes(filter)) ? "" : "none";
+        card.style.display = (filter === "all" || card.dataset.tags === filter) ? "" : "none";
       });
     });
   </script>
   <style>
     .active-filter { background: var(--accent-light) !important; color: var(--text-primary) !important; border-color: var(--text-muted) !important; }
+    .card-thumb { width: 100%; height: 160px; object-fit: cover; border-radius: 4px; display: block; margin-bottom: 0.75rem; }
+    .card-body { margin: 0.5rem 0; font-size: 0.9rem; }
+    .card-attachments { margin-top: 0.5rem; font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.2rem; }
+    .card-attachments a { color: var(--accent); }
+    .card-attachments span { color: var(--text-muted); margin-left: 0.4rem; }
+    .link-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+    .link-row input { padding: 0.4rem 0.6rem; background: var(--input-bg, var(--bg-card)); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-size: 0.9rem; }
+    .link-row .link-url { flex: 2; }
+    .link-row .link-label { flex: 1; }
   </style>
 </body>
 </html>
