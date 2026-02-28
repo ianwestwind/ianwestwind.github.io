@@ -140,65 +140,7 @@
         <button class="btn btn-secondary btn-sm" data-filter="game">Games</button>
       </div>
 
-      <div class="card-grid" id="projects-grid">
-        <!-- Static placeholder cards -->
-        <div class="card" data-tags="web">
-          <div class="card-tag">Web App</div>
-          <h3>WINN Platforms</h3>
-          <p>This very site — a static-hosted community platform with Firebase Auth and Firestore.</p>
-          <div class="card-links">
-            <a href="https://github.com/ianwestwind/ianwestwind.github.io" class="btn btn-secondary btn-sm" target="_blank">GitHub</a>
-            <a href="index.html" class="btn btn-ghost btn-sm">Live Site</a>
-          </div>
-        </div>
-
-        <div class="card" data-tags="tool">
-          <div class="card-tag">CLI Tool</div>
-          <h3>Project Name</h3>
-          <p>A brief description of what this tool does and the problem it solves.</p>
-          <div class="card-links">
-            <a href="#" class="btn btn-secondary btn-sm">GitHub</a>
-          </div>
-        </div>
-
-        <div class="card" data-tags="library">
-          <div class="card-tag">Library</div>
-          <h3>Project Name</h3>
-          <p>A reusable library or package — describe its API and use cases here.</p>
-          <div class="card-links">
-            <a href="#" class="btn btn-secondary btn-sm">GitHub</a>
-            <a href="#" class="btn btn-ghost btn-sm">Docs</a>
-          </div>
-        </div>
-
-        <div class="card" data-tags="web">
-          <div class="card-tag">Web App</div>
-          <h3>Project Name</h3>
-          <p>Another web project — replace this with your real work.</p>
-          <div class="card-links">
-            <a href="#" class="btn btn-secondary btn-sm">GitHub</a>
-            <a href="#" class="btn btn-ghost btn-sm">Demo</a>
-          </div>
-        </div>
-
-        <div class="card" data-tags="game">
-          <div class="card-tag">Game</div>
-          <h3>Project Name</h3>
-          <p>A game project. Describe the tech stack, genre, and status.</p>
-          <div class="card-links">
-            <a href="#" class="btn btn-secondary btn-sm">GitHub</a>
-          </div>
-        </div>
-
-        <div class="card" data-tags="tool">
-          <div class="card-tag">Tool</div>
-          <h3>Project Name</h3>
-          <p>A productivity or dev tool. What does it automate or simplify?</p>
-          <div class="card-links">
-            <a href="#" class="btn btn-secondary btn-sm">GitHub</a>
-          </div>
-        </div>
-      </div>
+      <div class="card-grid" id="projects-grid"></div>
     </section>
   </div>
   </main>
@@ -393,10 +335,6 @@
           const tag = docSnap.data().tag;
           if (tag) _allTags.add(tag);
           grid.insertBefore(renderSoftwareCard(docSnap), grid.firstChild);
-        });
-        // Collect tags from static cards too
-        grid.querySelectorAll(".card[data-tags]:not([data-doc-id])").forEach(c => {
-          if (c.dataset.tags) _allTags.add(c.dataset.tags);
         });
         _buildFilterBar();
         _populateTagDatalist();
