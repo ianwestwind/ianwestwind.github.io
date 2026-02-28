@@ -425,19 +425,46 @@
 
     // ---- Edit form open / close ----
     function _openEditForm() {
-      const d = _profileData || {};
+      const d = _profileData;
       _pendingPhotoUrl = null;
-      document.getElementById("profile-photo-preview").innerHTML = "";
 
-      document.getElementById("pf-name").value   = d.name    || "";
-      document.getElementById("pf-eyebrow").value = d.eyebrow || "";
-      document.getElementById("pf-role").value   = d.role    || "";
-      document.getElementById("pf-bio").value    = d.bio     || "";
-      document.getElementById("pf-tags").value   = Array.isArray(d.tags) ? d.tags.join(", ") : "";
+      // Show existing photo in preview so admin can see what's currently set
+      const preview = document.getElementById("profile-photo-preview");
+      if (d?.photoUrl) {
+        preview.innerHTML = `<div class="thumb-preview" style="margin-top:.5rem"><img src="${esc(d.photoUrl)}" alt="Current photo" style="max-height:80px;border-radius:50%" /><p style="font-size:.8rem;color:var(--text-muted);margin:.25rem 0 0">Upload a new photo to replace</p></div>`;
+      } else {
+        preview.innerHTML = "";
+      }
 
+      // Pre-fill from Firestore data; fall back to current DOM content for first-time edit
+      document.getElementById("pf-name").value    = d?.name    ?? document.getElementById("profile-name")?.textContent    ?? "";
+      document.getElementById("pf-eyebrow").value = d?.eyebrow ?? document.getElementById("profile-eyebrow")?.textContent ?? "";
+      document.getElementById("pf-role").value    = d?.role    ?? document.getElementById("profile-role")?.textContent    ?? "";
+
+      // Bio: from Firestore, or reconstruct from visible paragraphs
+      if (d?.bio !== undefined) {
+        document.getElementById("pf-bio").value = d.bio;
+      } else {
+        const paras = [...document.querySelectorAll("#profile-bio-content .profile-text")];
+        document.getElementById("pf-bio").value = paras.map(el => el.textContent.trim()).join("\n\n");
+      }
+
+      // Tags: from Firestore, or reconstruct from visible tag chips
+      if (Array.isArray(d?.tags)) {
+        document.getElementById("pf-tags").value = d.tags.join(", ");
+      } else {
+        const tagEls = [...document.querySelectorAll("#profile-tags .profile-tag")];
+        document.getElementById("pf-tags").value = tagEls.map(el => el.textContent.trim()).join(", ");
+      }
+
+      // Links: from Firestore, or reconstruct from visible link buttons (external only)
       const linksContainer = document.getElementById("pf-links-container");
       linksContainer.innerHTML = "";
-      (Array.isArray(d.links) ? d.links : []).forEach(l => _addProfileLinkRow(l.url, l.label));
+      const links = Array.isArray(d?.links) ? d.links :
+        [...document.querySelectorAll("#profile-links a")]
+          .filter(a => a.href.startsWith("http"))
+          .map(a => ({ label: a.textContent.trim().replace(/\s*↗\s*$/, ""), url: a.getAttribute("href") }));
+      links.forEach(l => _addProfileLinkRow(l.url, l.label));
 
       document.getElementById("profile-edit-wrap").style.display = "block";
       document.getElementById("profile-edit-btn").style.display  = "none";
@@ -528,10 +555,9 @@
       updateNavUI(user, role);
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
 
-      if (hasRole(role, "admin")) {
-        document.getElementById("profile-admin-bar").style.display = "";
-        document.getElementById("add-collab-btn").style.display    = "";
-      }
+      const isAdmin = hasRole(role, "admin");
+      document.getElementById("profile-admin-bar").style.display = isAdmin ? "" : "none";
+      document.getElementById("add-collab-btn").style.display    = isAdmin ? "" : "none";
 
       await loadProfile();
     });
@@ -539,6 +565,7 @@
     document.getElementById("nav-logout").addEventListener("click", async () => {
       await logout();
       showToast("Signed out.", "info");
+      window.location.reload();
     });
   </script>
 
