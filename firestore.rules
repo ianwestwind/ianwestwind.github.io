@@ -95,12 +95,23 @@ service cloud.firestore {
       allow create: if hasRole('regular')
         && request.resource.data.authorUid == request.auth.uid;
 
-      // Authors can update their own post body (no role escalation)
-      allow update: if isOwner(resource.data.authorUid) && hasRole('regular');
+      // Authors can update their own post; moderators/admins can update any
+      allow update: if (isOwner(resource.data.authorUid) && hasRole('regular'))
+        || hasRole('moderator');
 
       // Moderators can delete any post; authors can delete their own
       allow delete: if hasRole('moderator')
         || isOwner(resource.data.authorUid);
+    }
+
+
+    // ---- /forum_posts/{postId}/comments/{cid} ----
+    match /forum_posts/{postId}/comments/{cid} {
+      allow read: if true;
+      allow create: if hasRole('regular')
+        && request.resource.data.authorUid == request.auth.uid;
+      allow update: if isOwner(resource.data.authorUid) && hasRole('regular');
+      allow delete: if hasRole('moderator') || isOwner(resource.data.authorUid);
     }
 
 
@@ -113,8 +124,9 @@ service cloud.firestore {
       allow create: if hasRole('regular')
         && request.resource.data.authorUid == request.auth.uid;
 
-      // Authors can edit their own post
-      allow update: if isOwner(resource.data.authorUid) && hasRole('regular');
+      // Authors can edit their own post; moderators/admins can edit any
+      allow update: if (isOwner(resource.data.authorUid) && hasRole('regular'))
+        || hasRole('moderator');
 
       // Moderators can delete any; authors can delete their own
       allow delete: if hasRole('moderator')
@@ -131,7 +143,7 @@ service cloud.firestore {
       allow create: if hasRole('moderator')
         && request.resource.data.authorUid == request.auth.uid;
 
-      // Author (who must be a moderator+) can update their own post; admins can update any
+      // Author (mod+) can update own post; admins can update any
       allow update: if (isOwner(resource.data.authorUid) && hasRole('moderator'))
         || hasRole('admin');
 
@@ -150,8 +162,9 @@ service cloud.firestore {
       allow create: if hasRole('moderator')
         && request.resource.data.authorUid == request.auth.uid;
 
-      // Authors can update their own post (authors are moderator+)
-      allow update: if isOwner(resource.data.authorUid) && hasRole('moderator');
+      // Authors can update their own post; admins can update any
+      allow update: if (isOwner(resource.data.authorUid) && hasRole('moderator'))
+        || hasRole('admin');
 
       // Moderators can delete any; authors can delete their own
       allow delete: if hasRole('moderator')

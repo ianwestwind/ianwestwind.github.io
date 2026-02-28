@@ -105,6 +105,7 @@ function _showDetail(id) {
     <div class="post-detail-body rich-content" id="forum-detail-body-${id}"></div>
     ${_attachmentsHTML(data.attachments)}
     ${canDelete ? `<div class="post-detail-actions"><button type="button" class="btn btn-primary btn-sm" id="forum-edit-${id}">Edit</button><button type="button" class="btn btn-danger btn-sm" id="forum-delete-${id}">Delete Post</button></div>` : ""}
+    <div id="forum-comments-${id}" class="comments-section"></div>
   `;
 
   const bodyEl = document.getElementById(`forum-detail-body-${id}`);
@@ -124,6 +125,154 @@ function _showDetail(id) {
         location.hash = "";
       } catch (err) { showToast("Delete failed: " + err.message, "error"); }
     });
+  }
+
+  _loadAndRenderComments(id);
+}
+
+async function _loadAndRenderComments(postId) {
+  const section = document.getElementById(`forum-comments-${postId}`);
+  if (!section) return;
+
+  const role = getCurrentRole();
+  const canComment = hasRole(role, "regular");
+
+  let comments = [];
+  try {
+    const q = query(
+      collection(db, COLLECTION, postId, "comments"),
+      orderBy("createdAt", "asc")
+    );
+    const snap = await getDocs(q);
+    comments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (err) {
+    section.innerHTML = `<p style="color:var(--danger)">Error loading comments.</p>`;
+    return;
+  }
+
+  const topLevel = comments.filter(c => !c.parentId);
+  const repliesByParent = {};
+  comments.filter(c => c.parentId).forEach(r => {
+    (repliesByParent[r.parentId] ??= []).push(r);
+  });
+
+  section.innerHTML = `
+    <div class="comments-header">Comments (${comments.length})</div>
+    <div id="forum-comments-list-${postId}"></div>
+    ${canComment ? `
+      <div class="comment-form">
+        <textarea id="forum-new-comment-${postId}" class="comment-textarea" placeholder="Add a comment…" rows="3"></textarea>
+        <div class="comment-form-actions">
+          <button class="btn btn-primary btn-sm" id="forum-submit-comment-${postId}">Post Comment</button>
+        </div>
+      </div>
+    ` : ""}
+  `;
+
+  _renderCommentsList(postId, topLevel, repliesByParent, canComment);
+
+  if (canComment) {
+    document.getElementById(`forum-submit-comment-${postId}`)?.addEventListener("click", async () => {
+      const ta = document.getElementById(`forum-new-comment-${postId}`);
+      const body = ta?.value.trim();
+      if (!body) return;
+      const btn = document.getElementById(`forum-submit-comment-${postId}`);
+      btn.disabled = true;
+      await _submitComment(postId, body, null);
+      if (ta) ta.value = "";
+      btn.disabled = false;
+    });
+  }
+}
+
+function _renderCommentsList(postId, topLevel, repliesByParent, canComment) {
+  const list = document.getElementById(`forum-comments-list-${postId}`);
+  if (!list) return;
+
+  if (topLevel.length === 0) {
+    list.innerHTML = `<p class="comments-empty">No comments yet. Be the first!</p>`;
+  } else {
+    list.innerHTML = topLevel.map(c => `
+      <div class="comment" data-id="${escHtml(c.id)}">
+        <div class="comment-meta">
+          <span class="comment-author">${escHtml(c.authorName || "Anonymous")}</span>
+          <span class="comment-date">· ${formatDate(c.createdAt)}</span>
+        </div>
+        <div class="comment-body">${escHtml(c.body || "")}</div>
+        ${canComment ? `<button class="btn btn-ghost btn-sm reply-btn" data-comment-id="${escHtml(c.id)}">Reply</button>` : ""}
+        <div class="comment-replies">
+          ${(repliesByParent[c.id] || []).map(r => `
+            <div class="comment comment-reply">
+              <div class="comment-meta">
+                <span class="comment-author">${escHtml(r.authorName || "Anonymous")}</span>
+                <span class="comment-date">· ${formatDate(r.createdAt)}</span>
+              </div>
+              <div class="comment-body">${escHtml(r.body || "")}</div>
+            </div>
+          `).join("")}
+        </div>
+        ${canComment ? `
+          <div class="reply-form" id="reply-form-${escHtml(c.id)}" style="display:none">
+            <textarea class="comment-textarea" placeholder="Write a reply…" rows="2"></textarea>
+            <div class="comment-form-actions">
+              <button class="btn btn-primary btn-sm submit-reply-btn" data-comment-id="${escHtml(c.id)}">Post Reply</button>
+              <button class="btn btn-ghost btn-sm cancel-reply-btn" data-comment-id="${escHtml(c.id)}">Cancel</button>
+            </div>
+          </div>
+        ` : ""}
+      </div>
+    `).join("");
+  }
+
+  if (canComment) {
+    list.querySelectorAll(".reply-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const form = document.getElementById(`reply-form-${btn.dataset.commentId}`);
+        if (form) form.style.display = form.style.display === "none" ? "" : "none";
+      });
+    });
+    list.querySelectorAll(".submit-reply-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const cid = btn.dataset.commentId;
+        const form = document.getElementById(`reply-form-${cid}`);
+        const ta = form?.querySelector("textarea");
+        const body = ta?.value.trim();
+        if (!body) return;
+        btn.disabled = true;
+        await _submitComment(postId, body, cid);
+        if (ta) ta.value = "";
+        if (form) form.style.display = "none";
+        btn.disabled = false;
+      });
+    });
+    list.querySelectorAll(".cancel-reply-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const form = document.getElementById(`reply-form-${btn.dataset.commentId}`);
+        if (form) form.style.display = "none";
+      });
+    });
+  }
+}
+
+async function _submitComment(postId, body, parentId) {
+  const user = getCurrentUser();
+  const role = getCurrentRole();
+  if (!hasRole(role, "regular") || !user) {
+    showToast("You must be logged in to comment.", "error");
+    return;
+  }
+  try {
+    await addDoc(collection(db, COLLECTION, postId, "comments"), {
+      body,
+      authorUid:  user.uid,
+      authorName: user.displayName || user.email,
+      createdAt:  serverTimestamp(),
+      parentId:   parentId || null,
+    });
+    showToast(parentId ? "Reply posted!" : "Comment posted!", "success");
+    await _loadAndRenderComments(postId);
+  } catch (err) {
+    showToast("Failed to post: " + err.message, "error");
   }
 }
 

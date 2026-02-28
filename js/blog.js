@@ -160,7 +160,7 @@ function _startEdit(id) {
   const toggleBtn = document.getElementById("blog-toggle-btn");
   location.hash = "";
   if (form)      form.style.display      = "";
-  if (toggleBtn) toggleBtn.textContent   = "✕ Cancel";
+  if (toggleBtn) toggleBtn.style.display = "none";
 
   const titleInput = document.getElementById("blog-title");
   if (titleInput) titleInput.value = data.title || "";
@@ -263,7 +263,7 @@ export async function initBlogPage(role) {
       cancelBtn.addEventListener("click", () => {
         form.style.display = "none";
         const tb = document.getElementById("blog-toggle-btn");
-        if (tb) tb.textContent = "+ New Post";
+        if (tb) { tb.style.display = ""; tb.textContent = "+ New Post"; }
         _resetFormState();
       });
     }
@@ -307,7 +307,7 @@ export async function submitBlog() {
     if (_attachZone) _attachZone.reset();
     if (paInput) { const n = new Date(); n.setSeconds(0, 0); paInput.value = n.toISOString().slice(0, 16); }
     if (form)      form.style.display      = "none";
-    if (toggleBtn) toggleBtn.textContent   = "+ New Post";
+    if (toggleBtn) { toggleBtn.style.display = ""; toggleBtn.textContent = "+ New Post"; }
     _editId = null;
   }
 
