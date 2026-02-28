@@ -109,7 +109,7 @@ function _showDetail(id) {
   const role      = getCurrentRole();
   const user      = getCurrentUser();
   const isAuthor  = user && (user.uid === data.authorUid || (!data.authorUid && (user.displayName === data.authorName || (user.email && user.email === data.authorName))));
-  const canDelete = hasRole(role, "moderator") || isAuthor;
+  const canDelete = hasRole(role, "admin") || hasRole(role, "moderator") || isAuthor;
   const isMod     = hasRole(role, "moderator");
   const scheduled = !_isPublished(data) && isMod;
 

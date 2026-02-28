@@ -21,8 +21,8 @@ import {
 const ROLE_RANK = { guest: 0, regular: 1, moderator: 2, admin: 3 };
 
 export function hasRole(userRole, required) {
-  const r = typeof userRole === "string" ? userRole.toLowerCase() : "";
-  const q = typeof required === "string" ? required.toLowerCase() : "";
+  const r = typeof userRole === "string" ? userRole.trim().toLowerCase() : "";
+  const q = typeof required === "string" ? required.trim().toLowerCase() : "";
   return (ROLE_RANK[r] ?? 0) >= (ROLE_RANK[q] ?? 0);
 }
 
@@ -38,7 +38,9 @@ async function fetchRole(uid) {
   try {
     const snap = await getDoc(doc(db, "users", uid));
     if (snap.exists()) {
-      return snap.data().role ?? "regular";
+      const raw = snap.data().role ?? "regular";
+      const normalized = String(raw).trim().toLowerCase() || "regular";
+      return normalized;
     }
   } catch (e) {
     console.warn("fetchRole error:", e);
@@ -52,7 +54,8 @@ export function initAuth(callback) {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       _currentUser = user;
-      _currentRole = await fetchRole(user.uid);
+      const fetched = await fetchRole(user.uid);
+      _currentRole = typeof fetched === "string" ? fetched.trim().toLowerCase() : "regular";
     } else {
       _currentUser = null;
       _currentRole = "guest";

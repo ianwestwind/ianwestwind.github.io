@@ -86,7 +86,7 @@ function _showDetail(id) {
   const authorUid = data.authorUid != null ? String(data.authorUid) : "";
   const isAuthor  = user && authorUid && String(user.uid) === authorUid
     || (user && !authorUid && (user.displayName === data.authorName || (user.email && user.email === data.authorName)));
-  const canDelete = hasRole(role, "moderator") || isAuthor;
+  const canDelete = hasRole(role, "admin") || hasRole(role, "moderator") || isAuthor;
 
   detailView.innerHTML = `
     <div class="post-detail-header">
