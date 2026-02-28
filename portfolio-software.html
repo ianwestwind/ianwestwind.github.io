@@ -99,7 +99,7 @@
             </div>
           </div>
           <div class="form-group">
-            <label>Thumbnail <span style="color:var(--text-muted)">(optional, max 10 MB — shown as card background)</span></label>
+            <label>Thumbnail <span style="color:var(--text-muted)">(optional, max 10 MB)</span></label>
             <label class="file-input-label">
               Upload thumbnail
               <input type="file" id="sw-thumb" accept="image/*" />
@@ -134,13 +134,69 @@
       <!-- Filter chips (dynamic) -->
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:2rem;" id="filter-bar">
         <button class="btn btn-secondary btn-sm active-filter" data-filter="all">All</button>
+        <button class="btn btn-secondary btn-sm" data-filter="web">Web</button>
+        <button class="btn btn-secondary btn-sm" data-filter="tool">Tools</button>
+        <button class="btn btn-secondary btn-sm" data-filter="library">Libraries</button>
+        <button class="btn btn-secondary btn-sm" data-filter="game">Games</button>
       </div>
 
-      <!-- Project grid -->
       <div class="card-grid" id="projects-grid">
-        <div id="projects-empty" class="empty-state" style="display:none;grid-column:1/-1">
-          <div class="empty-icon"></div>
-          <p>No projects yet.</p>
+        <!-- Static placeholder cards -->
+        <div class="card" data-tags="web">
+          <div class="card-tag">Web App</div>
+          <h3>WINN Platforms</h3>
+          <p>This very site — a static-hosted community platform with Firebase Auth and Firestore.</p>
+          <div class="card-links">
+            <a href="https://github.com/ianwestwind/ianwestwind.github.io" class="btn btn-secondary btn-sm" target="_blank">GitHub</a>
+            <a href="index.html" class="btn btn-ghost btn-sm">Live Site</a>
+          </div>
+        </div>
+
+        <div class="card" data-tags="tool">
+          <div class="card-tag">CLI Tool</div>
+          <h3>Project Name</h3>
+          <p>A brief description of what this tool does and the problem it solves.</p>
+          <div class="card-links">
+            <a href="#" class="btn btn-secondary btn-sm">GitHub</a>
+          </div>
+        </div>
+
+        <div class="card" data-tags="library">
+          <div class="card-tag">Library</div>
+          <h3>Project Name</h3>
+          <p>A reusable library or package — describe its API and use cases here.</p>
+          <div class="card-links">
+            <a href="#" class="btn btn-secondary btn-sm">GitHub</a>
+            <a href="#" class="btn btn-ghost btn-sm">Docs</a>
+          </div>
+        </div>
+
+        <div class="card" data-tags="web">
+          <div class="card-tag">Web App</div>
+          <h3>Project Name</h3>
+          <p>Another web project — replace this with your real work.</p>
+          <div class="card-links">
+            <a href="#" class="btn btn-secondary btn-sm">GitHub</a>
+            <a href="#" class="btn btn-ghost btn-sm">Demo</a>
+          </div>
+        </div>
+
+        <div class="card" data-tags="game">
+          <div class="card-tag">Game</div>
+          <h3>Project Name</h3>
+          <p>A game project. Describe the tech stack, genre, and status.</p>
+          <div class="card-links">
+            <a href="#" class="btn btn-secondary btn-sm">GitHub</a>
+          </div>
+        </div>
+
+        <div class="card" data-tags="tool">
+          <div class="card-tag">Tool</div>
+          <h3>Project Name</h3>
+          <p>A productivity or dev tool. What does it automate or simplify?</p>
+          <div class="card-links">
+            <a href="#" class="btn btn-secondary btn-sm">GitHub</a>
+          </div>
         </div>
       </div>
     </section>
@@ -223,9 +279,7 @@
     // ---- Helpers ----
     function esc(s) {
       if (!s) return "";
-      const d = document.createElement("div");
-      d.textContent = s;
-      return d.innerHTML;
+      const d = document.createElement("div"); d.textContent = s; return d.innerHTML;
     }
 
     function _tagLabel(t) {
@@ -237,9 +291,7 @@
       if (!dl) return;
       const existing = new Set([...dl.querySelectorAll("option")].map(o => o.value));
       _allTags.forEach(t => {
-        if (!existing.has(t)) {
-          const opt = document.createElement("option"); opt.value = t; dl.appendChild(opt);
-        }
+        if (!existing.has(t)) { const opt = document.createElement("option"); opt.value = t; dl.appendChild(opt); }
       });
     }
 
@@ -275,7 +327,7 @@
 
     function _getLinks() {
       return [...document.querySelectorAll("#sw-links-container .link-row")].reduce((acc, row) => {
-        const url   = row.querySelector(".link-url")?.value.trim();
+        const url = row.querySelector(".link-url")?.value.trim();
         const label = row.querySelector(".link-label")?.value.trim();
         if (url) acc.push({ url, label: label || "View" });
         return acc;
@@ -287,53 +339,69 @@
         : (d.linkUrl ? [{ url: d.linkUrl, label: d.linkLabel || "View" }] : []);
     }
 
-    // ---- Card ----
+    // ---- Card renderer ----
     function renderSoftwareCard(docSnap) {
-      const d   = docSnap.data();
-      const id  = docSnap.id;
+      const d  = docSnap.data();
+      const id = docSnap.id;
       _projects.set(id, d);
 
-      const tag  = d.tag || "web";
-      const card = document.createElement("div");
-      card.className    = "portfolio-card" + (d.thumbnailUrl ? "" : " no-thumb");
+      const tag      = d.tag || "web";
+      const links    = _resolveLinks(d);
+      const card     = document.createElement("div");
+      card.className = "card card-clickable";
       card.dataset.tags  = tag;
       card.dataset.docId = id;
+
+      // Thumbnail as 50% transparent background
       if (d.thumbnailUrl) {
+        card.classList.add("has-thumb");
         card.style.backgroundImage = `url('${d.thumbnailUrl.replace(/'/g, "\\'")}')`;
       }
+
+      const githubHtml = d.githubUrl
+        ? `<a href="${esc(d.githubUrl)}" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">GitHub</a>`
+        : "";
+      const linksHtml = links.map(l =>
+        `<a href="${esc(l.url)}" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">${esc(l.label || "View")}</a>`
+      ).join("");
+
       card.innerHTML = `
-        <div class="portfolio-card-overlay">
-          <div class="portfolio-card-tag">${esc(_tagLabel(tag))}</div>
-          <div class="portfolio-card-title">${esc(d.title || "Project")}</div>
-          ${d.description ? `<div class="portfolio-card-desc">${esc(d.description)}</div>` : ""}
-        </div>
+        <div class="card-tag">${esc(_tagLabel(tag))}</div>
+        <h3>${esc(d.title || "Project")}</h3>
+        <p>${esc(d.description || "")}</p>
+        <div class="card-links">${githubHtml}${linksHtml}</div>
       `;
-      card.addEventListener("click", () => _openModal(id));
+
+      // Click on card body opens modal; clicks on links navigate normally
+      card.addEventListener("click", (e) => {
+        if (e.target.closest("a")) return;
+        _openModal(id);
+      });
+
       return card;
     }
 
-    // ---- Load ----
+    // ---- Load projects ----
     async function loadSoftwareProjects() {
       const grid    = document.getElementById(GRID_ID);
       const countEl = document.getElementById(COUNT_ID);
       try {
         const snap = await getDocs(query(collection(db, "software_projects"), orderBy("createdAt", "desc")));
-        grid.querySelectorAll(".portfolio-card").forEach(c => c.remove());
+        grid.querySelectorAll(".card[data-doc-id]").forEach(c => c.remove());
         _projects.clear();
         snap.docs.forEach(docSnap => {
           const tag = docSnap.data().tag;
           if (tag) _allTags.add(tag);
-          grid.appendChild(renderSoftwareCard(docSnap));
+          grid.insertBefore(renderSoftwareCard(docSnap), grid.firstChild);
+        });
+        // Collect tags from static cards too
+        grid.querySelectorAll(".card[data-tags]:not([data-doc-id])").forEach(c => {
+          if (c.dataset.tags) _allTags.add(c.dataset.tags);
         });
         _buildFilterBar();
         _populateTagDatalist();
-        const count = snap.size;
-        if (countEl) countEl.textContent = count + " project" + (count !== 1 ? "s" : "");
-        const emptyEl = document.getElementById("projects-empty");
-        if (emptyEl) emptyEl.style.display = count === 0 ? "" : "none";
-      } catch (e) {
-        console.warn("loadSoftwareProjects", e);
-      }
+        if (countEl) countEl.textContent = grid.querySelectorAll(".card").length + " projects";
+      } catch (e) { console.warn("loadSoftwareProjects", e); }
     }
 
     // ---- Modal ----
@@ -341,10 +409,10 @@
       const d = _projects.get(id);
       if (!d) return;
 
-      const isAdmin    = hasRole(_currentRole, "admin");
-      const links      = _resolveLinks(d);
+      const isAdmin     = hasRole(_currentRole, "admin");
+      const links       = _resolveLinks(d);
       const attachments = Array.isArray(d.attachments) ? d.attachments : [];
-      const content    = document.getElementById("portfolio-modal-content");
+      const content     = document.getElementById("portfolio-modal-content");
 
       content.innerHTML = `
         ${d.thumbnailUrl ? `<img src="${esc(d.thumbnailUrl)}" alt="" class="portfolio-modal-thumb" />` : ""}
@@ -356,8 +424,7 @@
           <div class="portfolio-modal-links">
             ${d.githubUrl ? `<a href="${esc(d.githubUrl)}" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">GitHub</a>` : ""}
             ${links.map(l => `<a href="${esc(l.url)}" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">${esc(l.label || "View")}</a>`).join("")}
-          </div>
-        ` : ""}
+          </div>` : ""}
         ${attachments.length ? `
           <div class="portfolio-modal-attachments">
             <div class="attach-section-title">Attachments</div>
@@ -366,14 +433,12 @@
                 <a href="${esc(a.url)}" target="_blank" rel="noopener" class="attach-link">${esc(a.name)}</a>
                 <span class="attach-size">${Math.round((a.size || 0) / 1024)} KB</span>
               </div>`).join("")}
-          </div>
-        ` : ""}
+          </div>` : ""}
         ${isAdmin ? `
           <div class="portfolio-modal-actions">
             <button class="btn btn-primary btn-sm" id="modal-edit-btn">Edit</button>
             <button class="btn btn-danger btn-sm"  id="modal-delete-btn">Delete</button>
-          </div>
-        ` : ""}
+          </div>` : ""}
       `;
 
       if (d.body) {
@@ -402,18 +467,15 @@
 
       const formWrap  = document.getElementById(FORM_WRAP_ID);
       const toggleBtn = document.getElementById("software-toggle-form-btn");
-      const heading   = document.getElementById("software-form-heading");
-      const submitBtn = document.getElementById("software-submit-btn");
-
       if (formWrap)  formWrap.style.display  = "block";
       if (toggleBtn) toggleBtn.style.display = "none";
-      if (heading)   heading.textContent      = "Edit software project";
-      if (submitBtn) submitBtn.textContent    = "Update project";
+      document.getElementById("software-form-heading").textContent = "Edit software project";
+      document.getElementById("software-submit-btn").textContent   = "Update project";
 
-      document.getElementById("software-tag-input").value = d.tag || "";
-      document.getElementById("software-title").value     = d.title || "";
+      document.getElementById("software-tag-input").value = d.tag         || "";
+      document.getElementById("software-title").value     = d.title       || "";
       document.getElementById("software-desc").value      = d.description || "";
-      document.getElementById("software-github").value    = d.githubUrl || "";
+      document.getElementById("software-github").value    = d.githubUrl   || "";
 
       if (_swQuill)     _swQuill.clipboard.dangerouslyPasteHTML(d.body || "");
       if (_swThumbZone) _swThumbZone.setThumbUrl(d.thumbnailUrl || null);
@@ -427,16 +489,14 @@
 
     function _resetForm() {
       _editId = null;
-      document.getElementById("software-project-form").reset();
+      document.getElementById(FORM_ID).reset();
       document.getElementById("software-tag-input").value = "";
       if (_swQuill)      _swQuill.setContents([]);
       if (_swThumbZone)  _swThumbZone.reset();
       if (_swAttachZone) _swAttachZone.reset();
       document.getElementById("sw-links-container").innerHTML = "";
-      const heading   = document.getElementById("software-form-heading");
-      const submitBtn = document.getElementById("software-submit-btn");
-      if (heading)   heading.textContent   = "New software project";
-      if (submitBtn) submitBtn.textContent = "Add project";
+      document.getElementById("software-form-heading").textContent = "New software project";
+      document.getElementById("software-submit-btn").textContent   = "Add project";
     }
 
     // ---- Delete ----
@@ -448,9 +508,7 @@
         _closeModal();
         showToast("Project deleted.", "info");
         await loadSoftwareProjects();
-      } catch (err) {
-        showToast("Delete failed: " + err.message, "error");
-      }
+      } catch (err) { showToast("Delete failed: " + err.message, "error"); }
     }
 
     // ---- Lazy editor init ----
@@ -469,11 +527,7 @@
       _currentRole = role;
       updateNavUI(user, role);
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
-
-      if (hasRole(role, "admin")) {
-        document.getElementById("software-list-header").style.display = "";
-      }
-
+      if (hasRole(role, "admin")) document.getElementById("software-list-header").style.display = "";
       await loadSoftwareProjects();
 
       const toggleBtn = document.getElementById("software-toggle-form-btn");
@@ -494,7 +548,6 @@
           if (toggleBtn) toggleBtn.style.display = "";
         });
       }
-
       document.getElementById("sw-add-link-btn")?.addEventListener("click", () =>
         _addLinkRow(document.getElementById("sw-links-container"))
       );
@@ -504,7 +557,7 @@
       await logout(); showToast("Signed out.", "info");
     });
 
-    // ---- Modal close handlers ----
+    // ---- Modal close ----
     document.getElementById("portfolio-modal-close").addEventListener("click", _closeModal);
     document.getElementById("modal-backdrop").addEventListener("click", _closeModal);
     document.addEventListener("keydown", e => { if (e.key === "Escape") _closeModal(); });
@@ -512,7 +565,7 @@
     // ---- Form submit (create + update) ----
     document.getElementById(FORM_ID).addEventListener("submit", async (e) => {
       e.preventDefault();
-      const errEl    = document.getElementById("software-form-error");
+      const errEl     = document.getElementById("software-form-error");
       const submitBtn = document.getElementById("software-submit-btn");
       errEl.textContent = ""; errEl.classList.remove("visible");
 
@@ -534,7 +587,7 @@
         errEl.textContent = "Tag and title are required."; errEl.classList.add("visible"); return;
       }
 
-      submitBtn.disabled = true;
+      submitBtn.disabled    = true;
       submitBtn.textContent = editId ? "Updating…" : "Adding…";
 
       const formWrap  = document.getElementById(FORM_WRAP_ID);
@@ -559,7 +612,7 @@
       } catch (err) {
         errEl.textContent = err.message || "Failed."; errEl.classList.add("visible");
       } finally {
-        submitBtn.disabled = false;
+        submitBtn.disabled    = false;
         submitBtn.textContent = _editId ? "Update project" : "Add project";
       }
     });
@@ -571,71 +624,42 @@
       document.querySelectorAll("#filter-bar [data-filter]").forEach(b => b.classList.remove("active-filter"));
       btn.classList.add("active-filter");
       const filter = btn.dataset.filter;
-      document.querySelectorAll(`#${GRID_ID} .portfolio-card`).forEach(card => {
+      document.querySelectorAll(`#${GRID_ID} .card`).forEach(card => {
         card.style.display = (filter === "all" || card.dataset.tags === filter) ? "" : "none";
       });
     });
   </script>
   <style>
-    /* --- Portfolio cards --- */
-    .portfolio-card {
-      position: relative;
-      min-height: 210px;
+    /* Thumbnail as card background with 50% dark overlay */
+    .card.has-thumb {
       background-size: cover;
       background-position: center;
-      background-color: var(--bg-card);
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-      cursor: pointer;
+      position: relative;
     }
-    .portfolio-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 28px rgba(0,0,0,0.35);
-    }
-    .portfolio-card.no-thumb {
-      background: linear-gradient(135deg, #4f46e5 0%, #1e1b4b 100%);
-    }
-    .portfolio-card-overlay {
+    .card.has-thumb::before {
+      content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.82) 100%);
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: inherit;
+      z-index: 0;
+      pointer-events: none;
     }
-    .portfolio-card.no-thumb .portfolio-card-overlay {
-      background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.45) 100%);
+    .card.has-thumb > * {
+      position: relative;
+      z-index: 1;
     }
-    .portfolio-card-tag {
-      font-size: 0.68rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: rgba(255,255,255,0.9);
-      background: rgba(255,255,255,0.18);
-      border-radius: 4px;
-      padding: 0.2rem 0.5rem;
-      margin-bottom: 0.45rem;
-      width: fit-content;
-    }
-    .portfolio-card-title {
-      font-size: 1rem;
-      font-weight: 600;
+    /* Keep text readable over dark overlay */
+    .card.has-thumb h3,
+    .card.has-thumb p {
       color: #fff;
-      line-height: 1.3;
     }
-    .portfolio-card-desc {
-      font-size: 0.8rem;
-      color: rgba(255,255,255,0.72);
-      margin-top: 0.3rem;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+    .card.has-thumb .card-tag {
+      color: rgba(255,255,255,0.85);
     }
+
+    /* Clickable Firestore cards */
+    .card.card-clickable { cursor: pointer; }
 
     /* --- Modal --- */
     .portfolio-modal {
@@ -650,7 +674,7 @@
     .portfolio-modal-backdrop {
       position: absolute;
       inset: 0;
-      background: rgba(0,0,0,0.72);
+      background: rgba(0,0,0,0.7);
       cursor: pointer;
     }
     .portfolio-modal-box {
@@ -704,30 +728,18 @@
       color: var(--accent);
       margin-bottom: 0.4rem;
     }
-    .portfolio-modal-title {
-      font-size: 1.55rem;
-      font-weight: 700;
-      margin: 0 0 0.75rem;
-      line-height: 1.2;
-    }
-    .portfolio-modal-desc {
-      color: var(--text-muted);
-      margin-bottom: 1rem;
-      font-size: 0.95rem;
-      line-height: 1.6;
-    }
+    .portfolio-modal-title { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.75rem; line-height: 1.2; }
+    .portfolio-modal-desc  { color: var(--text-muted); margin-bottom: 1rem; font-size: 0.95rem; line-height: 1.6; }
     .portfolio-modal-body-content { margin: 1.25rem 0; font-size: 0.95rem; }
     .portfolio-modal-links { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; }
     .portfolio-modal-attachments { margin: 1rem 0; }
     .portfolio-modal-actions {
-      display: flex;
-      gap: 0.5rem;
-      margin-top: 1.5rem;
-      padding-top: 1rem;
+      display: flex; gap: 0.5rem;
+      margin-top: 1.5rem; padding-top: 1rem;
       border-top: 1px solid var(--border);
     }
 
-    /* --- Form link rows --- */
+    /* Form link rows */
     .link-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
     .link-row input { padding: 0.4rem 0.6rem; background: var(--input-bg, var(--bg-card)); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-size: 0.9rem; }
     .link-row .link-url { flex: 2; }
