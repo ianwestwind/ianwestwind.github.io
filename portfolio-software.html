@@ -134,10 +134,6 @@
       <!-- Filter chips (dynamic) -->
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:2rem;" id="filter-bar">
         <button class="btn btn-secondary btn-sm active-filter" data-filter="all">All</button>
-        <button class="btn btn-secondary btn-sm" data-filter="web">Web</button>
-        <button class="btn btn-secondary btn-sm" data-filter="tool">Tools</button>
-        <button class="btn btn-secondary btn-sm" data-filter="library">Libraries</button>
-        <button class="btn btn-secondary btn-sm" data-filter="game">Games</button>
       </div>
 
       <div class="card-grid" id="projects-grid"></div>
@@ -215,7 +211,7 @@
     let _editorInited = false;
     let _editId       = null;
     let _currentRole  = "guest";
-    const _allTags    = new Set(["web", "tool", "library", "game"]);
+    const _allTags    = new Set();
     const _projects   = new Map(); // docId → data
 
     // ---- Helpers ----

@@ -129,10 +129,6 @@
       <!-- Filter chips (dynamic) -->
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:2rem;" id="filter-bar">
         <button class="btn btn-secondary btn-sm active-filter" data-filter="all">All</button>
-        <button class="btn btn-secondary btn-sm" data-filter="ui">UI/UX</button>
-        <button class="btn btn-secondary btn-sm" data-filter="brand">Branding</button>
-        <button class="btn btn-secondary btn-sm" data-filter="illustration">Illustration</button>
-        <button class="btn btn-secondary btn-sm" data-filter="motion">Motion</button>
       </div>
 
       <div class="card-grid" id="design-grid"></div>
@@ -210,7 +206,7 @@
     let _editorInited = false;
     let _editId       = null;
     let _currentRole  = "guest";
-    const _allTags    = new Set(["ui", "brand", "illustration", "motion"]);
+    const _allTags    = new Set();
     const _projects   = new Map();
 
     // ---- Helpers ----
