@@ -13,7 +13,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import {
   getCurrentUser, getCurrentRole, hasRole, escHtml, showToast, formatDate
-} from "./auth.js";
+} from "./auth.js?v=3";
 
 const COLLECTION = "discussion_posts";
 const _posts = new Map(); // id → data

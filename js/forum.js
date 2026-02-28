@@ -10,7 +10,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getCurrentUser, getCurrentRole, hasRole, escHtml, showToast, formatDate
-} from "./auth.js";
+} from "./auth.js?v=3";
 import {
   initEditor, getEditorHTML, initThumbnailZone, initAttachmentZone, renderBody, highlightContent, initPreview
 } from "./editor.js";
