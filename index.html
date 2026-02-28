@@ -30,41 +30,100 @@
 
     <!-- ===== Profile ===== -->
     <section class="about-hero container">
-      <div class="about-profile">
+
+      <!-- Admin bar -->
+      <div id="profile-admin-bar" style="display:none; text-align:right; margin-bottom:0.75rem;">
+        <button type="button" class="btn btn-ghost btn-sm" id="profile-edit-btn">Edit Profile</button>
+      </div>
+
+      <!-- Edit form (admin, hidden by default) -->
+      <div id="profile-edit-wrap" class="post-form" style="display:none; margin-bottom:2rem;">
+        <h3 id="profile-form-heading">Edit Profile</h3>
+        <form id="profile-form">
+
+          <div class="form-group">
+            <label>Photo <span style="color:var(--text-muted)">(optional, max 10 MB)</span></label>
+            <label class="file-input-label">
+              Upload photo
+              <input type="file" id="profile-photo-input" accept="image/*" />
+            </label>
+            <div id="profile-photo-preview"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="pf-name">Name</label>
+            <input type="text" id="pf-name" placeholder="Full name" required />
+          </div>
+
+          <div class="form-group">
+            <label for="pf-eyebrow">Affiliation</label>
+            <input type="text" id="pf-eyebrow" placeholder="e.g. Stanford Medicine · Department of Pediatrics" />
+          </div>
+
+          <div class="form-group">
+            <label for="pf-role">Role / Title</label>
+            <input type="text" id="pf-role" placeholder="e.g. Senior Research Scientist · PhD, Preventive Medicine" />
+          </div>
+
+          <div class="form-group">
+            <label for="pf-bio">Bio <span style="color:var(--text-muted)">(separate paragraphs with a blank line)</span></label>
+            <textarea id="pf-bio" rows="7" placeholder="Write your bio here…" style="width:100%;resize:vertical;padding:.5rem .7rem;background:var(--input-bg,var(--bg-card));border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:.93rem;line-height:1.6;font-family:inherit"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="pf-tags">Keywords <span style="color:var(--text-muted)">(comma-separated)</span></label>
+            <input type="text" id="pf-tags" placeholder="e.g. Neural Networks, Behavior Change, Precision Medicine" />
+          </div>
+
+          <div class="form-group">
+            <label>Links <span style="color:var(--text-muted)">(optional)</span></label>
+            <div id="pf-links-container"></div>
+            <button type="button" class="btn btn-ghost btn-sm" id="pf-add-link-btn" style="margin-top:.5rem">+ Add Link</button>
+          </div>
+
+          <p class="form-error" id="profile-form-error"></p>
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <button type="submit" class="btn btn-primary btn-sm" id="profile-save-btn">Save</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="profile-cancel-btn">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Profile display -->
+      <div class="about-profile" id="profile-display">
 
         <!-- Photo -->
         <div class="profile-photo-wrap">
-          <div class="profile-photo-placeholder" aria-label="Profile photo placeholder">
-            <!-- Replace with: <img src="assets/ian-kim.jpg" alt="Ian Kim" class="profile-photo-img" /> -->
-            IK
-          </div>
+          <div id="profile-photo-el" class="profile-photo-placeholder" aria-label="Profile photo">IK</div>
         </div>
 
         <!-- Bio -->
         <div class="profile-bio">
-          <div class="profile-eyebrow">Stanford Medicine · Department of Pediatrics</div>
-          <h1 class="profile-name">Ian Kim</h1>
-          <p class="profile-role">Senior Research Scientist &nbsp;·&nbsp; PhD, Preventive Medicine</p>
-          <p class="profile-text">
-            Ian Kim is a Senior Research Scientist in the Department of Pediatrics at Stanford Medicine.
-            His work applies dynamical systems theory and artificial neural networks to identify
-            behavioral patterns in individuals with, or at elevated risk for, chronic conditions.
-          </p>
-          <p class="profile-text">
-            He designs computational models of behavior change and health intervention applications
-            that bring precision medicine and behavioral science together. He holds a PhD in Preventive
-            Medicine from the University of Southern California (Keck School of Medicine) and an
-            MFA in New Media from Penn State. Outside research, Ian is a long-distance runner who
-            participates in endurance events in support of charitable causes.
-          </p>
-          <div class="profile-tags">
+          <div class="profile-eyebrow" id="profile-eyebrow">Stanford Medicine · Department of Pediatrics</div>
+          <h1 class="profile-name" id="profile-name">Ian Kim</h1>
+          <p class="profile-role" id="profile-role">Senior Research Scientist &nbsp;·&nbsp; PhD, Preventive Medicine</p>
+          <div id="profile-bio-content">
+            <p class="profile-text">
+              Ian Kim is a Senior Research Scientist in the Department of Pediatrics at Stanford Medicine.
+              His work applies dynamical systems theory and artificial neural networks to identify
+              behavioral patterns in individuals with, or at elevated risk for, chronic conditions.
+            </p>
+            <p class="profile-text">
+              He designs computational models of behavior change and health intervention applications
+              that bring precision medicine and behavioral science together. He holds a PhD in Preventive
+              Medicine from the University of Southern California (Keck School of Medicine) and an
+              MFA in New Media from Penn State. Outside research, Ian is a long-distance runner who
+              participates in endurance events in support of charitable causes.
+            </p>
+          </div>
+          <div class="profile-tags" id="profile-tags">
             <span class="profile-tag">Dynamical Systems</span>
             <span class="profile-tag">Neural Networks</span>
             <span class="profile-tag">Behavior Change</span>
             <span class="profile-tag">Precision Medicine</span>
             <span class="profile-tag">Chronic Disease</span>
           </div>
-          <div class="profile-links">
+          <div class="profile-links" id="profile-links">
             <a href="https://iankim.people.stanford.edu/" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Stanford Profile ↗</a>
             <a href="portfolio-software.html" class="btn btn-ghost btn-sm">Software Work</a>
             <a href="portfolio-design.html" class="btn btn-ghost btn-sm">Design Work</a>
@@ -77,42 +136,47 @@
     <!-- ===== Collaborators ===== -->
     <section class="about-section">
       <div class="container">
-        <div class="about-section-header">
-          <h2>Collaborators</h2>
-          <p>Research partners and colleagues</p>
+        <div class="about-section-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
+          <div>
+            <h2>Collaborators</h2>
+            <p>Research partners and colleagues</p>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="add-collab-btn" style="display:none;margin-top:.25rem">+ Add Collaborator</button>
         </div>
-        <div class="collab-list">
 
-          <div class="collab-entry">
-            <span class="collab-entry-name">Collaborator Name</span>
-            <span class="collab-entry-inst">Institution · Role</span>
-          </div>
+        <!-- Add collaborator form (admin, hidden by default) -->
+        <div id="add-collab-wrap" class="post-form" style="display:none; margin-bottom:1.5rem;">
+          <form id="collab-form">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+              <div class="form-group" style="margin:0">
+                <label for="collab-name">Name</label>
+                <input type="text" id="collab-name" placeholder="Full name" required />
+              </div>
+              <div class="form-group" style="margin:0">
+                <label for="collab-affiliation">Affiliation</label>
+                <input type="text" id="collab-affiliation" placeholder="Institution · Role" />
+              </div>
+            </div>
+            <div class="form-group" style="margin-top:.75rem">
+              <label for="collab-url">Profile URL <span style="color:var(--text-muted)">(optional)</span></label>
+              <input type="url" id="collab-url" placeholder="https://…" />
+            </div>
+            <p class="form-error" id="collab-form-error"></p>
+            <div style="display:flex;gap:.5rem;margin-top:.5rem">
+              <button type="submit" class="btn btn-primary btn-sm">Add</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="collab-cancel-btn">Cancel</button>
+            </div>
+          </form>
+        </div>
 
-          <div class="collab-entry">
-            <span class="collab-entry-name">Collaborator Name</span>
-            <span class="collab-entry-inst">Institution · Role</span>
-          </div>
-
-          <div class="collab-entry">
-            <span class="collab-entry-name">Collaborator Name</span>
-            <span class="collab-entry-inst">Institution · Role</span>
-          </div>
-
-          <div class="collab-entry">
-            <span class="collab-entry-name">Collaborator Name</span>
-            <span class="collab-entry-inst">Institution · Role</span>
-          </div>
-
-          <div class="collab-entry">
-            <span class="collab-entry-name">Collaborator Name</span>
-            <span class="collab-entry-inst">Institution · Role</span>
-          </div>
-
-          <div class="collab-entry">
-            <span class="collab-entry-name">Collaborator Name</span>
-            <span class="collab-entry-inst">Institution · Role</span>
-          </div>
-
+        <div class="collab-list" id="collab-list">
+          <!-- Rendered by JS; static fallback shown until Firestore loads -->
+          <div class="collab-entry"><span class="collab-entry-name">Collaborator Name</span><span class="collab-entry-inst">Institution · Role</span></div>
+          <div class="collab-entry"><span class="collab-entry-name">Collaborator Name</span><span class="collab-entry-inst">Institution · Role</span></div>
+          <div class="collab-entry"><span class="collab-entry-name">Collaborator Name</span><span class="collab-entry-inst">Institution · Role</span></div>
+          <div class="collab-entry"><span class="collab-entry-name">Collaborator Name</span><span class="collab-entry-inst">Institution · Role</span></div>
+          <div class="collab-entry"><span class="collab-entry-name">Collaborator Name</span><span class="collab-entry-inst">Institution · Role</span></div>
+          <div class="collab-entry"><span class="collab-entry-name">Collaborator Name</span><span class="collab-entry-inst">Institution · Role</span></div>
         </div>
       </div>
     </section>
@@ -160,7 +224,7 @@
   </div><!-- /.page-wrapper -->
   </main>
 
-  <!-- ===== Right: two sidebars — (1) email, status, signout one line; (2) theme, font, size ===== -->
+  <!-- ===== Right: two sidebars ===== -->
   <aside class="sidebar-user">
     <div class="nav-user" id="nav-user" style="display:none"></div>
     <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign In</a>
@@ -205,26 +269,297 @@
   </footer>
 
   <script type="module">
-    import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js?v=3";
+    import { auth, db, storage } from "./js/firebase-config.js";
+    import { initAuth, updateNavUI, logout, showToast, hasRole } from "./js/auth.js?v=3";
     import { initLayoutControls } from "./js/layout-controls.js";
+    import {
+      doc, getDoc, setDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import {
+      ref, uploadBytes, getDownloadURL
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
     initLayoutControls();
 
-    initAuth((user, role) => {
-      updateNavUI(user, role);
-      if (user) {
-        const drawerLogin = document.getElementById("drawer-login");
-        if (drawerLogin) drawerLogin.style.display = "none";
+    const PROFILE_DOC = doc(db, "site_config", "profile");
+    let _currentRole = "guest";
+    let _profileData = null;
+    let _pendingPhotoUrl = null; // photo uploaded during edit session
+
+    // ---- Helpers ----
+    function esc(s) {
+      if (!s) return "";
+      const d = document.createElement("div"); d.textContent = s; return d.innerHTML;
+    }
+
+    // ---- Photo upload ----
+    document.getElementById("profile-photo-input").addEventListener("change", async () => {
+      const file = document.getElementById("profile-photo-input").files[0];
+      document.getElementById("profile-photo-input").value = "";
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) { showToast("Photo exceeds 10 MB.", "error"); return; }
+      showToast("Uploading photo…", "info");
+      try {
+        const r   = ref(storage, `profile/photo-${Date.now()}-${file.name}`);
+        await uploadBytes(r, file);
+        _pendingPhotoUrl = await getDownloadURL(r);
+        const prev = document.getElementById("profile-photo-preview");
+        prev.innerHTML = `<div class="thumb-preview"><img src="${esc(_pendingPhotoUrl)}" alt="Photo preview" style="max-height:80px;border-radius:50%;margin-top:.5rem" /></div>`;
+        showToast("Photo ready.", "success");
+      } catch { showToast("Photo upload failed.", "error"); }
+    });
+
+    // ---- Link rows (profile form) ----
+    function _addProfileLinkRow(url = "", label = "") {
+      const container = document.getElementById("pf-links-container");
+      const row = document.createElement("div");
+      row.className = "link-row";
+      row.innerHTML = `
+        <input type="url"  class="link-url"   placeholder="https://…" />
+        <input type="text" class="link-label" placeholder="Label (e.g. Stanford Profile)" />
+        <button type="button" class="btn btn-ghost btn-sm remove-link-btn">✕</button>
+      `;
+      row.querySelector(".link-url").value   = url;
+      row.querySelector(".link-label").value = label;
+      row.querySelector(".remove-link-btn").addEventListener("click", () => row.remove());
+      container.appendChild(row);
+    }
+
+    function _getProfileLinks() {
+      return [...document.querySelectorAll("#pf-links-container .link-row")].reduce((acc, row) => {
+        const url   = row.querySelector(".link-url")?.value.trim();
+        const label = row.querySelector(".link-label")?.value.trim();
+        if (url) acc.push({ url, label: label || "Link" });
+        return acc;
+      }, []);
+    }
+
+    // ---- Render profile display ----
+    function _renderProfile(d) {
+      if (!d) return;
+
+      // Photo
+      const wrap = document.querySelector(".profile-photo-wrap");
+      if (wrap) {
+        if (d.photoUrl) {
+          wrap.innerHTML = `<img src="${esc(d.photoUrl)}" alt="${esc(d.name || "Profile")}" class="profile-photo-img" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`;
+        } else if (!wrap.querySelector("img")) {
+          // keep existing placeholder
+        }
+      }
+
+      if (d.name) {
+        document.getElementById("profile-name").textContent = d.name;
+        document.title = `${d.name} · WINN Platforms`;
+      }
+      if (d.eyebrow !== undefined) document.getElementById("profile-eyebrow").textContent = d.eyebrow;
+      if (d.role    !== undefined) document.getElementById("profile-role").innerHTML = esc(d.role).replace(/·/g, "&nbsp;·&nbsp;");
+
+      // Bio — split on blank lines into paragraphs
+      if (d.bio !== undefined) {
+        const bioContainer = document.getElementById("profile-bio-content");
+        const paras = d.bio.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+        if (paras.length) {
+          bioContainer.innerHTML = paras.map(p => `<p class="profile-text">${esc(p)}</p>`).join("");
+        }
+      }
+
+      // Tags
+      if (Array.isArray(d.tags)) {
+        document.getElementById("profile-tags").innerHTML =
+          d.tags.filter(Boolean).map(t => `<span class="profile-tag">${esc(t)}</span>`).join("");
+      }
+
+      // Links
+      if (Array.isArray(d.links)) {
+        document.getElementById("profile-links").innerHTML =
+          d.links.filter(l => l.url).map(l =>
+            `<a href="${esc(l.url)}" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">${esc(l.label || "Link")}</a>`
+          ).join("");
+      }
+    }
+
+    // ---- Render collaborators ----
+    function _renderCollabs(collabs) {
+      const list    = document.getElementById("collab-list");
+      const isAdmin = hasRole(_currentRole, "admin");
+      if (!Array.isArray(collabs) || collabs.length === 0) {
+        list.innerHTML = `<p style="color:var(--text-muted);font-size:.9rem">No collaborators added yet.</p>`;
+        return;
+      }
+      list.innerHTML = collabs.map((c, i) => `
+        <div class="collab-entry" data-index="${i}">
+          ${c.url
+            ? `<a href="${esc(c.url)}" class="collab-entry-name" target="_blank" rel="noopener">${esc(c.name)}</a>`
+            : `<span class="collab-entry-name">${esc(c.name)}</span>`}
+          <span class="collab-entry-inst">${esc(c.affiliation || "")}</span>
+          ${isAdmin ? `<button type="button" class="btn btn-ghost btn-sm remove-collab-btn" data-index="${i}" style="margin-left:auto;font-size:.75rem;padding:.15rem .5rem;color:var(--text-muted)">✕</button>` : ""}
+        </div>
+      `).join("");
+
+      if (isAdmin) {
+        list.querySelectorAll(".remove-collab-btn").forEach(btn => {
+          btn.addEventListener("click", () => _removeCollab(Number(btn.dataset.index)));
+        });
+      }
+    }
+
+    async function _removeCollab(index) {
+      if (!confirm("Remove this collaborator?")) return;
+      const collabs = [...(_profileData?.collaborators || [])];
+      collabs.splice(index, 1);
+      await _saveCollabs(collabs);
+    }
+
+    async function _saveCollabs(collabs) {
+      try {
+        const data = { ...(_profileData || {}), collaborators: collabs };
+        await setDoc(PROFILE_DOC, data);
+        _profileData = data;
+        _renderCollabs(collabs);
+        showToast("Collaborators updated.", "success");
+      } catch (err) { showToast("Save failed: " + err.message, "error"); }
+    }
+
+    // ---- Load profile ----
+    async function loadProfile() {
+      try {
+        const snap = await getDoc(PROFILE_DOC);
+        if (snap.exists()) {
+          _profileData = snap.data();
+          _renderProfile(_profileData);
+          _renderCollabs(_profileData.collaborators || []);
+        }
+      } catch (e) { console.warn("loadProfile", e); }
+    }
+
+    // ---- Edit form open / close ----
+    function _openEditForm() {
+      const d = _profileData || {};
+      _pendingPhotoUrl = null;
+      document.getElementById("profile-photo-preview").innerHTML = "";
+
+      document.getElementById("pf-name").value   = d.name    || "";
+      document.getElementById("pf-eyebrow").value = d.eyebrow || "";
+      document.getElementById("pf-role").value   = d.role    || "";
+      document.getElementById("pf-bio").value    = d.bio     || "";
+      document.getElementById("pf-tags").value   = Array.isArray(d.tags) ? d.tags.join(", ") : "";
+
+      const linksContainer = document.getElementById("pf-links-container");
+      linksContainer.innerHTML = "";
+      (Array.isArray(d.links) ? d.links : []).forEach(l => _addProfileLinkRow(l.url, l.label));
+
+      document.getElementById("profile-edit-wrap").style.display = "block";
+      document.getElementById("profile-edit-btn").style.display  = "none";
+      document.getElementById("profile-edit-wrap").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function _closeEditForm() {
+      document.getElementById("profile-edit-wrap").style.display = "none";
+      document.getElementById("profile-edit-btn").style.display  = "";
+    }
+
+    document.getElementById("profile-edit-btn").addEventListener("click", _openEditForm);
+    document.getElementById("profile-cancel-btn").addEventListener("click", _closeEditForm);
+    document.getElementById("pf-add-link-btn").addEventListener("click", () => _addProfileLinkRow());
+
+    // ---- Profile form submit ----
+    document.getElementById("profile-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errEl     = document.getElementById("profile-form-error");
+      const saveBtn   = document.getElementById("profile-save-btn");
+      errEl.textContent = ""; errEl.classList.remove("visible");
+
+      const name     = document.getElementById("pf-name").value.trim();
+      const eyebrow  = document.getElementById("pf-eyebrow").value.trim();
+      const role     = document.getElementById("pf-role").value.trim();
+      const bio      = document.getElementById("pf-bio").value.trim();
+      const tagsRaw  = document.getElementById("pf-tags").value;
+      const tags     = tagsRaw.split(",").map(t => t.trim()).filter(Boolean);
+      const links    = _getProfileLinks();
+      const photoUrl = _pendingPhotoUrl ?? (_profileData?.photoUrl ?? null);
+
+      if (!name) { errEl.textContent = "Name is required."; errEl.classList.add("visible"); return; }
+
+      saveBtn.disabled = true; saveBtn.textContent = "Saving…";
+      try {
+        const data = {
+          ...(_profileData || {}),
+          name, eyebrow, role, bio, tags, links, photoUrl,
+          collaborators: _profileData?.collaborators || []
+        };
+        await setDoc(PROFILE_DOC, data);
+        _profileData = data;
+        _renderProfile(data);
+        _closeEditForm();
+        showToast("Profile saved.", "success");
+      } catch (err) {
+        errEl.textContent = err.message || "Save failed."; errEl.classList.add("visible");
+      } finally {
+        saveBtn.disabled = false; saveBtn.textContent = "Save";
       }
     });
 
-    const logoutBtn = document.getElementById("nav-logout");
-    if (logoutBtn) {
-      logoutBtn.addEventListener("click", async () => {
-        await logout();
-        showToast("Signed out.", "info");
-      });
-    }
+    // ---- Add collaborator ----
+    document.getElementById("add-collab-btn").addEventListener("click", () => {
+      document.getElementById("add-collab-wrap").style.display = "block";
+      document.getElementById("add-collab-btn").style.display  = "none";
+      document.getElementById("collab-name").focus();
+    });
+
+    document.getElementById("collab-cancel-btn").addEventListener("click", () => {
+      document.getElementById("add-collab-wrap").style.display = "none";
+      document.getElementById("add-collab-btn").style.display  = "";
+      document.getElementById("collab-form").reset();
+    });
+
+    document.getElementById("collab-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById("collab-form-error");
+      errEl.textContent = ""; errEl.classList.remove("visible");
+
+      const name        = document.getElementById("collab-name").value.trim();
+      const affiliation = document.getElementById("collab-affiliation").value.trim();
+      const url         = document.getElementById("collab-url").value.trim() || null;
+
+      if (!name) { errEl.textContent = "Name is required."; errEl.classList.add("visible"); return; }
+
+      const collabs = [...(_profileData?.collaborators || []), { name, affiliation, url }];
+      await _saveCollabs(collabs);
+
+      document.getElementById("collab-form").reset();
+      document.getElementById("add-collab-wrap").style.display = "none";
+      document.getElementById("add-collab-btn").style.display  = "";
+    });
+
+    // ---- Auth ----
+    initAuth(async (user, role) => {
+      _currentRole = role;
+      updateNavUI(user, role);
+      if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
+
+      if (hasRole(role, "admin")) {
+        document.getElementById("profile-admin-bar").style.display = "";
+        document.getElementById("add-collab-btn").style.display    = "";
+      }
+
+      await loadProfile();
+    });
+
+    document.getElementById("nav-logout").addEventListener("click", async () => {
+      await logout();
+      showToast("Signed out.", "info");
+    });
   </script>
+
+  <style>
+    .link-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+    .link-row input { padding: .4rem .6rem; background: var(--input-bg, var(--bg-card)); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-size: .9rem; }
+    .link-row .link-url   { flex: 2; }
+    .link-row .link-label { flex: 1; }
+    .collab-entry { display: flex; align-items: center; gap: .75rem; }
+    a.collab-entry-name { color: var(--accent); text-decoration: none; }
+    a.collab-entry-name:hover { text-decoration: underline; }
+  </style>
 </body>
 </html>
