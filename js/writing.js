@@ -198,28 +198,36 @@ function _handleHash() {
   else _showList();
 }
 
+// Shared loading promise — ensures posts are fetched only once even if
+// initWritingPage is called twice (once immediately, once after auth).
+let _postsLoaded = null;
+
 export async function initWritingPage(role) {
   _userRole = role;
-  window.addEventListener("hashchange", _handleHash);
 
-  const rows = document.getElementById("writing-rows");
-  if (rows) rows.innerHTML = `<div class="spinner"><div class="spinner-ring"></div></div>`;
+  if (!_postsLoaded) {
+    window.addEventListener("hashchange", _handleHash);
+    const rows = document.getElementById("writing-rows");
+    if (rows) rows.innerHTML = `<div class="spinner"><div class="spinner-ring"></div></div>`;
 
-  try {
-    const snap = await getDocs(collection(db, COLLECTION));
-    _posts.clear();
-    snap.docs.forEach(d => _posts.set(d.id, d.data()));
-  } catch (err) {
-    if (rows) rows.innerHTML = `<p style="color:var(--danger)">Error loading posts: ${escHtml(err.message)}</p>`;
-    return;
+    _postsLoaded = getDocs(collection(db, COLLECTION)).then(snap => {
+      _posts.clear();
+      snap.docs.forEach(d => _posts.set(d.id, d.data()));
+    }).catch(err => {
+      if (rows) rows.innerHTML = `<p style="color:var(--danger)">Error loading posts: ${escHtml(err.message)}</p>`;
+      _postsLoaded = null; // allow retry on next call
+      throw err;
+    });
   }
+
+  try { await _postsLoaded; } catch { return; }
 
   _handleHash();
 
   const listHeader = document.getElementById("writing-list-header");
-  if (listHeader && hasRole(role, "moderator")) listHeader.style.display = "";
+  if (listHeader) listHeader.style.display = hasRole(role, "moderator") ? "" : "none";
 
-  if (hasRole(role, "moderator")) {
+  if (hasRole(role, "moderator") && !_quill) {
     try {
       _quill      = initEditor("writing-toolbar", "writing-editor", "writing");
       _thumbZone  = initThumbnailZone("writing-thumb", "writing-thumb-preview", "writing");

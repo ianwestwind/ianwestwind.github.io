@@ -215,6 +215,7 @@
 
     initLayoutControls();
     logVisit("writing");
+    initWritingPage("guest"); // load posts immediately for all visitors
 
     document.getElementById("nav-logout").addEventListener("click", async () => {
       await logout();
@@ -226,7 +227,7 @@
       updateNavUI(user, role);
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
 
-      await initWritingPage(role);
+      await initWritingPage(role); // upgrades UI for moderators; posts already loaded
       showStats(role);
     });
 
