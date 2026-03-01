@@ -357,7 +357,7 @@
           await uploadBytes(r, blob, { contentType: "image/jpeg" });
           _pendingPhotoUrl = await getDownloadURL(r);
           const prev = document.getElementById("profile-photo-preview");
-          prev.innerHTML = `<div class="thumb-preview" style="margin-top:.5rem"><img src="${esc(_pendingPhotoUrl)}" alt="Photo preview" style="max-height:80px;border-radius:50%" /><p style="font-size:.8rem;color:var(--text-muted);margin:.25rem 0 0">Photo ready — click Save to apply</p></div>`;
+          prev.innerHTML = `<div class="thumb-preview" style="margin-top:.5rem"><img src="${esc(_pendingPhotoUrl)}" alt="Photo preview" style="max-height:80px;border-radius:var(--radius)" /><p style="font-size:.8rem;color:var(--text-muted);margin:.25rem 0 0">Photo ready — click Save to apply</p></div>`;
           showToast("Photo ready.", "success");
         } catch { showToast("Photo upload failed.", "error"); }
       }, "image/jpeg", 0.92);
@@ -396,7 +396,7 @@
       const wrap = document.querySelector(".profile-photo-wrap");
       if (wrap) {
         if (d.photoUrl) {
-          wrap.innerHTML = `<img src="${esc(d.photoUrl)}" alt="${esc(d.name || "Profile")}" class="profile-photo-img" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`;
+          wrap.innerHTML = `<img src="${esc(d.photoUrl)}" alt="${esc(d.name || "Profile")}" class="profile-photo-img" />`;
         } else if (!wrap.querySelector("img")) {
           // keep existing placeholder
         }
@@ -493,7 +493,7 @@
       // Show existing photo in preview so admin can see what's currently set
       const preview = document.getElementById("profile-photo-preview");
       if (d?.photoUrl) {
-        preview.innerHTML = `<div class="thumb-preview" style="margin-top:.5rem"><img src="${esc(d.photoUrl)}" alt="Current photo" style="max-height:80px;border-radius:50%" /><p style="font-size:.8rem;color:var(--text-muted);margin:.25rem 0 0">Upload a new photo to replace</p></div>`;
+        preview.innerHTML = `<div class="thumb-preview" style="margin-top:.5rem"><img src="${esc(d.photoUrl)}" alt="Current photo" style="max-height:80px;border-radius:var(--radius)" /><p style="font-size:.8rem;color:var(--text-muted);margin:.25rem 0 0">Upload a new photo to replace</p></div>`;
       } else {
         preview.innerHTML = "";
       }
