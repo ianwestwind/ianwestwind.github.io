@@ -1,6 +1,6 @@
 // ============================================================
-// WINN Platforms — blog.js
-// Blog posts (moderator+ can post); thumbnail cards + scheduling
+// WINN Platforms — writing.js
+// Writing posts (moderator+ can post); thumbnail cards + scheduling
 // ============================================================
 
 import { db } from "./firebase-config.js";
@@ -15,7 +15,7 @@ import {
   initEditor, getEditorHTML, initThumbnailZone, initAttachmentZone, renderBody, highlightContent, initPreview
 } from "./editor.js";
 
-const COLLECTION = "blog_posts";
+const COLLECTION = "writing_posts";
 const _posts = new Map();
 let _quill      = null;
 let _thumbZone  = null;
@@ -48,7 +48,7 @@ function _isPublished(data) {
 }
 
 function _updateCount(n) {
-  const el = document.getElementById("blog-count");
+  const el = document.getElementById("writing-count");
   if (el) el.textContent = `${n} post${n !== 1 ? "s" : ""}`;
 }
 
@@ -56,7 +56,7 @@ function _showList() {
   document.getElementById("list-view").style.display   = "";
   document.getElementById("detail-view").style.display = "none";
 
-  const rows  = document.getElementById("blog-rows");
+  const rows  = document.getElementById("writing-rows");
   if (!rows) return;
 
   const isMod   = hasRole(_userRole, "moderator");
@@ -127,7 +127,7 @@ function _showDetail(id) {
     </div>
     <div class="post-detail-body rich-content" id="detail-body-${id}"></div>
     ${_attachmentsHTML(data.attachments)}
-    ${canDelete ? `<div class="post-detail-actions"><button type="button" class="btn btn-primary btn-sm" id="blog-edit-${id}">Edit</button><button type="button" class="btn btn-danger btn-sm" id="blog-delete-${id}">Delete Post</button></div>` : ""}
+    ${canDelete ? `<div class="post-detail-actions"><button type="button" class="btn btn-primary btn-sm" id="writing-edit-${id}">Edit</button><button type="button" class="btn btn-danger btn-sm" id="writing-delete-${id}">Delete Post</button></div>` : ""}
   `;
 
   const bodyEl = document.getElementById(`detail-body-${id}`);
@@ -137,8 +137,8 @@ function _showDetail(id) {
   document.getElementById("back-btn").addEventListener("click", () => { location.hash = ""; });
 
   if (canDelete) {
-    document.getElementById(`blog-edit-${id}`).addEventListener("click", () => _startEdit(id));
-    document.getElementById(`blog-delete-${id}`).addEventListener("click", async () => {
+    document.getElementById(`writing-edit-${id}`).addEventListener("click", () => _startEdit(id));
+    document.getElementById(`writing-delete-${id}`).addEventListener("click", async () => {
       if (!confirm("Delete this post?")) return;
       try {
         await deleteDoc(doc(db, COLLECTION, id));
@@ -155,25 +155,25 @@ function _startEdit(id) {
   if (!data) return;
   _editId = id;
 
-  const form      = document.getElementById("blog-post-form");
-  const toggleBtn = document.getElementById("blog-toggle-btn");
+  const form      = document.getElementById("writing-post-form");
+  const toggleBtn = document.getElementById("writing-toggle-btn");
   location.hash = "";
   if (form)      form.style.display      = "";
   if (toggleBtn) toggleBtn.style.display = "none";
 
-  const titleInput = document.getElementById("blog-title");
+  const titleInput = document.getElementById("writing-title");
   if (titleInput) titleInput.value = data.title || "";
   if (_quill) _quill.clipboard.dangerouslyPasteHTML(data.body || "");
   if (_thumbZone) _thumbZone.setThumbUrl(data.thumbnailUrl || null);
 
-  const paInput = document.getElementById("blog-publish-at");
+  const paInput = document.getElementById("writing-publish-at");
   if (paInput && data.publishAt) {
     const d = new Date(data.publishAt.seconds * 1000);
     d.setSeconds(0, 0);
     paInput.value = d.toISOString().slice(0, 16);
   }
 
-  const submitBtn = document.querySelector("#blog-form [type=submit]");
+  const submitBtn = document.querySelector("#writing-form [type=submit]");
   if (submitBtn) submitBtn.textContent = "Update Post";
   form?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -197,11 +197,11 @@ function _handleHash() {
   else _showList();
 }
 
-export async function initBlogPage(role) {
+export async function initWritingPage(role) {
   _userRole = role;
   window.addEventListener("hashchange", _handleHash);
 
-  const rows = document.getElementById("blog-rows");
+  const rows = document.getElementById("writing-rows");
   if (rows) rows.innerHTML = `<div class="spinner"><div class="spinner-ring"></div></div>`;
 
   try {
@@ -209,43 +209,43 @@ export async function initBlogPage(role) {
     _posts.clear();
     snap.docs.forEach(d => _posts.set(d.id, d.data()));
   } catch (err) {
-    if (rows) rows.innerHTML = `<p style="color:var(--danger)">Error loading blog: ${escHtml(err.message)}</p>`;
+    if (rows) rows.innerHTML = `<p style="color:var(--danger)">Error loading posts: ${escHtml(err.message)}</p>`;
     return;
   }
 
   _handleHash();
 
-  const listHeader = document.getElementById("blog-list-header");
+  const listHeader = document.getElementById("writing-list-header");
   if (listHeader && hasRole(role, "moderator")) listHeader.style.display = "";
 
   if (hasRole(role, "moderator")) {
     try {
-      _quill      = initEditor("blog-toolbar", "blog-editor", "blog");
-      _thumbZone  = initThumbnailZone("blog-thumb", "blog-thumb-preview", "blog");
-      _attachZone = initAttachmentZone("blog-attach-input", "blog-attach-list", "blog");
-      initPreview("blog-preview-btn", "blog-preview-panel", () => ({
-        title:    document.getElementById("blog-title")?.value.trim() || "",
+      _quill      = initEditor("writing-toolbar", "writing-editor", "writing");
+      _thumbZone  = initThumbnailZone("writing-thumb", "writing-thumb-preview", "writing");
+      _attachZone = initAttachmentZone("writing-attach-input", "writing-attach-list", "writing");
+      initPreview("writing-preview-btn", "writing-preview-panel", () => ({
+        title:    document.getElementById("writing-title")?.value.trim() || "",
         thread:   "",
         body:     _quill ? getEditorHTML(_quill) : "",
         thumbUrl: _thumbZone?.getThumbUrl() || null,
       }));
     } catch (e) {
-      console.warn("Blog editor init failed:", e);
+      console.warn("Writing editor init failed:", e);
     }
 
     // Set publishAt default to now
-    const pa = document.getElementById("blog-publish-at");
+    const pa = document.getElementById("writing-publish-at");
     if (pa) { const n = new Date(); n.setSeconds(0, 0); pa.value = n.toISOString().slice(0, 16); }
 
     // Toggle form
-    const toggleBtn = document.getElementById("blog-toggle-btn");
-    const form      = document.getElementById("blog-post-form");
+    const toggleBtn = document.getElementById("writing-toggle-btn");
+    const form      = document.getElementById("writing-post-form");
 
     function _resetFormState() {
       _editId = null;
       if (_quill) _quill.setContents([]);
       if (_thumbZone) _thumbZone.reset();
-      const sb = document.querySelector("#blog-form [type=submit]");
+      const sb = document.querySelector("#writing-form [type=submit]");
       if (sb) sb.textContent = "Publish";
     }
 
@@ -257,11 +257,11 @@ export async function initBlogPage(role) {
         if (!hidden) _resetFormState();
       });
     }
-    const cancelBtn = document.getElementById("blog-cancel-btn");
+    const cancelBtn = document.getElementById("writing-cancel-btn");
     if (cancelBtn && form) {
       cancelBtn.addEventListener("click", () => {
         form.style.display = "none";
-        const tb = document.getElementById("blog-toggle-btn");
+        const tb = document.getElementById("writing-toggle-btn");
         if (tb) { tb.style.display = ""; tb.textContent = "+ New Post"; }
         _resetFormState();
       });
@@ -271,15 +271,15 @@ export async function initBlogPage(role) {
   _handleHash();
 }
 
-export async function submitBlog() {
-  const titleInput = document.getElementById("blog-title");
-  const submitBtn  = document.querySelector("#blog-form [type=submit]");
-  const errorEl    = document.getElementById("blog-form-error");
+export async function submitWriting() {
+  const titleInput = document.getElementById("writing-title");
+  const submitBtn  = document.querySelector("#writing-form [type=submit]");
+  const errorEl    = document.getElementById("writing-form-error");
   const role       = getCurrentRole();
   const user       = getCurrentUser();
 
   if (!hasRole(role, "moderator")) {
-    showToast("Only moderators and admins can post on the blog.", "error"); return;
+    showToast("Only moderators and admins can post in Writing.", "error"); return;
   }
 
   const title  = titleInput.value.trim();
@@ -295,9 +295,9 @@ export async function submitBlog() {
   submitBtn.disabled    = true;
   submitBtn.textContent = editId ? "Updating…" : "Publishing…";
 
-  const form      = document.getElementById("blog-post-form");
-  const toggleBtn = document.getElementById("blog-toggle-btn");
-  const paInput   = document.getElementById("blog-publish-at");
+  const form      = document.getElementById("writing-post-form");
+  const toggleBtn = document.getElementById("writing-toggle-btn");
+  const paInput   = document.getElementById("writing-publish-at");
 
   function _closeForm() {
     titleInput.value = "";

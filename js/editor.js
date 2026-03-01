@@ -178,6 +178,59 @@ export function initAttachmentZone(inputId, listId, ns) {
   return { getAttachments: () => [...files], reset: () => { files.length = 0; list.innerHTML = ""; } };
 }
 
+// ---- Thumbnail crop modal ----
+function _ensureThumbCropModal() {
+  if (document.getElementById("_thumb-crop-modal")) return;
+  const m = document.createElement("div");
+  m.id = "_thumb-crop-modal";
+  m.style.cssText = "display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.88);align-items:center;justify-content:center;padding:1rem;";
+  m.innerHTML = `
+    <div style="background:var(--bg-card,#1e1e1e);border-radius:0.75rem;padding:1.25rem;max-width:720px;width:100%;display:flex;flex-direction:column;gap:1rem;">
+      <p style="margin:0;font-weight:600;">Crop thumbnail (16:9)</p>
+      <div style="height:55vh;">
+        <img id="_thumb-crop-img" src="" alt="" style="display:block;max-width:100%;" />
+      </div>
+      <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+        <button id="_thumb-crop-cancel" type="button" class="btn btn-ghost">Cancel</button>
+        <button id="_thumb-crop-confirm" type="button" class="btn btn-primary">Use this crop</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+}
+
+function _openThumbCropModal(dataUrl) {
+  return new Promise((resolve) => {
+    _ensureThumbCropModal();
+    const modal  = document.getElementById("_thumb-crop-modal");
+    const img    = document.getElementById("_thumb-crop-img");
+    const cancel = document.getElementById("_thumb-crop-cancel");
+    const confirm= document.getElementById("_thumb-crop-confirm");
+
+    modal.style.display = "flex";
+    img.src = dataUrl;
+
+    let cropper = null;
+    img.onload = () => {
+      cropper = new Cropper(img, { aspectRatio: 16 / 9, viewMode: 1, autoCropArea: 0.9 });
+    };
+
+    function cleanup() {
+      if (cropper) { cropper.destroy(); cropper = null; }
+      modal.style.display = "none";
+      img.onload = null;
+      img.src = "";
+    }
+
+    cancel.onclick = () => { cleanup(); resolve(null); };
+    confirm.onclick = () => {
+      if (!cropper) return;
+      const canvas = cropper.getCroppedCanvas({ width: 1280, height: 720 });
+      cleanup();
+      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.92);
+    };
+  });
+}
+
 // ---- Thumbnail zone ----
 // Returns { getThumbUrl(), reset() }
 export function initThumbnailZone(inputId, previewId, ns) {
@@ -194,6 +247,24 @@ export function initThumbnailZone(inputId, previewId, ns) {
     if (file.size > LIMITS.image) {
       showToast(`Thumbnail exceeds ${fmtMB(LIMITS.image)} limit.`, "error"); return;
     }
+
+    if (window.Cropper) {
+      const dataUrl = await new Promise((res) => {
+        const reader = new FileReader();
+        reader.onload = (e) => res(e.target.result);
+        reader.readAsDataURL(file);
+      });
+      const blob = await _openThumbCropModal(dataUrl);
+      if (!blob) return;
+      showToast("Uploading thumbnail…", "info");
+      try {
+        const croppedFile = new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" });
+        thumbUrl = await storeFile(croppedFile, `thumbnails/${ns}/${Date.now()}-${croppedFile.name}`);
+        _showThumb(thumbUrl);
+      } catch { showToast("Thumbnail upload failed.", "error"); }
+      return;
+    }
+
     showToast("Uploading thumbnail…", "info");
     try {
       thumbUrl = await storeFile(file, `thumbnails/${ns}/${Date.now()}-${file.name}`);
@@ -223,7 +294,7 @@ export function initThumbnailZone(inputId, previewId, ns) {
 // ---- Init editor ----
 // toolbarId: id of the HTML toolbar <div>
 // editorId:  id of the editor <div>
-// ns:        storage namespace ("forum" | "news" | "blog")
+// ns:        storage namespace ("forum" | "news" | "writing")
 export function initEditor(toolbarId, editorId, ns) {
   ensureRegistered();
 

@@ -152,12 +152,12 @@ service cloud.firestore {
     }
 
 
-    // ---- /blog_posts/{id} ----
-    match /blog_posts/{id} {
+    // ---- /writing_posts/{id} ----
+    match /writing_posts/{id} {
       // Everyone can read
       allow read: if true;
 
-      // Only moderators and admins can create blog posts
+      // Only moderators and admins can create writing posts
       allow create: if hasRole('moderator')
         && request.resource.data.authorUid == request.auth.uid;
 
