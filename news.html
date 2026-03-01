@@ -209,6 +209,7 @@
     import { initLayoutControls } from "./js/layout-controls.js";
     import { initNewsPage, submitNews } from "./js/news.js";
     import { logVisit, showStats } from "./js/analytics.js";
+    import { initNavVisibility } from "./js/nav-visibility.js";
 
     initLayoutControls();
     logVisit("news");
@@ -221,6 +222,7 @@
 
     initAuth(async (user, role) => {
       updateNavUI(user, role);
+      await initNavVisibility(role);
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
 
       if (hasRole(role, "moderator")) {

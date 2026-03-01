@@ -117,12 +117,14 @@
     import { initAuth, login, register, logout, updateNavUI, showToast } from "./js/auth.js?v=3";
     import { initLayoutControls } from "./js/layout-controls.js";
     import { logVisit } from "./js/analytics.js";
+    import { initNavVisibility } from "./js/nav-visibility.js";
 
     initLayoutControls();
     logVisit("login");
 
-    initAuth((user, role) => {
+    initAuth(async (user, role) => {
       updateNavUI(user, role);
+      await initNavVisibility(role);
       if (user) window.location.href = "index.html";
     });
 

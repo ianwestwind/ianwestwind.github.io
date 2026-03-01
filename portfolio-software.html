@@ -199,6 +199,7 @@
     import { initEditor, getEditorHTML, initThumbnailZone, initAttachmentZone, renderBody, highlightContent }
       from "./js/editor.js";
     import { logVisit, showStats } from "./js/analytics.js";
+    import { initNavVisibility } from "./js/nav-visibility.js";
 
     initLayoutControls();
     logVisit("software");
@@ -462,6 +463,7 @@
     initAuth(async (user, role) => {
       _currentRole = role;
       updateNavUI(user, role);
+      await initNavVisibility(role);
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
       if (hasRole(role, "admin")) document.getElementById("software-list-header").style.display = "";
       await loadSoftwareProjects();

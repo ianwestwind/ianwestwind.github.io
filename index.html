@@ -284,6 +284,7 @@
     import { initAuth, updateNavUI, logout, showToast, hasRole } from "./js/auth.js?v=3";
     import { initLayoutControls } from "./js/layout-controls.js";
     import { logVisit, showStats } from "./js/analytics.js";
+    import { initNavVisibility } from "./js/nav-visibility.js";
     import {
       doc, getDoc, setDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -617,6 +618,7 @@
     initAuth(async (user, role) => {
       _currentRole = role;
       updateNavUI(user, role);
+      await initNavVisibility(role);
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
 
       const isAdmin = hasRole(role, "admin");

@@ -230,6 +230,55 @@ p { color: var(--text-secondary); }
   color: #fff;
 }
 
+/* ---- Nav visibility eye toggles (admin only) ---- */
+
+/* Hide toggleable links until initNavVisibility has run, preventing a flash
+   of hidden items. Uses visibility:hidden so layout space is preserved. */
+html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="portfolio-software.html"],
+html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="portfolio-design.html"],
+html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="forum.html"],
+html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="writing.html"],
+html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="news.html"] {
+  visibility: hidden;
+}
+
+/* Row wrapper injected by JS for admin (holds link + eye button) */
+.nav-link-row {
+  display: flex;
+  align-items: center;
+}
+.nav-link-row > a {
+  flex: 1;
+}
+
+/* Eye toggle button */
+.nav-eye-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0.5rem 0.75rem 0.5rem 0;
+  cursor: pointer;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity var(--transition), color var(--transition);
+  line-height: 1;
+}
+.nav-sidebar:hover .nav-eye-btn {
+  opacity: 0.4;
+}
+.nav-eye-btn:hover {
+  opacity: 1 !important;
+  color: var(--text-primary);
+}
+/* Always show at partial opacity when the item is currently hidden,
+   so admin can find and re-enable it */
+.nav-eye-btn.is-hidden {
+  opacity: 0.6;
+}
+
 /* Two right sidebars: (1) user — email, status, signout on one line; (2) theme, font, size */
 .sidebar-user {
   width: var(--sidebar-user-width);
@@ -302,7 +351,7 @@ p { color: var(--text-secondary); }
 
 .main-content {
   flex: 1;
-  min-width: 0;
+  min-width: 480px;
   display: flex;
   flex-direction: column;
   background: var(--bg-primary);

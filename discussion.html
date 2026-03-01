@@ -123,6 +123,7 @@
     import { initLayoutControls } from "./js/layout-controls.js";
     import { initDiscussionPage, submitDiscussionPost } from "./js/discussion.js";
     import { logVisit, showStats } from "./js/analytics.js";
+    import { initNavVisibility } from "./js/nav-visibility.js";
 
     initLayoutControls();
     logVisit("discussion");
@@ -135,6 +136,7 @@
 
     initAuth(async (user, role) => {
       updateNavUI(user, role);
+      await initNavVisibility(role);
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
 
       const gate      = document.getElementById("post-gate");

@@ -212,6 +212,7 @@
     import { initLayoutControls } from "./js/layout-controls.js";
     import { initWritingPage, submitWriting } from "./js/writing.js?v=3";
     import { logVisit, showStats } from "./js/analytics.js";
+    import { initNavVisibility } from "./js/nav-visibility.js";
 
     initLayoutControls();
     logVisit("writing");
@@ -225,6 +226,7 @@
 
     initAuth(async (user, role) => {
       updateNavUI(user, role);
+      await initNavVisibility(role);
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
 
       await initWritingPage(role); // upgrades UI for moderators; posts already loaded
