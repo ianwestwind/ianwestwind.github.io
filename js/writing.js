@@ -119,13 +119,13 @@ function _showDetail(id) {
       <button class="back-btn" id="back-btn">← Back</button>
       ${scheduled ? '<span class="scheduled-badge" style="margin-left:.5rem">Scheduled</span>' : ""}
     </div>
+    ${data.thumbnailUrl ? `<div class="post-detail-thumb"><img src="${escHtml(data.thumbnailUrl)}" alt="" /></div>` : ""}
     <div class="post-detail-title">${escHtml(data.title || "(untitled)")}</div>
     <div class="post-detail-meta">
       <span>${escHtml(data.authorName || "Anonymous")}</span>
       <span>·</span>
       <span>${formatDate(data.publishAt ?? data.createdAt)}</span>
     </div>
-    ${data.thumbnailUrl ? `<div class="post-detail-thumb"><img src="${escHtml(data.thumbnailUrl)}" alt="" /></div>` : ""}
     <div class="post-detail-body rich-content" id="detail-body-${id}"></div>
     ${_attachmentsHTML(data.attachments)}
     ${canDelete ? `<div class="post-detail-actions"><button type="button" class="btn btn-primary btn-sm" id="writing-edit-${id}">Edit</button><button type="button" class="btn btn-danger btn-sm" id="writing-delete-${id}">Delete Post</button></div>` : ""}
