@@ -6,8 +6,8 @@
 
 import { db } from "./firebase-config.js";
 import {
-  collection, addDoc, getDocs, doc, updateDoc, deleteDoc,
-  query, orderBy, serverTimestamp, Timestamp
+  collection, addDoc, getDocs, getDoc, setDoc, doc, updateDoc, deleteDoc,
+  query, orderBy, where, serverTimestamp, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getCurrentUser, hasRole, escHtml, showToast, formatDate
@@ -24,6 +24,10 @@ let _calYear        = 0;
 let _calMonth       = 0;       // 0-based
 let _selectedDate   = null;    // "YYYY-MM-DD"
 let _selectedSlotId = null;
+
+let _consultSettings = { approvalMessage: "", videoLink: "" };
+const DEFAULT_APPROVAL_MSG =
+  "Your consultation has been confirmed. Please join using the meeting link below at your scheduled time.";
 
 // ---- Helpers ----
 
@@ -398,6 +402,154 @@ function _initAdminSlotForm() {
   }
 }
 
+// ---- Consultation settings (admin) ----
+
+async function _loadConsultSettings() {
+  try {
+    const snap = await getDoc(doc(db, "site_config", "consultation_settings"));
+    if (snap.exists()) {
+      _consultSettings = { ..._consultSettings, ...snap.data() };
+    }
+  } catch (e) {
+    console.error("Failed to load consultation settings:", e);
+  }
+}
+
+function _renderAdminSettings() {
+  const msgEl  = document.getElementById("cs-approval-msg");
+  const linkEl = document.getElementById("cs-video-link");
+  if (msgEl)  msgEl.value  = _consultSettings.approvalMessage || "";
+  if (linkEl) linkEl.value = _consultSettings.videoLink || "";
+}
+
+export async function saveConsultSettings() {
+  const msgEl   = document.getElementById("cs-approval-msg");
+  const linkEl  = document.getElementById("cs-video-link");
+  const saveBtn = document.getElementById("cs-save-btn");
+
+  const approvalMessage = msgEl?.value.trim() || "";
+  const videoLink       = linkEl?.value.trim() || "";
+
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "Saving…"; }
+  try {
+    await setDoc(
+      doc(db, "site_config", "consultation_settings"),
+      { approvalMessage, videoLink },
+      { merge: true }
+    );
+    _consultSettings = { approvalMessage, videoLink };
+    showToast("Settings saved.", "success");
+  } catch (e) {
+    showToast("Save failed: " + e.message, "error");
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "Save Settings"; }
+  }
+}
+
+// ---- My Bookings (user) ----
+
+function _buildGoogleCalUrl(ts, durationMins, videoLink) {
+  let start;
+  if (ts && typeof ts.toDate === "function") start = ts.toDate();
+  else if (ts && typeof ts.seconds === "number") start = new Date(ts.seconds * 1000);
+  else start = new Date(ts);
+  const end = new Date(start.getTime() + (durationMins || 30) * 60000);
+  const fmt = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const params = new URLSearchParams({
+    action:   "TEMPLATE",
+    text:     "Consultation - WINN Platforms",
+    dates:    `${fmt(start)}/${fmt(end)}`,
+    details:  videoLink ? `Join at: ${videoLink}` : "Consultation with WINN Platforms",
+    location: videoLink || "",
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+function _buildIcsDataUri(ts, durationMins, videoLink) {
+  let start;
+  if (ts && typeof ts.toDate === "function") start = ts.toDate();
+  else if (ts && typeof ts.seconds === "number") start = new Date(ts.seconds * 1000);
+  else start = new Date(ts);
+  const end = new Date(start.getTime() + (durationMins || 30) * 60000);
+  const fmt = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const uid = `consult-${start.getTime()}@winn-platforms`;
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//WINN Platforms//EN",
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTART:${fmt(start)}`,
+    `DTEND:${fmt(end)}`,
+    "SUMMARY:Consultation - WINN Platforms",
+    videoLink ? `LOCATION:${videoLink}` : "",
+    videoLink ? `DESCRIPTION:Join at: ${videoLink}` : "",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].filter(Boolean).join("\r\n");
+  return "data:text/calendar;charset=utf8," + encodeURIComponent(ics);
+}
+
+async function _loadUserBookings() {
+  const user = getCurrentUser();
+  if (!user) return;
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, BOOKINGS_COL),
+        where("requesterUid", "==", user.uid),
+        orderBy("createdAt", "desc")
+      )
+    );
+    const bookings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    _renderMyBookings(bookings);
+  } catch (e) {
+    // Composite index may not exist yet; log hint but don't surface to user
+    console.warn("My bookings query failed (may need Firestore composite index):", e.message);
+  }
+}
+
+function _renderMyBookings(bookings) {
+  const section = document.getElementById("my-bookings-section");
+  const listEl  = document.getElementById("my-bookings-list");
+  if (!section || !listEl) return;
+
+  if (bookings.length === 0) {
+    section.style.display = "none";
+    return;
+  }
+
+  section.style.display = "";
+
+  listEl.innerHTML = bookings.map(b => {
+    const dateLabel  = formatDate(b.slotDateTime);
+    const status     = b.status || "pending";
+    const isApproved = status === "approved";
+    const videoLink  = b.videoLink || _consultSettings.videoLink || "";
+    const gcalUrl    = isApproved
+      ? _buildGoogleCalUrl(b.slotDateTime, b.durationMins, videoLink)
+      : "";
+    const icsUri     = isApproved
+      ? _buildIcsDataUri(b.slotDateTime, b.durationMins, videoLink)
+      : "";
+
+    return `
+      <div class="my-booking-card">
+        <div class="my-booking-header">
+          ${_statusBadgeHTML(status)}
+          <span class="my-booking-date">${escHtml(dateLabel)}</span>
+        </div>
+        <div class="my-booking-topic">${escHtml(b.topic || "")}</div>
+        ${isApproved ? `
+        <div class="my-booking-cal-row">
+          ${videoLink ? `<a href="${escHtml(videoLink)}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">Join Meeting</a>` : ""}
+          ${gcalUrl   ? `<a href="${escHtml(gcalUrl)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">+ Google Calendar</a>` : ""}
+          ${icsUri    ? `<a href="${escHtml(icsUri)}" download="consultation.ics" class="btn btn-ghost btn-sm">+ Download ICS</a>` : ""}
+        </div>` : ""}
+      </div>`;
+  }).join("");
+}
+
 // ---- Public exports ----
 
 export async function initConsultationPage(role) {
@@ -425,12 +577,14 @@ export async function initConsultationPage(role) {
     try {
       await _loadSlots();
       await _loadBookings();
+      await _loadConsultSettings();
     } catch (e) {
       showToast("Error loading data: " + e.message, "error");
       return;
     }
 
     _initAdminSlotForm();
+    _renderAdminSettings();
     _renderAdminSlots();
     _renderAdminBookings();
   } else {
@@ -460,6 +614,9 @@ export async function initConsultationPage(role) {
       if (wrap)    wrap.style.display    = "none";
       _selectedSlotId = null;
     });
+
+    await _loadConsultSettings();
+    await _loadUserBookings();
   }
 }
 
@@ -558,6 +715,7 @@ export async function submitBooking() {
     await addDoc(collection(db, BOOKINGS_COL), {
       slotId:         _selectedSlotId,
       slotDateTime:   slot.dateTime,
+      durationMins:   slot.durationMins || 30,
       requesterUid:   user.uid,
       requesterName:  name,
       requesterEmail: email,
@@ -574,6 +732,7 @@ export async function submitBooking() {
     if (confirm) confirm.style.display = "";
 
     showToast("Booking request submitted!", "success");
+    await _loadUserBookings();
   } catch (e) {
     showToast("Submission failed: " + e.message, "error");
   } finally {
@@ -584,9 +743,16 @@ export async function submitBooking() {
 
 export async function updateBookingStatus(bookingId, newStatus) {
   try {
-    await updateDoc(doc(db, BOOKINGS_COL, bookingId), { status: newStatus });
+    const updateData = {
+      status:          newStatus,
+      statusUpdatedAt: serverTimestamp(),
+    };
+    if (newStatus === "approved" && _consultSettings.videoLink) {
+      updateData.videoLink = _consultSettings.videoLink;
+    }
+    await updateDoc(doc(db, BOOKINGS_COL, bookingId), updateData);
     const existing = _bookings.get(bookingId);
-    if (existing) _bookings.set(bookingId, { ...existing, status: newStatus });
+    if (existing) _bookings.set(bookingId, { ...existing, ...updateData });
     _renderAdminBookings();
     showToast("Status updated.", "info");
   } catch (e) {

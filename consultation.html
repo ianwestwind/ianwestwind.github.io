@@ -104,10 +104,32 @@
               <button type="button" class="btn btn-ghost btn-sm" id="booking-new-btn">← Back to Calendar</button>
             </div>
 
+            <!-- My Bookings -->
+            <div id="my-bookings-section" style="display:none;margin-top:2.5rem">
+              <div class="list-header" style="margin-bottom:1rem">
+                <span class="list-header-count">MY BOOKINGS</span>
+              </div>
+              <div id="my-bookings-list"></div>
+            </div>
+
           </div><!-- /#consult-user-view -->
 
           <!-- ===== ADMIN VIEW ===== -->
           <div id="consult-admin-view" style="display:none">
+
+            <!-- Email & meeting settings -->
+            <div class="post-form" id="consult-settings-form" style="margin-bottom:2rem">
+              <h3>Email &amp; Meeting Settings</h3>
+              <div class="form-group">
+                <label for="cs-approval-msg">Default Approval Message</label>
+                <textarea id="cs-approval-msg" rows="4" placeholder="Your consultation has been confirmed. Please join using the meeting link below at your scheduled time."></textarea>
+              </div>
+              <div class="form-group">
+                <label for="cs-video-link">Video / Zoom Meeting Link</label>
+                <input type="url" id="cs-video-link" placeholder="https://zoom.us/j/…" />
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" id="cs-save-btn">Save Settings</button>
+            </div>
 
             <!-- Slot management -->
             <div class="list-header" id="admin-slot-list-header">
@@ -195,7 +217,7 @@
     import { initLayoutControls } from "./js/layout-controls.js";
     import { logVisit, showStats } from "./js/analytics.js";
     import { initNavVisibility } from "./js/nav-visibility.js";
-    import { initConsultationPage, submitSlot, submitBooking } from "./js/consultation.js";
+    import { initConsultationPage, submitSlot, submitBooking, saveConsultSettings } from "./js/consultation.js";
 
     initLayoutControls();
     logVisit("consultation");
@@ -213,6 +235,8 @@
       await initConsultationPage(role);
       showStats(role);
     });
+
+    document.getElementById("cs-save-btn")?.addEventListener("click", () => saveConsultSettings());
 
     document.getElementById("slot-form").addEventListener("submit", async e => {
       e.preventDefault();
