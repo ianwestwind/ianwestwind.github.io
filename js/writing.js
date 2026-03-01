@@ -17,11 +17,12 @@ import {
 
 const COLLECTION = "writing_posts";
 const _posts = new Map();
-let _quill      = null;
-let _thumbZone  = null;
-let _attachZone = null;
-let _userRole   = "guest";
-let _editId     = null;
+let _quill       = null;
+let _thumbZone   = null;
+let _attachZone  = null;
+let _userRole    = "guest";
+let _editId      = null;
+let _initialized = false;
 
 function _snippet(html, max = 130) {
   if (!html) return "";
@@ -198,29 +199,26 @@ function _handleHash() {
   else _showList();
 }
 
-// Shared loading promise — ensures posts are fetched only once even if
-// initWritingPage is called twice (once immediately, once after auth).
-let _postsLoaded = null;
-
 export async function initWritingPage(role) {
   _userRole = role;
 
-  if (!_postsLoaded) {
+  // Load posts only on first call; subsequent calls (e.g. after auth) just update UI.
+  if (!_initialized) {
+    _initialized = true;
     window.addEventListener("hashchange", _handleHash);
     const rows = document.getElementById("writing-rows");
     if (rows) rows.innerHTML = `<div class="spinner"><div class="spinner-ring"></div></div>`;
 
-    _postsLoaded = getDocs(collection(db, COLLECTION)).then(snap => {
+    try {
+      const snap = await getDocs(collection(db, COLLECTION));
       _posts.clear();
       snap.docs.forEach(d => _posts.set(d.id, d.data()));
-    }).catch(err => {
+    } catch (err) {
+      _initialized = false; // allow retry
       if (rows) rows.innerHTML = `<p style="color:var(--danger)">Error loading posts: ${escHtml(err.message)}</p>`;
-      _postsLoaded = null; // allow retry on next call
-      throw err;
-    });
+      return;
+    }
   }
-
-  try { await _postsLoaded; } catch { return; }
 
   _handleHash();
 
