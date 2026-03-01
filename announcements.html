@@ -107,8 +107,10 @@
     import { initAuth, updateNavUI, logout, hasRole, showToast } from "./js/auth.js?v=3";
     import { initLayoutControls } from "./js/layout-controls.js";
     import { initAnnouncementsPage, submitAnnouncement } from "./js/announcements.js";
+    import { logVisit, showStats } from "./js/analytics.js";
 
     initLayoutControls();
+    logVisit("announcements");
 
     document.getElementById("nav-logout").addEventListener("click", async () => {
       await logout();
@@ -125,6 +127,7 @@
       }
 
       await initAnnouncementsPage();
+      showStats(role);
     });
 
     document.getElementById("ann-form").addEventListener("submit", async e => {

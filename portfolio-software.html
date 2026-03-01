@@ -198,8 +198,10 @@
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { initEditor, getEditorHTML, initThumbnailZone, initAttachmentZone, renderBody, highlightContent }
       from "./js/editor.js";
+    import { logVisit, showStats } from "./js/analytics.js";
 
     initLayoutControls();
+    logVisit("software");
 
     const GRID_ID      = "projects-grid";
     const COUNT_ID     = "software-count";
@@ -463,6 +465,7 @@
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
       if (hasRole(role, "admin")) document.getElementById("software-list-header").style.display = "";
       await loadSoftwareProjects();
+      showStats(role);
 
       const toggleBtn = document.getElementById("software-toggle-form-btn");
       const formWrap  = document.getElementById(FORM_WRAP_ID);

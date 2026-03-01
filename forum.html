@@ -206,8 +206,10 @@
     import { initAuth, updateNavUI, logout, hasRole, showToast } from "./js/auth.js?v=3";
     import { initLayoutControls } from "./js/layout-controls.js";
     import { initForumPage, submitForumPost } from "./js/forum.js";
+    import { logVisit, showStats } from "./js/analytics.js";
 
     initLayoutControls();
+    logVisit("forum");
 
     document.getElementById("nav-logout").addEventListener("click", async () => {
       await logout();
@@ -233,6 +235,7 @@
       }
 
       await initForumPage();
+      showStats(role);
     });
 
     document.getElementById("forum-form").addEventListener("submit", async e => {

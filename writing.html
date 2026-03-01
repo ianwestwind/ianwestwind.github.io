@@ -211,8 +211,10 @@
     import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js?v=3";
     import { initLayoutControls } from "./js/layout-controls.js";
     import { initWritingPage, submitWriting } from "./js/writing.js?v=3";
+    import { logVisit, showStats } from "./js/analytics.js";
 
     initLayoutControls();
+    logVisit("writing");
 
     document.getElementById("nav-logout").addEventListener("click", async () => {
       await logout();
@@ -225,6 +227,7 @@
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
 
       await initWritingPage(role);
+      showStats(role);
     });
 
     document.getElementById("writing-form").addEventListener("submit", async e => {

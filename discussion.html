@@ -122,8 +122,10 @@
     import { initAuth, updateNavUI, logout, hasRole, showToast } from "./js/auth.js?v=3";
     import { initLayoutControls } from "./js/layout-controls.js";
     import { initDiscussionPage, submitDiscussionPost } from "./js/discussion.js";
+    import { logVisit, showStats } from "./js/analytics.js";
 
     initLayoutControls();
+    logVisit("discussion");
 
     document.getElementById("nav-logout").addEventListener("click", async () => {
       await logout();
@@ -150,6 +152,7 @@
       }
 
       await initDiscussionPage();
+      showStats(role);
     });
 
     document.getElementById("discussion-form").addEventListener("submit", async e => {

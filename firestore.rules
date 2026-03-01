@@ -193,6 +193,15 @@ service cloud.firestore {
     }
 
 
+    // ---- /visits/{id} ----
+    // Anyone can log a visit; only admins can read stats
+    match /visits/{id} {
+      allow create: if true;
+      allow read:   if hasRole('admin');
+      allow update, delete: if false;
+    }
+
+
     // ---- Deny all other paths ----
     match /{document=**} {
       allow read, write: if false;

@@ -283,6 +283,7 @@
     import { auth, db, storage } from "./js/firebase-config.js";
     import { initAuth, updateNavUI, logout, showToast, hasRole } from "./js/auth.js?v=3";
     import { initLayoutControls } from "./js/layout-controls.js";
+    import { logVisit, showStats } from "./js/analytics.js";
     import {
       doc, getDoc, setDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -291,6 +292,7 @@
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
     initLayoutControls();
+    logVisit("index");
 
     const PROFILE_DOC = doc(db, "site_config", "profile");
     let _currentRole = "guest";
@@ -622,6 +624,7 @@
       document.getElementById("add-collab-btn").style.display    = isAdmin ? "" : "none";
 
       await loadProfile();
+      showStats(role);
     });
 
     document.getElementById("nav-logout").addEventListener("click", async () => {
