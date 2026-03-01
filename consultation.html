@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Consultation · WINN Platforms</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="nav-sidebar">
+      <a href="index.html" class="nav-brand">WINN<span> Platforms</span></a>
+      <div class="nav-links">
+        <a href="index.html">About</a>
+        <a href="portfolio-software.html">Software</a>
+        <a href="portfolio-design.html">Design</a>
+        <a href="forum.html">WINNers</a>
+        <a href="writing.html">Writing</a>
+        <a href="news.html">News</a>
+        <a href="consultation.html" class="active">Consultation</a>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-wrapper">
+        <div class="page-title-bar">
+          <div class="container">
+            <h1>Consultation</h1>
+            <p>Book a session — pick an available time slot and submit your request</p>
+          </div>
+        </div>
+
+        <div class="section-sm container">
+
+          <!-- Auth gate (guests) -->
+          <div id="consult-gate" style="display:none">
+            <div class="access-gate">
+              <div class="gate-icon">📅</div>
+              <h3>Sign in to book a consultation</h3>
+              <p>You need to be signed in to view available slots and submit a booking request.</p>
+              <a href="login.html" class="btn btn-primary btn-sm">Sign In</a>
+            </div>
+          </div>
+
+          <!-- ===== USER VIEW ===== -->
+          <div id="consult-user-view" style="display:none">
+
+            <!-- Calendar -->
+            <div class="cal-wrapper">
+              <div class="cal-header">
+                <button type="button" class="btn btn-ghost btn-sm" id="cal-prev">←</button>
+                <span id="cal-month-label" class="cal-month-label"></span>
+                <button type="button" class="btn btn-ghost btn-sm" id="cal-next">→</button>
+              </div>
+              <div class="cal-weekdays">
+                <span>Sun</span><span>Mon</span><span>Tue</span>
+                <span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+              </div>
+              <div class="cal-grid" id="cal-grid"></div>
+            </div>
+
+            <!-- Slot list for selected date -->
+            <div id="slot-section" style="display:none">
+              <div class="list-header" style="margin-bottom:.5rem">
+                <span id="slot-section-label" class="list-header-count"></span>
+              </div>
+              <div id="slot-list"></div>
+            </div>
+
+            <!-- Booking form (shown after picking a slot) -->
+            <div id="booking-form-wrap" class="post-form" style="display:none;margin-top:1.5rem">
+              <h3>Request a Consultation</h3>
+              <p id="booking-slot-info" style="font-size:.85rem;color:var(--text-muted);margin-bottom:1rem"></p>
+              <form id="booking-form">
+                <div class="form-group">
+                  <label for="book-name">Full Name</label>
+                  <input type="text" id="book-name" placeholder="Your name" required />
+                </div>
+                <div class="form-group">
+                  <label for="book-email">Email</label>
+                  <input type="email" id="book-email" placeholder="you@example.com" required />
+                </div>
+                <div class="form-group">
+                  <label for="book-phone">Phone <span style="color:var(--text-muted)">(optional)</span></label>
+                  <input type="tel" id="book-phone" placeholder="+1 555 000 0000" />
+                </div>
+                <div class="form-group">
+                  <label for="book-topic">Topic / Purpose</label>
+                  <textarea id="book-topic" rows="3" placeholder="Briefly describe what you'd like to discuss…" required></textarea>
+                </div>
+                <p class="form-error" id="booking-form-error"></p>
+                <div style="display:flex;gap:.5rem;align-items:center">
+                  <button type="submit" class="btn btn-primary btn-sm" id="booking-submit-btn">Submit Request</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="booking-cancel-btn">Cancel</button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Confirmation after submit -->
+            <div id="booking-confirmation" class="post-form" style="display:none;margin-top:1.5rem">
+              <h3>Request Submitted ✓</h3>
+              <p style="color:var(--text-muted);margin:.5rem 0 1rem">Your consultation request has been received. You'll be notified once it's reviewed.</p>
+              <button type="button" class="btn btn-ghost btn-sm" id="booking-new-btn">← Back to Calendar</button>
+            </div>
+
+          </div><!-- /#consult-user-view -->
+
+          <!-- ===== ADMIN VIEW ===== -->
+          <div id="consult-admin-view" style="display:none">
+
+            <!-- Slot management -->
+            <div class="list-header" id="admin-slot-list-header">
+              <span class="list-header-count" id="admin-slot-count"></span>
+              <button type="button" class="btn btn-ghost btn-sm" id="slot-toggle-btn">+ Add Slot</button>
+            </div>
+
+            <div id="slot-add-form" class="post-form" style="display:none">
+              <h3>Add Consultation Slot</h3>
+              <form id="slot-form">
+                <div class="form-group">
+                  <label for="slot-datetime">Date &amp; Time</label>
+                  <input type="datetime-local" id="slot-datetime" required />
+                </div>
+                <div class="form-group">
+                  <label for="slot-duration">Duration (minutes)</label>
+                  <input type="number" id="slot-duration" value="30" min="15" max="180" step="15" required />
+                </div>
+                <div class="form-group">
+                  <label for="slot-notes">Notes <span style="color:var(--text-muted)">(optional — visible to you only)</span></label>
+                  <input type="text" id="slot-notes" placeholder="e.g. Zoom link, topic area…" />
+                </div>
+                <p class="form-error" id="slot-form-error"></p>
+                <div style="display:flex;gap:.5rem;align-items:center">
+                  <button type="submit" class="btn btn-primary btn-sm" id="slot-submit-btn">Add Slot</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="slot-cancel-btn">Cancel</button>
+                </div>
+              </form>
+            </div>
+
+            <div id="admin-slot-list">
+              <div class="spinner"><div class="spinner-ring"></div></div>
+            </div>
+
+            <!-- All booking requests -->
+            <div class="list-header" style="margin-top:2.5rem">
+              <span class="list-header-count" id="admin-booking-count"></span>
+            </div>
+            <div id="admin-booking-list"></div>
+
+          </div><!-- /#consult-admin-view -->
+
+        </div>
+      </div>
+    </main>
+
+    <aside class="sidebar-user">
+      <div class="nav-user" id="nav-user" style="display:none"></div>
+      <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign In</a>
+      <button class="btn btn-ghost btn-sm" id="nav-logout" style="display:none">Sign Out</button>
+    </aside>
+    <aside class="sidebar-controls">
+      <div class="controls-group">
+        <span class="controls-group-label">Theme</span>
+        <div class="controls-theme">
+          <button type="button" id="theme-light">Light</button>
+          <button type="button" id="theme-dark">Dark</button>
+        </div>
+      </div>
+      <div class="controls-group">
+        <span class="controls-group-label">Font</span>
+        <div class="controls-font">
+          <button type="button" class="font-option" data-font="inter" aria-label="Inter">Aa</button>
+          <button type="button" class="font-option" data-font="georgia" aria-label="Georgia">Aa</button>
+          <button type="button" class="font-option" data-font="system" aria-label="System">Aa</button>
+        </div>
+      </div>
+      <div class="controls-group">
+        <span class="controls-group-label">Size</span>
+        <div class="controls-font-size">
+          <button type="button" class="font-size-option" data-size="s">S</button>
+          <button type="button" class="font-size-option" data-size="m">M</button>
+          <button type="button" class="font-size-option" data-size="l">L</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="footer">
+    <div class="container"><p>© 2026 WINN Platforms</p></div>
+  </footer>
+
+  <script type="module">
+    import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js?v=3";
+    import { initLayoutControls } from "./js/layout-controls.js";
+    import { logVisit, showStats } from "./js/analytics.js";
+    import { initNavVisibility } from "./js/nav-visibility.js";
+    import { initConsultationPage, submitSlot, submitBooking } from "./js/consultation.js";
+
+    initLayoutControls();
+    logVisit("consultation");
+
+    document.getElementById("nav-logout").addEventListener("click", async () => {
+      await logout();
+      showToast("Signed out.", "info");
+      window.location.reload();
+    });
+
+    initAuth(async (user, role) => {
+      updateNavUI(user, role);
+      await initNavVisibility(role);
+      if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
+      await initConsultationPage(role);
+      showStats(role);
+    });
+
+    document.getElementById("slot-form").addEventListener("submit", async e => {
+      e.preventDefault();
+      await submitSlot();
+    });
+
+    document.getElementById("booking-form").addEventListener("submit", async e => {
+      e.preventDefault();
+      await submitBooking();
+    });
+  </script>
+</body>
+</html>

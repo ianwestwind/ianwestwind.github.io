@@ -171,6 +171,31 @@ service cloud.firestore {
     }
 
 
+    // ---- /consultation_slots/{id} ----
+    match /consultation_slots/{id} {
+      // Authenticated users can read slots
+      allow read: if isAuth();
+      // Only admin can manage slots
+      allow create, update, delete: if hasRole('admin');
+    }
+
+
+    // ---- /consultations/{id} ----
+    match /consultations/{id} {
+      // Admin sees all; requester sees their own
+      allow read: if hasRole('admin')
+        || (isAuth() && resource.data.requesterUid == request.auth.uid);
+      // Authenticated users can create for themselves only
+      allow create: if isAuth()
+        && request.resource.data.requesterUid == request.auth.uid;
+      // Only admin can update (approve/reject)
+      allow update: if hasRole('admin');
+      // Admin or the requester can delete
+      allow delete: if hasRole('admin')
+        || isOwner(resource.data.requesterUid);
+    }
+
+
     // ---- /software_projects/{id} ----
     match /software_projects/{id} {
       allow read: if true;
