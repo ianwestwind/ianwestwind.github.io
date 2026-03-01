@@ -14,7 +14,7 @@ const FONTS = {
 const FONTSIZE_MAP = { s: "14px", m: "16px", l: "18px" };
 
 export function getStoredTheme() {
-  return localStorage.getItem(THEME_KEY) || "dark";
+  return localStorage.getItem(THEME_KEY) || "light";
 }
 
 export function getStoredFont() {
