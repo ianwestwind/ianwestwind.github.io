@@ -24,6 +24,11 @@ let _userRole    = "guest";
 let _editId      = null;
 let _initialized = false;
 
+function _toLocalDateTimeInput(date) {
+  const pad = n => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 function _snippet(html, max = 130) {
   if (!html) return "";
   const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
@@ -172,7 +177,7 @@ function _startEdit(id) {
   if (paInput && data.publishAt) {
     const d = new Date(data.publishAt.seconds * 1000);
     d.setSeconds(0, 0);
-    paInput.value = d.toISOString().slice(0, 16);
+    paInput.value = _toLocalDateTimeInput(d);
   }
 
   const submitBtn = document.querySelector("#writing-form [type=submit]");
@@ -242,7 +247,7 @@ export async function initWritingPage(role) {
 
     // Set publishAt default to now
     const pa = document.getElementById("writing-publish-at");
-    if (pa) { const n = new Date(); n.setSeconds(0, 0); pa.value = n.toISOString().slice(0, 16); }
+    if (pa) { const n = new Date(); n.setSeconds(0, 0); pa.value = _toLocalDateTimeInput(n); }
 
     // Toggle form
     const toggleBtn = document.getElementById("writing-toggle-btn");
@@ -311,7 +316,7 @@ export async function submitWriting() {
     if (_quill) _quill.setContents([]);
     if (_thumbZone) _thumbZone.reset();
     if (_attachZone) _attachZone.reset();
-    if (paInput) { const n = new Date(); n.setSeconds(0, 0); paInput.value = n.toISOString().slice(0, 16); }
+    if (paInput) { const n = new Date(); n.setSeconds(0, 0); paInput.value = _toLocalDateTimeInput(n); }
     if (form)      form.style.display      = "none";
     if (toggleBtn) { toggleBtn.style.display = ""; toggleBtn.textContent = "+ New Post"; }
     _editId = null;
