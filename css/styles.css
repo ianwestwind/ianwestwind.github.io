@@ -1660,7 +1660,7 @@ p { color: var(--text-secondary); }
 }
 
 .profile-name {
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-size: clamp(1.3rem, 2.5vw, 1.7rem);
   font-weight: 800;
   color: var(--text-primary);
   line-height: 1.15;

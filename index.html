@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 </head>
 <body>
 
@@ -260,6 +262,23 @@
     </div>
   </footer>
 
+  <!-- ===== Photo crop modal ===== -->
+  <div id="crop-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.88); align-items:center; justify-content:center; padding:1rem;">
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:10px; max-width:460px; width:100%; padding:1.5rem; display:flex; flex-direction:column; gap:1rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-weight:600; font-size:.95rem">Crop &amp; Position Photo</span>
+        <span style="font-size:.8rem; color:var(--text-muted)">Scroll to zoom · Drag to reposition</span>
+      </div>
+      <div style="max-height:340px; overflow:hidden; border-radius:6px; background:#111;">
+        <img id="crop-img" src="" alt="" style="display:block; max-width:100%;" />
+      </div>
+      <div style="display:flex; gap:.5rem; justify-content:flex-end;">
+        <button type="button" class="btn btn-ghost btn-sm" id="crop-cancel-btn">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" id="crop-confirm-btn">Use this photo</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { auth, db, storage } from "./js/firebase-config.js";
     import { initAuth, updateNavUI, logout, showToast, hasRole } from "./js/auth.js?v=3";
@@ -277,6 +296,7 @@
     let _currentRole = "guest";
     let _profileData = null;
     let _pendingPhotoUrl = null; // photo uploaded during edit session
+    let _cropper      = null;
 
     // ---- Helpers ----
     function esc(s) {
@@ -284,21 +304,63 @@
       const d = document.createElement("div"); d.textContent = s; return d.innerHTML;
     }
 
-    // ---- Photo upload ----
-    document.getElementById("profile-photo-input").addEventListener("change", async () => {
+    // ---- Photo upload → crop modal ----
+    document.getElementById("profile-photo-input").addEventListener("change", () => {
       const file = document.getElementById("profile-photo-input").files[0];
       document.getElementById("profile-photo-input").value = "";
       if (!file) return;
       if (file.size > 10 * 1024 * 1024) { showToast("Photo exceeds 10 MB.", "error"); return; }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const cropImg  = document.getElementById("crop-img");
+        const cropModal = document.getElementById("crop-modal");
+
+        if (_cropper) { _cropper.destroy(); _cropper = null; }
+        cropImg.src = "";
+        cropModal.style.display = "flex";
+
+        cropImg.onload = () => {
+          _cropper = new Cropper(cropImg, {
+            aspectRatio: 1,
+            viewMode:    1,
+            movable:     true,
+            zoomable:    true,
+            rotatable:   false,
+            scalable:    false,
+            guides:      false,
+            center:      true,
+            highlight:   false,
+            background:  false,
+          });
+        };
+        cropImg.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById("crop-cancel-btn").addEventListener("click", () => {
+      document.getElementById("crop-modal").style.display = "none";
+      if (_cropper) { _cropper.destroy(); _cropper = null; }
+    });
+
+    document.getElementById("crop-confirm-btn").addEventListener("click", () => {
+      if (!_cropper) return;
+      const canvas = _cropper.getCroppedCanvas({ width: 400, height: 400 });
+      _cropper.destroy(); _cropper = null;
+      document.getElementById("crop-modal").style.display = "none";
+
       showToast("Uploading photo…", "info");
-      try {
-        const r   = ref(storage, `profile/photo-${Date.now()}-${file.name}`);
-        await uploadBytes(r, file);
-        _pendingPhotoUrl = await getDownloadURL(r);
-        const prev = document.getElementById("profile-photo-preview");
-        prev.innerHTML = `<div class="thumb-preview"><img src="${esc(_pendingPhotoUrl)}" alt="Photo preview" style="max-height:80px;border-radius:50%;margin-top:.5rem" /></div>`;
-        showToast("Photo ready.", "success");
-      } catch { showToast("Photo upload failed.", "error"); }
+      canvas.toBlob(async (blob) => {
+        try {
+          const r = ref(storage, `profile/photo-${Date.now()}.jpg`);
+          await uploadBytes(r, blob, { contentType: "image/jpeg" });
+          _pendingPhotoUrl = await getDownloadURL(r);
+          const prev = document.getElementById("profile-photo-preview");
+          prev.innerHTML = `<div class="thumb-preview" style="margin-top:.5rem"><img src="${esc(_pendingPhotoUrl)}" alt="Photo preview" style="max-height:80px;border-radius:50%" /><p style="font-size:.8rem;color:var(--text-muted);margin:.25rem 0 0">Photo ready — click Save to apply</p></div>`;
+          showToast("Photo ready.", "success");
+        } catch { showToast("Photo upload failed.", "error"); }
+      }, "image/jpeg", 0.92);
     });
 
     // ---- Link rows (profile form) ----
