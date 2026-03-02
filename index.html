@@ -326,7 +326,7 @@
 
         cropImg.onload = () => {
           _cropper = new Cropper(cropImg, {
-            aspectRatio: 1,
+            aspectRatio: 1 / 1.3,
             viewMode:    1,
             movable:     true,
             zoomable:    true,
@@ -350,7 +350,7 @@
 
     document.getElementById("crop-confirm-btn").addEventListener("click", () => {
       if (!_cropper) return;
-      const canvas = _cropper.getCroppedCanvas({ width: 400, height: 400 });
+      const canvas = _cropper.getCroppedCanvas({ width: 400, height: 520 });
       _cropper.destroy(); _cropper = null;
       document.getElementById("crop-modal").style.display = "none";
 
