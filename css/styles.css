@@ -2430,6 +2430,74 @@ pre.ql-syntax.hljs { border: none; }
   margin-top: 0.4rem;
 }
 
+/* ── News simple list ────────────────────────────────────── */
+.news-row {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.12s, padding-left 0.12s;
+}
+
+.news-row:hover {
+  background: var(--bg-card);
+  padding-left: 0.5rem;
+}
+
+.news-row-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.news-row-snippet {
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+  line-height: 1.4;
+}
+
+.news-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.news-row-likes {
+  margin-left: 0.25rem;
+}
+
+/* ── News like button ────────────────────────────────────── */
+.news-like-row {
+  margin: 1.5rem 0 1rem;
+}
+
+.news-like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.news-like-btn:hover {
+  background: var(--bg-card);
+  border-color: var(--text-muted);
+}
+
+.news-like-btn.is-liked {
+  color: #e05;
+  border-color: #e05;
+  background: rgba(238, 0, 85, 0.06);
+}
+
 /* ── Post navigation strip ───────────────────────────────── */
 .post-nav-strip {
   display: flex;

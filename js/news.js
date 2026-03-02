@@ -1,12 +1,12 @@
 // ============================================================
 // WINN Platforms — news.js
-// News posts (moderator/admin only); thumbnail cards + scheduling
+// News posts (moderator/admin only); simple list + scheduling
 // ============================================================
 
 import { db } from "./firebase-config.js";
 import {
   collection, addDoc, getDocs, deleteDoc, doc, updateDoc,
-  query, orderBy, serverTimestamp, Timestamp
+  serverTimestamp, Timestamp, increment
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getCurrentUser, getCurrentRole, hasRole, escHtml, showToast, formatDate
@@ -64,25 +64,21 @@ function _showList() {
   rows.innerHTML = visible.map(([id, data]) => {
     const isPub  = _isPublished(data);
     const badge  = (!isPub && isMod) ? `<span class="scheduled-badge">Scheduled</span>` : "";
-    const thumb  = data.thumbnailUrl
-      ? `<img src="${escHtml(data.thumbnailUrl)}" alt="" class="pub-card-thumb" />`
-      : `<div class="pub-card-thumb pub-card-thumb-placeholder">📰</div>`;
+    const likes  = data.likeCount > 0 ? `<span class="news-row-likes">❤️ ${data.likeCount}</span>` : "";
     return `
-      <div class="pub-card" data-id="${escHtml(id)}" role="button" tabindex="0">
-        ${thumb}
-        <div class="pub-card-content">
-          <div class="pub-card-title">${escHtml(data.title || "(untitled)")} ${badge}</div>
-          <div class="pub-card-snippet">${escHtml(_snippet(data.body))}</div>
-          <div class="pub-card-meta">
-            <span>${escHtml(data.authorName || "Staff")}</span>
-            <span>·</span>
-            <span>${formatDate(data.publishAt ?? data.createdAt)}</span>
-          </div>
+      <div class="news-row" data-id="${escHtml(id)}" role="button" tabindex="0">
+        <div class="news-row-title">${escHtml(data.title || "(untitled)")} ${badge}</div>
+        <div class="news-row-snippet">${escHtml(_snippet(data.body))}</div>
+        <div class="news-row-meta">
+          <span>${escHtml(data.authorName || "Staff")}</span>
+          <span>·</span>
+          <span>${formatDate(data.publishAt ?? data.createdAt)}</span>
+          ${likes}
         </div>
       </div>`;
   }).join("");
 
-  rows.querySelectorAll(".pub-card").forEach(row => {
+  rows.querySelectorAll(".news-row").forEach(row => {
     const open = () => { location.hash = row.dataset.id; };
     row.addEventListener("click", open);
     row.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
@@ -125,6 +121,10 @@ function _showDetail(id) {
     .filter(([, d]) => isMod || _isPublished(d))
     .sort((a, b) => _publishSec(b[1]) - _publishSec(a[1]));
 
+  const likedKey  = `winnews_liked_${id}`;
+  const isLiked   = localStorage.getItem(likedKey) === "1";
+  const likeCount = data.likeCount || 0;
+
   const detailView = document.getElementById("detail-view");
   detailView.innerHTML = `
     <div class="post-detail-header">
@@ -139,9 +139,13 @@ function _showDetail(id) {
     </div>
     <div class="post-detail-body rich-content" id="detail-body-${id}"></div>
     ${_attachmentsHTML(data.attachments)}
+    <div class="news-like-row">
+      <button class="news-like-btn${isLiked ? " is-liked" : ""}" id="news-like-btn-${id}">
+        ❤️ <span id="news-like-count-${id}">${likeCount}</span>
+      </button>
+    </div>
     ${canDelete ? `<div class="post-detail-actions"><button type="button" class="btn btn-primary btn-sm" id="news-edit-${id}">Edit</button><button type="button" class="btn btn-danger btn-sm" id="news-delete-${id}">Delete Post</button></div>` : ""}
     ${_navStripHtml(sortedPairs, id)}
-    <div id="news-comments-${id}" class="comments-section"></div>
   `;
 
   const bodyEl = document.getElementById(`detail-body-${id}`);
@@ -156,7 +160,31 @@ function _showDetail(id) {
     item.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav(); } });
   });
 
-  _loadAndRenderComments(id);
+  const likeBtn = document.getElementById(`news-like-btn-${id}`);
+  const countEl = document.getElementById(`news-like-count-${id}`);
+  likeBtn.addEventListener("click", async () => {
+    const wasLiked = likeBtn.classList.contains("is-liked");
+    const delta    = wasLiked ? -1 : 1;
+    const oldCount = parseInt(countEl.textContent) || 0;
+    const newCount = Math.max(0, oldCount + delta);
+
+    // Optimistic update
+    likeBtn.classList.toggle("is-liked");
+    countEl.textContent = newCount;
+    if (wasLiked) localStorage.removeItem(likedKey);
+    else          localStorage.setItem(likedKey, "1");
+
+    try {
+      await updateDoc(doc(db, COLLECTION, id), { likeCount: increment(delta) });
+      _items.set(id, { ..._items.get(id), likeCount: newCount });
+    } catch {
+      // Revert on failure
+      likeBtn.classList.toggle("is-liked");
+      countEl.textContent = oldCount;
+      if (wasLiked) localStorage.setItem(likedKey, "1");
+      else          localStorage.removeItem(likedKey);
+    }
+  });
 
   if (canDelete) {
     document.getElementById(`news-edit-${id}`).addEventListener("click", () => _startEdit(id));
@@ -169,205 +197,6 @@ function _showDetail(id) {
         location.hash = "";
       } catch (err) { showToast("Delete failed: " + err.message, "error"); }
     });
-  }
-}
-
-async function _loadAndRenderComments(postId) {
-  const section = document.getElementById(`news-comments-${postId}`);
-  if (!section) return;
-
-  const role = getCurrentRole();
-  const user = getCurrentUser();
-  const canComment = hasRole(role, "regular");
-
-  let comments = [];
-  try {
-    const q = query(
-      collection(db, COLLECTION, postId, "comments"),
-      orderBy("createdAt", "asc")
-    );
-    const snap = await getDocs(q);
-    comments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch (err) {
-    console.error("Comments load error:", err);
-    section.innerHTML = `<p style="color:var(--danger)">Error loading comments: ${escHtml(err.message)}</p>`;
-    return;
-  }
-
-  const topLevel = comments.filter(c => !c.parentId);
-  const repliesByParent = {};
-  comments.filter(c => c.parentId).forEach(r => {
-    (repliesByParent[r.parentId] ??= []).push(r);
-  });
-
-  const visibleCount = comments.filter(c => !c.deleted).length;
-
-  section.innerHTML = `
-    <div class="comments-header">Comments (${visibleCount})</div>
-    <div id="news-comments-list-${postId}"></div>
-    ${canComment ? `
-      <div class="comment-form">
-        <textarea id="news-new-comment-${postId}" class="comment-textarea" placeholder="Add a comment…" rows="3"></textarea>
-        <div class="comment-form-actions">
-          <button class="btn btn-primary btn-sm" id="news-submit-comment-${postId}">Post Comment</button>
-        </div>
-      </div>
-    ` : ""}
-  `;
-
-  _renderCommentsList(postId, topLevel, repliesByParent, canComment, user, role);
-
-  if (canComment) {
-    document.getElementById(`news-submit-comment-${postId}`)?.addEventListener("click", async () => {
-      const ta = document.getElementById(`news-new-comment-${postId}`);
-      const body = ta?.value.trim();
-      if (!body) return;
-      const btn = document.getElementById(`news-submit-comment-${postId}`);
-      btn.disabled = true;
-      await _submitComment(postId, body, null);
-      if (ta) ta.value = "";
-      btn.disabled = false;
-    });
-  }
-}
-
-function _renderCommentsList(postId, topLevel, repliesByParent, canComment, user, role) {
-  const list = document.getElementById(`news-comments-list-${postId}`);
-  if (!list) return;
-
-  if (topLevel.length === 0) {
-    list.innerHTML = `<p class="comments-empty">No comments yet. Be the first!</p>`;
-  } else {
-    list.innerHTML = topLevel.map(c => {
-      const replies = repliesByParent[c.id] || [];
-      const isDeleted = c.deleted === true;
-      const canDeleteC = hasRole(role, "admin") || (user && user.uid === c.authorUid);
-      return `
-        <div class="comment${isDeleted ? " comment-is-deleted" : ""}" data-id="${escHtml(c.id)}">
-          ${isDeleted ? `<div class="comment-deleted-msg">[comment deleted]</div>` : `
-            <div class="comment-meta">
-              <span class="comment-author">${escHtml(c.authorName || "Anonymous")}</span>
-              <span class="comment-date">· ${formatDate(c.createdAt)}</span>
-            </div>
-            <div class="comment-body">${escHtml(c.body || "")}</div>
-            <div class="comment-actions">
-              ${canComment ? `<button class="btn btn-ghost btn-sm reply-btn" data-comment-id="${escHtml(c.id)}">Reply</button>` : ""}
-              ${canDeleteC ? `<button class="btn btn-ghost btn-sm delete-comment-btn" data-comment-id="${escHtml(c.id)}" data-has-replies="${replies.length > 0}">Delete</button>` : ""}
-            </div>
-          `}
-          <div class="comment-replies">
-            ${replies.map(r => {
-              const isDeletedR = r.deleted === true;
-              const canDeleteR = hasRole(role, "admin") || (user && user.uid === r.authorUid);
-              return `
-                <div class="comment comment-reply${isDeletedR ? " comment-is-deleted" : ""}">
-                  ${isDeletedR ? `<div class="comment-deleted-msg">[comment deleted]</div>` : `
-                    <div class="comment-meta">
-                      <span class="comment-author">${escHtml(r.authorName || "Anonymous")}</span>
-                      <span class="comment-date">· ${formatDate(r.createdAt)}</span>
-                    </div>
-                    <div class="comment-body">${escHtml(r.body || "")}</div>
-                    <div class="comment-actions">
-                      ${canComment ? `<button class="btn btn-ghost btn-sm reply-to-reply-btn" data-parent-id="${escHtml(c.id)}" data-reply-to="${escHtml(r.authorName || "Anonymous")}">Reply</button>` : ""}
-                      ${canDeleteR ? `<button class="btn btn-ghost btn-sm delete-comment-btn" data-comment-id="${escHtml(r.id)}" data-has-replies="false">Delete</button>` : ""}
-                    </div>
-                  `}
-                </div>`;
-            }).join("")}
-          </div>
-          ${canComment && !isDeleted ? `
-            <div class="reply-form" id="news-reply-form-${escHtml(c.id)}" style="display:none">
-              <textarea class="comment-textarea" placeholder="Write a reply…" rows="2"></textarea>
-              <div class="comment-form-actions">
-                <button class="btn btn-primary btn-sm submit-reply-btn" data-comment-id="${escHtml(c.id)}">Post Reply</button>
-                <button class="btn btn-ghost btn-sm cancel-reply-btn" data-comment-id="${escHtml(c.id)}">Cancel</button>
-              </div>
-            </div>
-          ` : ""}
-        </div>`;
-    }).join("");
-  }
-
-  if (canComment) {
-    list.querySelectorAll(".reply-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const form = document.getElementById(`news-reply-form-${btn.dataset.commentId}`);
-        if (form) form.style.display = form.style.display === "none" ? "" : "none";
-      });
-    });
-    list.querySelectorAll(".reply-to-reply-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const form = document.getElementById(`news-reply-form-${btn.dataset.parentId}`);
-        if (form) {
-          form.style.display = "";
-          const ta = form.querySelector("textarea");
-          if (ta) { ta.value = `@${btn.dataset.replyTo} `; ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
-        }
-      });
-    });
-    list.querySelectorAll(".submit-reply-btn").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const cid = btn.dataset.commentId;
-        const form = document.getElementById(`news-reply-form-${cid}`);
-        const ta = form?.querySelector("textarea");
-        const body = ta?.value.trim();
-        if (!body) return;
-        btn.disabled = true;
-        await _submitComment(postId, body, cid);
-        if (ta) ta.value = "";
-        if (form) form.style.display = "none";
-        btn.disabled = false;
-      });
-    });
-    list.querySelectorAll(".cancel-reply-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const form = document.getElementById(`news-reply-form-${btn.dataset.commentId}`);
-        if (form) form.style.display = "none";
-      });
-    });
-  }
-
-  list.querySelectorAll(".delete-comment-btn").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      await _deleteComment(postId, btn.dataset.commentId, btn.dataset.hasReplies === "true");
-    });
-  });
-}
-
-async function _deleteComment(postId, commentId, hasReplies) {
-  if (!confirm("Delete this comment?")) return;
-  try {
-    if (hasReplies) {
-      await updateDoc(doc(db, COLLECTION, postId, "comments", commentId), { deleted: true });
-    } else {
-      await deleteDoc(doc(db, COLLECTION, postId, "comments", commentId));
-    }
-    showToast("Comment deleted.", "info");
-    await _loadAndRenderComments(postId);
-  } catch (err) {
-    showToast("Failed to delete: " + err.message, "error");
-  }
-}
-
-async function _submitComment(postId, body, parentId) {
-  const user = getCurrentUser();
-  const role = getCurrentRole();
-  if (!hasRole(role, "regular") || !user) {
-    showToast("You must be logged in to comment.", "error");
-    return;
-  }
-  try {
-    await addDoc(collection(db, COLLECTION, postId, "comments"), {
-      body,
-      authorUid:  user.uid,
-      authorName: user.displayName || user.email,
-      createdAt:  serverTimestamp(),
-      parentId:   parentId || null,
-    });
-    showToast(parentId ? "Reply posted!" : "Comment posted!", "success");
-    await _loadAndRenderComments(postId);
-  } catch (err) {
-    showToast("Failed to post: " + err.message, "error");
   }
 }
 
@@ -530,7 +359,7 @@ export async function submitNews() {
 
   try {
     if (editId) {
-      // Update existing post (preserve attachments, author, createdAt)
+      // Update existing post (preserve attachments, author, createdAt, likeCount)
       const publishAt = paInput?.value
         ? Timestamp.fromDate(new Date(paInput.value))
         : _items.get(editId)?.publishAt ?? Timestamp.fromDate(new Date());
@@ -560,6 +389,7 @@ export async function submitNews() {
         authorName:   user.displayName || user.email,
         publishAt,
         createdAt:    serverTimestamp(),
+        likeCount:    0,
       };
 
       const newDoc = await addDoc(collection(db, COLLECTION), postData);
