@@ -114,6 +114,26 @@ service cloud.firestore {
     }
 
 
+    // ---- /writing_posts/{postId}/comments/{cid} ----
+    match /writing_posts/{postId}/comments/{cid} {
+      allow read: if true;
+      allow create: if isAuth()
+        && request.resource.data.authorUid == request.auth.uid;
+      allow update: if isOwner(resource.data.authorUid) || hasRole('admin');
+      allow delete: if hasRole('admin') || isOwner(resource.data.authorUid);
+    }
+
+
+    // ---- /news_posts/{postId}/comments/{cid} ----
+    match /news_posts/{postId}/comments/{cid} {
+      allow read: if true;
+      allow create: if isAuth()
+        && request.resource.data.authorUid == request.auth.uid;
+      allow update: if isOwner(resource.data.authorUid) || hasRole('admin');
+      allow delete: if hasRole('admin') || isOwner(resource.data.authorUid);
+    }
+
+
     // ---- /discussion_posts/{id} ----
     match /discussion_posts/{id} {
       // Everyone can read

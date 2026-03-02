@@ -72,6 +72,25 @@ function _showList() {
   _updateCount(_posts.size);
 }
 
+function _navStripHtml(sortedPairs, currentId) {
+  if (sortedPairs.length <= 1) return "";
+  const ci = sortedPairs.findIndex(([id]) => id === currentId);
+  if (ci === -1) return "";
+  let start = Math.max(0, ci - 2);
+  let end   = Math.min(sortedPairs.length - 1, ci + 2);
+  if (ci - start < 2) end   = Math.min(sortedPairs.length - 1, end + (2 - (ci - start)));
+  if (end - ci   < 2) start = Math.max(0, start - (2 - (end - ci)));
+  return `<div class="post-nav-strip">${
+    sortedPairs.slice(start, end + 1).map(([id, data]) => {
+      const isCurrent = id === currentId;
+      const title = escHtml((data.title || "(untitled)").slice(0, 45));
+      return isCurrent
+        ? `<div class="post-nav-item post-nav-current"><span class="post-nav-title">${title}</span></div>`
+        : `<div class="post-nav-item" role="button" tabindex="0" data-nav-id="${escHtml(id)}"><span class="post-nav-title">${title}</span></div>`;
+    }).join("")
+  }</div>`;
+}
+
 function _showDetail(id) {
   const data = _posts.get(id);
   if (!data) { location.hash = ""; return; }
@@ -87,6 +106,10 @@ function _showDetail(id) {
   const isAuthor  = user && authorUid && String(user.uid) === authorUid
     || (user && !authorUid && (user.displayName === data.authorName || (user.email && user.email === data.authorName)));
   const canDelete = hasRole(role, "admin") || hasRole(role, "moderator") || isAuthor;
+
+  const sortedPairs = [..._posts.entries()].sort((a, b) =>
+    (b[1].createdAt?.seconds ?? 0) - (a[1].createdAt?.seconds ?? 0)
+  );
 
   detailView.innerHTML = `
     <div class="post-detail-header">
@@ -104,6 +127,7 @@ function _showDetail(id) {
     <div class="post-detail-body rich-content" id="forum-detail-body-${id}"></div>
     ${_attachmentsHTML(data.attachments)}
     ${canDelete ? `<div class="post-detail-actions"><button type="button" class="btn btn-primary btn-sm" id="forum-edit-${id}">Edit</button><button type="button" class="btn btn-danger btn-sm" id="forum-delete-${id}">Delete Post</button></div>` : ""}
+    ${_navStripHtml(sortedPairs, id)}
     <div id="forum-comments-${id}" class="comments-section"></div>
   `;
 
@@ -112,6 +136,12 @@ function _showDetail(id) {
   highlightContent(bodyEl);
 
   document.getElementById("back-btn").addEventListener("click", () => { location.hash = ""; });
+
+  detailView.querySelectorAll(".post-nav-item[data-nav-id]").forEach(item => {
+    const nav = () => { location.hash = item.dataset.navId; };
+    item.addEventListener("click", nav);
+    item.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav(); } });
+  });
 
   if (canDelete) {
     document.getElementById(`forum-edit-${id}`).addEventListener("click", () => _startEdit(id));
