@@ -73,14 +73,16 @@ function _showList() {
   _updateCount(_posts.size);
 }
 
-function _renderNavStrip(container, sortedPairs, currentId) {
+function _renderNavStrip(container, sortedPairs, currentId, autoAdjust = true) {
   const PAGE  = 5;
   const total = sortedPairs.length;
   if (total <= 1) { container.innerHTML = ""; return; }
 
-  const ci = sortedPairs.findIndex(([id]) => id === currentId);
-  if (ci >= 0 && (ci < _navOffset || ci >= _navOffset + PAGE)) {
-    _navOffset = Math.floor(ci / PAGE) * PAGE;
+  if (autoAdjust) {
+    const ci = sortedPairs.findIndex(([id]) => id === currentId);
+    if (ci >= 0 && (ci < _navOffset || ci >= _navOffset + PAGE)) {
+      _navOffset = Math.floor(ci / PAGE) * PAGE;
+    }
   }
   _navOffset = Math.max(0, Math.min(_navOffset, Math.floor((total - 1) / PAGE) * PAGE));
 
@@ -123,18 +125,18 @@ function _renderNavStrip(container, sortedPairs, currentId) {
 
   container.querySelector(".post-nav-prev")?.addEventListener("click", () => {
     _navOffset = Math.max(0, _navOffset - PAGE);
-    _renderNavStrip(container, sortedPairs, currentId);
+    _renderNavStrip(container, sortedPairs, currentId, false);
   });
 
   container.querySelector(".post-nav-next")?.addEventListener("click", () => {
     _navOffset = Math.min(Math.floor((total - 1) / PAGE) * PAGE, _navOffset + PAGE);
-    _renderNavStrip(container, sortedPairs, currentId);
+    _renderNavStrip(container, sortedPairs, currentId, false);
   });
 
   container.querySelectorAll(".post-nav-page[data-page]").forEach(btn => {
     btn.addEventListener("click", () => {
       _navOffset = parseInt(btn.dataset.page) * PAGE;
-      _renderNavStrip(container, sortedPairs, currentId);
+      _renderNavStrip(container, sortedPairs, currentId, false);
     });
   });
 }
