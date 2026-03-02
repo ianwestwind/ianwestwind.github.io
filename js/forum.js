@@ -21,6 +21,7 @@ let _quill      = null;
 let _thumbZone  = null;
 let _attachZone = null;
 let _editId     = null; // set while editing an existing post
+let _navOffset  = 0;   // current page offset for the nav strip
 
 function _updateCount(n) {
   const el = document.getElementById("post-count");
@@ -72,23 +73,70 @@ function _showList() {
   _updateCount(_posts.size);
 }
 
-function _navStripHtml(sortedPairs, currentId) {
-  if (sortedPairs.length <= 1) return "";
+function _renderNavStrip(container, sortedPairs, currentId) {
+  const PAGE  = 5;
+  const total = sortedPairs.length;
+  if (total <= 1) { container.innerHTML = ""; return; }
+
   const ci = sortedPairs.findIndex(([id]) => id === currentId);
-  if (ci === -1) return "";
-  let start = Math.max(0, ci - 2);
-  let end   = Math.min(sortedPairs.length - 1, ci + 2);
-  if (ci - start < 2) end   = Math.min(sortedPairs.length - 1, end + (2 - (ci - start)));
-  if (end - ci   < 2) start = Math.max(0, start - (2 - (end - ci)));
-  return `<div class="post-nav-strip">${
-    sortedPairs.slice(start, end + 1).map(([id, data]) => {
-      const isCurrent = id === currentId;
-      const title = escHtml((data.title || "(untitled)").slice(0, 45));
-      return isCurrent
-        ? `<div class="post-nav-item post-nav-current"><span class="post-nav-title">${title}</span></div>`
-        : `<div class="post-nav-item" role="button" tabindex="0" data-nav-id="${escHtml(id)}"><span class="post-nav-title">${title}</span></div>`;
-    }).join("")
-  }</div>`;
+  if (ci >= 0 && (ci < _navOffset || ci >= _navOffset + PAGE)) {
+    _navOffset = Math.floor(ci / PAGE) * PAGE;
+  }
+  _navOffset = Math.max(0, Math.min(_navOffset, Math.floor((total - 1) / PAGE) * PAGE));
+
+  const start      = _navOffset;
+  const end        = Math.min(start + PAGE, total);
+  const slice      = sortedPairs.slice(start, end);
+  const hasPrev    = start > 0;
+  const hasNext    = end < total;
+  const totalPages = Math.ceil(total / PAGE);
+  const curPage    = Math.floor(start / PAGE);
+
+  const pageNums = Array.from({ length: totalPages }, (_, i) =>
+    `<button class="post-nav-page${i === curPage ? " post-nav-page-active" : ""}" data-page="${i}">${i + 1}</button>`
+  ).join("");
+
+  container.innerHTML = `
+    <div class="post-nav-strip">
+      ${slice.map(([id, data]) => {
+        const isCurrent = id === currentId;
+        const title = escHtml((data.title || "(untitled)").slice(0, 60));
+        return isCurrent
+          ? `<div class="post-nav-item post-nav-current"><span class="post-nav-title">${title}</span></div>`
+          : `<div class="post-nav-item" role="button" tabindex="0" data-nav-id="${escHtml(id)}"><span class="post-nav-title">${title}</span></div>`;
+      }).join("")}
+    </div>
+    ${totalPages > 1 ? `
+      <div class="post-nav-controls">
+        <button class="btn btn-ghost btn-sm post-nav-prev"${hasPrev ? "" : " disabled"}>◀ Prev</button>
+        <div class="post-nav-pages">${pageNums}</div>
+        <button class="btn btn-ghost btn-sm post-nav-next"${hasNext ? "" : " disabled"}>Next ▶</button>
+      </div>
+    ` : ""}
+  `;
+
+  container.querySelectorAll(".post-nav-item[data-nav-id]").forEach(item => {
+    const nav = () => { location.hash = item.dataset.navId; };
+    item.addEventListener("click", nav);
+    item.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav(); } });
+  });
+
+  container.querySelector(".post-nav-prev")?.addEventListener("click", () => {
+    _navOffset = Math.max(0, _navOffset - PAGE);
+    _renderNavStrip(container, sortedPairs, currentId);
+  });
+
+  container.querySelector(".post-nav-next")?.addEventListener("click", () => {
+    _navOffset = Math.min(Math.floor((total - 1) / PAGE) * PAGE, _navOffset + PAGE);
+    _renderNavStrip(container, sortedPairs, currentId);
+  });
+
+  container.querySelectorAll(".post-nav-page[data-page]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      _navOffset = parseInt(btn.dataset.page) * PAGE;
+      _renderNavStrip(container, sortedPairs, currentId);
+    });
+  });
 }
 
 function _showDetail(id) {
@@ -127,7 +175,7 @@ function _showDetail(id) {
     <div class="post-detail-body rich-content" id="forum-detail-body-${id}"></div>
     ${_attachmentsHTML(data.attachments)}
     ${canDelete ? `<div class="post-detail-actions"><button type="button" class="btn btn-primary btn-sm" id="forum-edit-${id}">Edit</button><button type="button" class="btn btn-danger btn-sm" id="forum-delete-${id}">Delete Post</button></div>` : ""}
-    ${_navStripHtml(sortedPairs, id)}
+    <div id="forum-nav-container-${escHtml(id)}"></div>
     <div id="forum-comments-${id}" class="comments-section"></div>
   `;
 
@@ -137,11 +185,7 @@ function _showDetail(id) {
 
   document.getElementById("back-btn").addEventListener("click", () => { location.hash = ""; });
 
-  detailView.querySelectorAll(".post-nav-item[data-nav-id]").forEach(item => {
-    const nav = () => { location.hash = item.dataset.navId; };
-    item.addEventListener("click", nav);
-    item.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav(); } });
-  });
+  _renderNavStrip(document.getElementById(`forum-nav-container-${id}`), sortedPairs, id);
 
   if (canDelete) {
     document.getElementById(`forum-edit-${id}`).addEventListener("click", () => _startEdit(id));

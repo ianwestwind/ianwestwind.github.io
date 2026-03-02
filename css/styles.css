@@ -2542,3 +2542,41 @@ pre.ql-syntax.hljs { border: none; }
   color: #fff;
   font-weight: 600;
 }
+
+.post-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.post-nav-pages {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  flex: 1;
+  justify-content: center;
+}
+
+.post-nav-page {
+  min-width: 2rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  transition: background 0.15s;
+}
+
+.post-nav-page:hover {
+  background: var(--bg-input);
+}
+
+.post-nav-page-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
