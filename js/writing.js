@@ -6,7 +6,7 @@
 import { db } from "./firebase-config.js";
 import {
   collection, addDoc, getDocs, deleteDoc, doc, updateDoc,
-  query, orderBy, serverTimestamp, Timestamp
+  query, orderBy, serverTimestamp, Timestamp, increment
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getCurrentUser, getCurrentRole, hasRole, escHtml, showToast, formatDate
@@ -142,6 +142,10 @@ function _showDetail(id) {
     .filter(([, d]) => isMod || _isPublished(d))
     .sort((a, b) => _publishSec(b[1]) - _publishSec(a[1]));
 
+  const likedKey  = `winwriting_liked_${id}`;
+  const isLiked   = localStorage.getItem(likedKey) === "1";
+  const likeCount = data.likeCount || 0;
+
   const detailView = document.getElementById("detail-view");
   detailView.innerHTML = `
     <div class="post-detail-header">
@@ -157,6 +161,11 @@ function _showDetail(id) {
     </div>
     <div class="post-detail-body rich-content" id="detail-body-${id}"></div>
     ${_attachmentsHTML(data.attachments)}
+    <div class="news-article-footer" style="margin-top:1rem">
+      <button class="writing-like-btn${isLiked ? " is-liked" : ""}" id="writing-like-btn-${escHtml(id)}">
+        ❤️ <span id="writing-like-count-${escHtml(id)}">${likeCount}</span>
+      </button>
+    </div>
     ${canDelete ? `<div class="post-detail-actions"><button type="button" class="btn btn-primary btn-sm" id="writing-edit-${id}">Edit</button><button type="button" class="btn btn-danger btn-sm" id="writing-delete-${id}">Delete Post</button></div>` : ""}
     ${_navStripHtml(sortedPairs, id)}
     <div id="writing-comments-${id}" class="comments-section"></div>
@@ -167,6 +176,32 @@ function _showDetail(id) {
   highlightContent(bodyEl);
 
   document.getElementById("back-btn").addEventListener("click", () => { location.hash = ""; });
+
+  const likeBtn = document.getElementById(`writing-like-btn-${id}`);
+  if (likeBtn) {
+    likeBtn.addEventListener("click", async () => {
+      const wasLiked = likeBtn.classList.contains("is-liked");
+      const delta    = wasLiked ? -1 : 1;
+      const countEl  = document.getElementById(`writing-like-count-${id}`);
+      const oldCount = parseInt(countEl.textContent) || 0;
+      const newCount = Math.max(0, oldCount + delta);
+
+      likeBtn.classList.toggle("is-liked");
+      countEl.textContent = newCount;
+      if (wasLiked) localStorage.removeItem(likedKey);
+      else          localStorage.setItem(likedKey, "1");
+
+      try {
+        await updateDoc(doc(db, COLLECTION, id), { likeCount: increment(delta) });
+        _posts.set(id, { ..._posts.get(id), likeCount: newCount });
+      } catch {
+        likeBtn.classList.toggle("is-liked");
+        countEl.textContent = oldCount;
+        if (wasLiked) localStorage.setItem(likedKey, "1");
+        else          localStorage.removeItem(likedKey);
+      }
+    });
+  }
 
   detailView.querySelectorAll(".post-nav-item[data-nav-id]").forEach(item => {
     const nav = () => { location.hash = item.dataset.navId; };
@@ -586,6 +621,7 @@ export async function submitWriting() {
         authorName:   user.displayName || user.email,
         publishAt,
         createdAt:    serverTimestamp(),
+        likeCount:    0,
       };
 
       const newDoc = await addDoc(collection(db, COLLECTION), postData);
