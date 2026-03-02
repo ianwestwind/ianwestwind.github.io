@@ -243,13 +243,40 @@ html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="consultation.html"] {
   visibility: hidden;
 }
 
-/* Row wrapper injected by JS for admin (holds link + eye button) */
+/* Row wrapper injected by JS for admin (holds drag handle + link + eye button) */
 .nav-link-row {
   display: flex;
   align-items: center;
 }
 .nav-link-row > a {
   flex: 1;
+}
+.nav-link-row.dragging {
+  opacity: 0.4;
+}
+.nav-link-row.drag-over {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-radius: 2px;
+}
+
+/* Drag handle */
+.nav-drag-handle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.35rem 0.5rem 0;
+  cursor: grab;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity var(--transition);
+  line-height: 1;
+}
+.nav-sidebar:hover .nav-drag-handle {
+  opacity: 0.3;
+}
+.nav-drag-handle:hover {
+  opacity: 0.8 !important;
 }
 
 /* Eye toggle button */
@@ -1678,7 +1705,7 @@ html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="consultation.html"] {
 
 .profile-photo-img {
   width: 180px;
-  height: 180px;
+  height: 234px;
   object-fit: cover;
   border-radius: var(--radius);
   display: block;
@@ -1686,7 +1713,7 @@ html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="consultation.html"] {
 
 .profile-photo-placeholder {
   width: 180px;
-  height: 180px;
+  height: 234px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -1960,7 +1987,7 @@ pre.ql-syntax.hljs { border: none; }
   .stats-strip { gap: 2rem; }
   .about-profile { grid-template-columns: 1fr; gap: 1.5rem; }
   .profile-photo-placeholder,
-  .profile-photo-img { width: 120px; height: 120px; font-size: 1.6rem; }
+  .profile-photo-img { width: 120px; height: 156px; font-size: 1.6rem; }
 }
 
 @media (max-width: 480px) {
