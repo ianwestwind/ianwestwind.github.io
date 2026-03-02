@@ -1,6 +1,6 @@
 // ============================================================
 // WINN Platforms — news.js
-// News posts (moderator/admin only); simple list + scheduling
+// News posts (moderator/admin only); scrollable full-content feed
 // ============================================================
 
 import { db } from "./firebase-config.js";
@@ -23,12 +23,6 @@ let _attachZone = null;
 let _userRole   = "guest";
 let _editId     = null;
 
-function _snippet(html, max = 130) {
-  if (!html) return "";
-  const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  return text.length > max ? text.slice(0, max) + "…" : text;
-}
-
 function _publishSec(data) {
   return data.publishAt?.seconds ?? data.createdAt?.seconds ?? 0;
 }
@@ -42,17 +36,33 @@ function _updateCount(n) {
   if (el) el.textContent = `${n} post${n !== 1 ? "s" : ""}`;
 }
 
-function _showList() {
+function _attachmentsHTML(attachments) {
+  if (!attachments?.length) return "";
+  return `
+    <div class="attach-section">
+      <div class="attach-section-title">Attachments</div>
+      ${attachments.map(a => `
+        <div class="attach-item">
+          <a href="${escHtml(a.url)}" target="_blank" rel="noopener" class="attach-link">${escHtml(a.name)}</a>
+          <span class="attach-size">${Math.round((a.size || 0) / 1024)} KB</span>
+        </div>`).join("")}
+    </div>`;
+}
+
+function _showFeed(scrollToId) {
   document.getElementById("list-view").style.display   = "";
   document.getElementById("detail-view").style.display = "none";
 
-  const rows  = document.getElementById("news-rows");
+  const rows = document.getElementById("news-rows");
   if (!rows) return;
 
-  const isMod   = hasRole(_userRole, "moderator");
+  const isMod = hasRole(_userRole, "moderator");
+  const role  = getCurrentRole();
+  const user  = getCurrentUser();
+
   const visible = [..._items.entries()]
     .filter(([, d]) => isMod || _isPublished(d))
-    .sort((a, b)  => _publishSec(b[1]) - _publishSec(a[1]));
+    .sort((a, b) => _publishSec(b[1]) - _publishSec(a[1]));
 
   _updateCount(visible.length);
 
@@ -62,140 +72,98 @@ function _showList() {
   }
 
   rows.innerHTML = visible.map(([id, data]) => {
-    const isPub  = _isPublished(data);
-    const badge  = (!isPub && isMod) ? `<span class="scheduled-badge">Scheduled</span>` : "";
-    const likes  = data.likeCount > 0 ? `<span class="news-row-likes">❤️ ${data.likeCount}</span>` : "";
+    const isPub     = _isPublished(data);
+    const badge     = (!isPub && isMod) ? `<span class="scheduled-badge">Scheduled</span>` : "";
+    const canDelete = hasRole(role, "admin") || hasRole(role, "moderator") || (user && user.uid === data.authorUid);
+    const likedKey  = `winnews_liked_${id}`;
+    const isLiked   = localStorage.getItem(likedKey) === "1";
+    const likeCount = data.likeCount || 0;
+
     return `
-      <div class="news-row" data-id="${escHtml(id)}" role="button" tabindex="0">
-        <div class="news-row-title">${escHtml(data.title || "(untitled)")} ${badge}</div>
-        <div class="news-row-snippet">${escHtml(_snippet(data.body))}</div>
-        <div class="news-row-meta">
+      <article class="news-article" id="news-article-${escHtml(id)}">
+        <div class="news-article-title">${escHtml(data.title || "(untitled)")} ${badge}</div>
+        <div class="news-article-meta">
           <span>${escHtml(data.authorName || "Staff")}</span>
           <span>·</span>
           <span>${formatDate(data.publishAt ?? data.createdAt)}</span>
-          ${likes}
         </div>
-      </div>`;
+        <div class="post-detail-body rich-content" id="news-body-${escHtml(id)}"></div>
+        ${_attachmentsHTML(data.attachments)}
+        <div class="news-article-footer">
+          <button class="news-like-btn${isLiked ? " is-liked" : ""}" data-like-id="${escHtml(id)}">
+            ❤️ <span class="news-like-count">${likeCount}</span>
+          </button>
+          ${canDelete ? `
+            <div class="post-detail-actions" style="margin:0">
+              <button type="button" class="btn btn-primary btn-sm" data-edit-id="${escHtml(id)}">Edit</button>
+              <button type="button" class="btn btn-danger btn-sm" data-delete-id="${escHtml(id)}">Delete</button>
+            </div>` : ""}
+        </div>
+      </article>`;
   }).join("");
 
-  rows.querySelectorAll(".news-row").forEach(row => {
-    const open = () => { location.hash = row.dataset.id; };
-    row.addEventListener("click", open);
-    row.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
-  });
-}
-
-function _navStripHtml(sortedPairs, currentId) {
-  if (sortedPairs.length <= 1) return "";
-  const ci = sortedPairs.findIndex(([id]) => id === currentId);
-  if (ci === -1) return "";
-  let start = Math.max(0, ci - 2);
-  let end   = Math.min(sortedPairs.length - 1, ci + 2);
-  if (ci - start < 2) end   = Math.min(sortedPairs.length - 1, end + (2 - (ci - start)));
-  if (end - ci   < 2) start = Math.max(0, start - (2 - (end - ci)));
-  return `<div class="post-nav-strip">${
-    sortedPairs.slice(start, end + 1).map(([id, data]) => {
-      const isCurrent = id === currentId;
-      const title = escHtml((data.title || "(untitled)").slice(0, 45));
-      return isCurrent
-        ? `<div class="post-nav-item post-nav-current"><span class="post-nav-title">${title}</span></div>`
-        : `<div class="post-nav-item" role="button" tabindex="0" data-nav-id="${escHtml(id)}"><span class="post-nav-title">${title}</span></div>`;
-    }).join("")
-  }</div>`;
-}
-
-function _showDetail(id) {
-  const data = _items.get(id);
-  if (!data) { location.hash = ""; return; }
-
-  document.getElementById("list-view").style.display   = "none";
-  document.getElementById("detail-view").style.display = "";
-
-  const role      = getCurrentRole();
-  const user      = getCurrentUser();
-  const canDelete = hasRole(role, "admin") || hasRole(role, "moderator") || (user && user.uid === data.authorUid);
-  const isMod     = hasRole(role, "moderator");
-  const scheduled = !_isPublished(data) && isMod;
-
-  const sortedPairs = [..._items.entries()]
-    .filter(([, d]) => isMod || _isPublished(d))
-    .sort((a, b) => _publishSec(b[1]) - _publishSec(a[1]));
-
-  const likedKey  = `winnews_liked_${id}`;
-  const isLiked   = localStorage.getItem(likedKey) === "1";
-  const likeCount = data.likeCount || 0;
-
-  const detailView = document.getElementById("detail-view");
-  detailView.innerHTML = `
-    <div class="post-detail-header">
-      <button class="back-btn" id="back-btn">← Back</button>
-      ${scheduled ? '<span class="scheduled-badge" style="margin-left:.5rem">Scheduled</span>' : ""}
-    </div>
-    <div class="post-detail-title">${escHtml(data.title || "(untitled)")}</div>
-    <div class="post-detail-meta">
-      <span>${escHtml(data.authorName || "Staff")}</span>
-      <span>·</span>
-      <span>${formatDate(data.publishAt ?? data.createdAt)}</span>
-    </div>
-    <div class="post-detail-body rich-content" id="detail-body-${id}"></div>
-    ${_attachmentsHTML(data.attachments)}
-    <div class="news-like-row">
-      <button class="news-like-btn${isLiked ? " is-liked" : ""}" id="news-like-btn-${id}">
-        ❤️ <span id="news-like-count-${id}">${likeCount}</span>
-      </button>
-    </div>
-    ${canDelete ? `<div class="post-detail-actions"><button type="button" class="btn btn-primary btn-sm" id="news-edit-${id}">Edit</button><button type="button" class="btn btn-danger btn-sm" id="news-delete-${id}">Delete Post</button></div>` : ""}
-    ${_navStripHtml(sortedPairs, id)}
-  `;
-
-  const bodyEl = document.getElementById(`detail-body-${id}`);
-  bodyEl.innerHTML = renderBody(data.body);
-  highlightContent(bodyEl);
-
-  document.getElementById("back-btn").addEventListener("click", () => { location.hash = ""; });
-
-  detailView.querySelectorAll(".post-nav-item[data-nav-id]").forEach(item => {
-    const nav = () => { location.hash = item.dataset.navId; };
-    item.addEventListener("click", nav);
-    item.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nav(); } });
-  });
-
-  const likeBtn = document.getElementById(`news-like-btn-${id}`);
-  const countEl = document.getElementById(`news-like-count-${id}`);
-  likeBtn.addEventListener("click", async () => {
-    const wasLiked = likeBtn.classList.contains("is-liked");
-    const delta    = wasLiked ? -1 : 1;
-    const oldCount = parseInt(countEl.textContent) || 0;
-    const newCount = Math.max(0, oldCount + delta);
-
-    // Optimistic update
-    likeBtn.classList.toggle("is-liked");
-    countEl.textContent = newCount;
-    if (wasLiked) localStorage.removeItem(likedKey);
-    else          localStorage.setItem(likedKey, "1");
-
-    try {
-      await updateDoc(doc(db, COLLECTION, id), { likeCount: increment(delta) });
-      _items.set(id, { ..._items.get(id), likeCount: newCount });
-    } catch {
-      // Revert on failure
-      likeBtn.classList.toggle("is-liked");
-      countEl.textContent = oldCount;
-      if (wasLiked) localStorage.setItem(likedKey, "1");
-      else          localStorage.removeItem(likedKey);
+  // Render rich body content after DOM is ready
+  visible.forEach(([id, data]) => {
+    const bodyEl = document.getElementById(`news-body-${id}`);
+    if (bodyEl) {
+      bodyEl.innerHTML = renderBody(data.body);
+      highlightContent(bodyEl);
     }
   });
 
-  if (canDelete) {
-    document.getElementById(`news-edit-${id}`).addEventListener("click", () => _startEdit(id));
-    document.getElementById(`news-delete-${id}`).addEventListener("click", async () => {
+  // Like handlers
+  rows.querySelectorAll(".news-like-btn[data-like-id]").forEach(btn => {
+    const id       = btn.dataset.likeId;
+    const likedKey = `winnews_liked_${id}`;
+    btn.addEventListener("click", async () => {
+      const wasLiked = btn.classList.contains("is-liked");
+      const delta    = wasLiked ? -1 : 1;
+      const countEl  = btn.querySelector(".news-like-count");
+      const oldCount = parseInt(countEl.textContent) || 0;
+      const newCount = Math.max(0, oldCount + delta);
+
+      btn.classList.toggle("is-liked");
+      countEl.textContent = newCount;
+      if (wasLiked) localStorage.removeItem(likedKey);
+      else          localStorage.setItem(likedKey, "1");
+
+      try {
+        await updateDoc(doc(db, COLLECTION, id), { likeCount: increment(delta) });
+        _items.set(id, { ..._items.get(id), likeCount: newCount });
+      } catch {
+        btn.classList.toggle("is-liked");
+        countEl.textContent = oldCount;
+        if (wasLiked) localStorage.setItem(likedKey, "1");
+        else          localStorage.removeItem(likedKey);
+      }
+    });
+  });
+
+  // Edit handlers
+  rows.querySelectorAll("[data-edit-id]").forEach(btn => {
+    btn.addEventListener("click", () => _startEdit(btn.dataset.editId));
+  });
+
+  // Delete handlers
+  rows.querySelectorAll("[data-delete-id]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.deleteId;
       if (!confirm("Delete this post?")) return;
       try {
         await deleteDoc(doc(db, COLLECTION, id));
         _items.delete(id);
         showToast("Post deleted.", "info");
         location.hash = "";
+        _showFeed();
       } catch (err) { showToast("Delete failed: " + err.message, "error"); }
+    });
+  });
+
+  // Scroll to target post if specified
+  if (scrollToId) {
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`news-article-${scrollToId}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
 }
@@ -228,23 +196,9 @@ function _startEdit(id) {
   form?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function _attachmentsHTML(attachments) {
-  if (!attachments?.length) return "";
-  return `
-    <div class="attach-section">
-      <div class="attach-section-title">Attachments</div>
-      ${attachments.map(a => `
-        <div class="attach-item">
-          <a href="${escHtml(a.url)}" target="_blank" rel="noopener" class="attach-link">${escHtml(a.name)}</a>
-          <span class="attach-size">${Math.round((a.size || 0) / 1024)} KB</span>
-        </div>`).join("")}
-    </div>`;
-}
-
 function _handleHash() {
   const id = location.hash.slice(1);
-  if (id && _items.has(id)) _showDetail(id);
-  else _showList();
+  _showFeed(id && _items.has(id) ? id : null);
 }
 
 export async function initNewsPage(role) {
@@ -280,11 +234,9 @@ export async function initNewsPage(role) {
       console.warn("News editor init failed:", e);
     }
 
-    // Set publishAt default to now
     const pa = document.getElementById("news-publish-at");
     if (pa) { const n = new Date(); n.setSeconds(0, 0); pa.value = n.toISOString().slice(0, 16); }
 
-    // Toggle form
     const toggleBtn = document.getElementById("news-toggle-btn");
     const form      = document.getElementById("news-post-form");
 
@@ -359,17 +311,11 @@ export async function submitNews() {
 
   try {
     if (editId) {
-      // Update existing post (preserve attachments, author, createdAt, likeCount)
       const publishAt = paInput?.value
         ? Timestamp.fromDate(new Date(paInput.value))
         : _items.get(editId)?.publishAt ?? Timestamp.fromDate(new Date());
 
-      const changes = {
-        title,
-        body,
-        thumbnailUrl: _thumbZone?.getThumbUrl() || null,
-        publishAt,
-      };
+      const changes = { title, body, thumbnailUrl: _thumbZone?.getThumbUrl() || null, publishAt };
       await updateDoc(doc(db, COLLECTION, editId), changes);
       _items.set(editId, { ..._items.get(editId), ...changes });
       _closeForm();
@@ -396,7 +342,7 @@ export async function submitNews() {
       _items.set(newDoc.id, { ...postData, createdAt: { seconds: Date.now() / 1000 } });
       _closeForm();
       showToast("News published!", "success");
-      _showList();
+      _showFeed();
     }
   } catch (err) {
     showToast(`Failed to ${editId ? "update" : "publish"}: ` + err.message, "error");
