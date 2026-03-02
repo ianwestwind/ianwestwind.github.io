@@ -24,6 +24,7 @@ let _calYear        = 0;
 let _calMonth       = 0;       // 0-based
 let _selectedDate   = null;    // "YYYY-MM-DD"
 let _selectedSlotId = null;
+let _userBookedSlotIds = new Set(); // slotIds the current user has already requested
 
 let _consultSettings = { approvalMessage: "", videoLink: "" };
 const DEFAULT_APPROVAL_MSG =
@@ -205,13 +206,18 @@ function _renderSlotList() {
         </div>`;
     }
 
+    const alreadyBooked = _userBookedSlotIds.has(id);
     return `
       <div class="slot-row${unavail ? " unavailable" : ""}">
         <div>
           <div class="slot-row-time">${escHtml(timeStr)}</div>
           <div class="slot-row-meta">${escHtml(metaStr)}</div>
         </div>
-        ${!unavail ? `<button type="button" class="btn btn-primary btn-sm" data-book="${escHtml(id)}">Book</button>` : ""}
+        ${!unavail
+          ? alreadyBooked
+            ? `<span class="status-badge status-pending">Requested</span>`
+            : `<button type="button" class="btn btn-primary btn-sm" data-book="${escHtml(id)}">Book</button>`
+          : ""}
       </div>`;
   }).join("");
 
@@ -495,17 +501,16 @@ async function _loadUserBookings() {
   if (!user) return;
   try {
     const snap = await getDocs(
-      query(
-        collection(db, BOOKINGS_COL),
-        where("requesterUid", "==", user.uid),
-        orderBy("createdAt", "desc")
-      )
+      query(collection(db, BOOKINGS_COL), where("requesterUid", "==", user.uid))
     );
-    const bookings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const bookings = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
+    _userBookedSlotIds = new Set(bookings.map(b => b.slotId).filter(Boolean));
     _renderMyBookings(bookings);
+    if (_selectedDate) _renderSlotList(); // refresh "Requested" badges if a date is selected
   } catch (e) {
-    // Composite index may not exist yet; log hint but don't surface to user
-    console.warn("My bookings query failed (may need Firestore composite index):", e.message);
+    console.warn("My bookings query failed:", e.message);
   }
 }
 
@@ -753,6 +758,16 @@ export async function updateBookingStatus(bookingId, newStatus) {
     await updateDoc(doc(db, BOOKINGS_COL, bookingId), updateData);
     const existing = _bookings.get(bookingId);
     if (existing) _bookings.set(bookingId, { ...existing, ...updateData });
+
+    // Mark slot unavailable when approved so it no longer shows on calendar
+    if (newStatus === "approved" && existing?.slotId) {
+      await updateDoc(doc(db, SLOTS_COL, existing.slotId), { isAvailable: false });
+      const slot = _slots.get(existing.slotId);
+      if (slot) _slots.set(existing.slotId, { ...slot, isAvailable: false });
+      _renderAdminSlots();
+      if (_selectedDate) _renderSlotList();
+    }
+
     _renderAdminBookings();
     showToast("Status updated.", "info");
   } catch (e) {
