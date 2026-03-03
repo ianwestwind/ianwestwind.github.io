@@ -1,0 +1,3371 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bayesian Thinking · WINN Platforms</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+  <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #faf8f5;
+  --ink: #1a1714;
+  --muted: #7a6f63;
+  --border: #e4ddd4;
+  --accent: #2563a8;
+  --accent2: #16a34a;
+  --accent3: #dc2626;
+  --warm: #92400e;
+  --card: #ffffff;
+  --sidebar-bg: #1e1b18;
+  --sidebar-text: #c4b89a;
+  --sidebar-active: #f59e0b;
+  --code-bg: #1c1917;
+  --code-text: #d4c5a9;
+  --week1: #2563a8;
+  --week2: #16a34a;
+  --week3: #9333ea;
+  --highlight: #fef9c3;
+}
+
+/* body styles provided by WINN site shell */
+
+/* === COURSE SIDEBAR === */
+.teaching-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--sidebar-bg);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid #2e2a25;
+}
+
+.sidebar-logo .title {
+  font-family: 'Crimson Pro', serif;
+  font-size: 18px;
+  color: #f5f0e8;
+  line-height: 1.3;
+}
+
+.sidebar-logo .subtitle {
+  font-size: 11px;
+  color: var(--sidebar-text);
+  margin-top: 4px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.nav-week {
+  padding: 16px 0 4px;
+}
+
+.nav-week-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #4a4540;
+  padding: 0 24px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-week-label .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.nav-item {
+  display: block;
+  padding: 9px 24px;
+  font-size: 13px;
+  color: var(--sidebar-text);
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  line-height: 1.4;
+}
+
+.nav-item:hover { background: rgba(255,255,255,0.05); color: #f5f0e8; }
+.nav-item.active { background: rgba(245,158,11,0.12); color: var(--sidebar-active); }
+.nav-item .nav-type {
+  font-size: 10px;
+  opacity: 0.5;
+  display: block;
+  margin-top: 1px;
+}
+
+/* === COURSE CONTENT === */
+.teaching-wrap { display: flex; }
+.teaching-main {
+  flex: 1;
+  overflow-y: auto;
+  height: 100vh;
+}
+
+.topbar {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 48px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topbar-breadcrumb {
+  font-size: 13px;
+  color: var(--muted);
+}
+.topbar-breadcrumb span { color: var(--ink); font-weight: 500; }
+
+.week-badge {
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+/* === PAGE SECTIONS === */
+.page-section {
+  display: none;
+  padding: 48px;
+  max-width: 900px;
+  margin: 0 auto;
+  animation: fadeIn 0.3s ease;
+}
+
+.page-section.active { display: block; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* === TYPOGRAPHY === */
+.section-eyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-family: 'Crimson Pro', serif;
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 300;
+  line-height: 1.2;
+  margin-bottom: 20px;
+  color: var(--ink);
+}
+
+.section-lead {
+  font-size: 17px;
+  line-height: 1.75;
+  color: #3a3530;
+  margin-bottom: 32px;
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+}
+
+.prose {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #2a2520;
+}
+
+.prose p { margin-bottom: 18px; }
+.prose h2 {
+  font-family: 'Crimson Pro', serif;
+  font-size: 26px;
+  font-weight: 600;
+  margin: 36px 0 14px;
+  color: var(--ink);
+}
+.prose h3 {
+  font-weight: 500;
+  margin: 24px 0 10px;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+.prose strong { color: var(--ink); }
+.prose em { font-family: 'Crimson Pro', serif; font-style: italic; }
+
+/* === CALLOUT BOXES === */
+.callout {
+  border-radius: 6px;
+  padding: 20px 24px;
+  margin: 24px 0;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.callout.info { background: #eff6ff; border-left: 4px solid var(--accent); }
+.callout.success { background: #f0fdf4; border-left: 4px solid var(--accent2); }
+.callout.warning { background: #fffbeb; border-left: 4px solid #f59e0b; }
+.callout.formula { background: #f8f5f2; border: 1px solid var(--border); border-left: 4px solid var(--warm); font-family: 'Crimson Pro', serif; font-size: 16px; }
+.callout-title { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+.callout.info .callout-title { color: var(--accent); }
+.callout.success .callout-title { color: var(--accent2); }
+.callout.warning .callout-title { color: #92400e; }
+.callout.formula .callout-title { color: var(--warm); }
+
+/* === MATH === */
+.math-block {
+  text-align: center;
+  font-family: 'Crimson Pro', serif;
+  font-size: 22px;
+  font-style: italic;
+  padding: 20px;
+  background: #f8f5f2;
+  border-radius: 6px;
+  margin: 20px 0;
+  border: 1px solid var(--border);
+}
+
+/* === CODE BLOCKS === */
+.code-block {
+  background: var(--code-bg);
+  border-radius: 8px;
+  padding: 24px;
+  margin: 20px 0;
+  overflow-x: auto;
+  position: relative;
+}
+
+.code-block .lang-tag {
+  position: absolute;
+  top: 10px; right: 14px;
+  font-size: 10px;
+  color: #6b7280;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.code-block pre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--code-text);
+  white-space: pre;
+}
+
+.kw { color: #c792ea; }
+.fn { color: #82aaff; }
+.st { color: #c3e88d; }
+.cm { color: #546e7a; font-style: italic; }
+.nm { color: #f78c6c; }
+.op { color: #89ddff; }
+
+/* === INTERACTIVE LAB === */
+.lab-container {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 24px 0;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.06);
+}
+
+.lab-header {
+  background: linear-gradient(135deg, #1e3a5f, #2563a8);
+  padding: 24px 32px;
+  color: white;
+}
+
+.lab-header h3 {
+  font-family: 'Crimson Pro', serif;
+  font-size: 22px;
+  font-weight: 400;
+  margin-bottom: 4px;
+}
+
+.lab-header p {
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.lab-body {
+  padding: 32px;
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.control-group label {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.control-group input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.control-group .val-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--accent);
+  margin-top: 4px;
+}
+
+.control-group select, .control-group input[type="number"] {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  background: white;
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+}
+
+.btn-group {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 10px 22px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: #1d4ed8; }
+.btn-success { background: var(--accent2); color: white; }
+.btn-success:hover { background: #15803d; }
+.btn-outline { background: white; color: var(--ink); border: 1px solid var(--border); }
+.btn-outline:hover { background: var(--bg); }
+.btn-danger { background: var(--accent3); color: white; }
+.btn-danger:hover { background: #b91c1c; }
+
+.chart-area {
+  position: relative;
+  height: 300px;
+  margin-bottom: 24px;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+
+.stat-card .stat-val {
+  font-size: 24px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-card .stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.flip-log {
+  background: #0f172a;
+  border-radius: 8px;
+  padding: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #94a3b8;
+  max-height: 140px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+
+.flip-log .H { color: #34d399; }
+.flip-log .T { color: #f87171; }
+
+/* === COIN ANIMATION === */
+.coin-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.coin {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  font-family: 'Crimson Pro', serif;
+  transition: transform 0.3s;
+}
+
+.coin.heads { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #1a1714; box-shadow: 0 4px 15px rgba(245,158,11,0.4); }
+.coin.tails { background: linear-gradient(135deg, #94a3b8, #64748b); color: white; box-shadow: 0 4px 15px rgba(100,116,139,0.4); }
+.coin.flipping { animation: flip 0.5s ease; }
+
+@keyframes flip {
+  0% { transform: rotateY(0); }
+  50% { transform: rotateY(90deg); }
+  100% { transform: rotateY(0); }
+}
+
+/* === TABLES === */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin: 20px 0;
+}
+
+th {
+  background: #f1ede8;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0ebe5;
+  line-height: 1.5;
+}
+
+tr:hover td { background: #faf8f5; }
+
+/* === ASSIGNMENT SECTION === */
+.assignment-header {
+  background: linear-gradient(135deg, #1c1917, #2d2520);
+  color: white;
+  padding: 32px 40px;
+  border-radius: 12px;
+  margin-bottom: 32px;
+}
+
+.assignment-meta {
+  display: flex;
+  gap: 24px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.meta-item {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.meta-item strong { opacity: 1; color: var(--sidebar-active); }
+
+.question-block {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 28px;
+  margin-bottom: 20px;
+}
+
+.question-num {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.question-text {
+  font-size: 15px;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+.answer-space {
+  background: #faf8f5;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  min-height: 80px;
+  font-size: 13px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Answer sheet styles */
+.answer-key {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.answer-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent2);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* === HOME PAGE === */
+.home-hero {
+  background: linear-gradient(135deg, #1e1b18 0%, #2d2520 50%, #1e3a5f 100%);
+  color: white;
+  padding: 64px 48px;
+  border-radius: 16px;
+  margin-bottom: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.home-hero::before {
+  content: 'P(H|E)';
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Crimson Pro', serif;
+  font-size: 120px;
+  font-style: italic;
+  opacity: 0.08;
+  color: white;
+  pointer-events: none;
+}
+
+.home-hero h1 {
+  font-family: 'Crimson Pro', serif;
+  font-size: clamp(32px, 5vw, 56px);
+  font-weight: 300;
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+
+.home-hero p {
+  opacity: 0.75;
+  max-width: 560px;
+  line-height: 1.7;
+}
+
+.week-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.week-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.week-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+
+.week-card .week-num {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.week-card h3 {
+  font-family: 'Crimson Pro', serif;
+  font-size: 20px;
+  font-weight: 400;
+  margin-bottom: 10px;
+  color: var(--ink);
+}
+
+.week-card p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.week-card .item-list {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.week-card .item {
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  background: var(--bg);
+}
+
+/* responsive */
+@media (max-width: 900px) {
+  .teaching-sidebar { width: 200px; }
+  .page-section { padding: 32px 24px; }
+  .week-cards { grid-template-columns: 1fr; }
+  .controls-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* === TABS === */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
+}
+
+.tab-btn {
+  padding: 10px 20px;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  margin-bottom: -1px;
+}
+
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+.tab-btn:hover { color: var(--ink); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* === PROGRESS === */
+.progress-bar-wrap {
+  background: var(--border);
+  border-radius: 4px;
+  height: 6px;
+  margin: 8px 0 20px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+/* highlight math */
+.highlight-box {
+  background: var(--highlight);
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  font-family: 'Crimson Pro', serif;
+  line-height: 1.7;
+}
+
+/* === PYTHON SANDBOX === */
+.pybox {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 32px 0;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.06);
+}
+
+.pybox-header {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  padding: 18px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pybox-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pybox-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.pybox-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+}
+
+.pybox-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.pybox-title strong {
+  color: #f1f5f9;
+  font-weight: 500;
+}
+
+.pybox-badge {
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(99,102,241,0.2);
+  color: #a5b4fc;
+  font-family: 'JetBrains Mono', monospace;
+  border: 1px solid rgba(99,102,241,0.3);
+}
+
+.pybox-tabs {
+  display: flex;
+  background: #0f172a;
+  border-bottom: 1px solid #1e293b;
+}
+
+.pybox-tab {
+  padding: 10px 20px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #64748b;
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+
+.pybox-tab.active {
+  color: #f59e0b;
+  border-bottom-color: #f59e0b;
+  background: rgba(245,158,11,0.05);
+}
+
+.pybox-tab:hover { color: #94a3b8; }
+
+.pybox-editor-wrap {
+  position: relative;
+  background: #0a0f1e;
+}
+
+.pybox-editor {
+  width: 100%;
+  min-height: 240px;
+  background: #0a0f1e;
+  color: #e2e8f0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.75;
+  padding: 20px 24px;
+  border: none;
+  resize: vertical;
+  outline: none;
+  tab-size: 4;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
+.pybox-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: #0f172a;
+  border-top: 1px solid #1e293b;
+}
+
+.pybox-run {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  background: #f59e0b;
+  color: #0f172a;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  transition: all 0.15s;
+}
+
+.pybox-run:hover { background: #fbbf24; }
+.pybox-run:disabled { background: #374151; color: #6b7280; cursor: not-allowed; }
+
+.pybox-run .run-icon { font-size: 14px; }
+
+.pybox-hint {
+  font-size: 11px;
+  color: #475569;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.pybox-clear {
+  margin-left: auto;
+  padding: 7px 14px;
+  background: transparent;
+  color: #475569;
+  border: 1px solid #1e293b;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  transition: all 0.15s;
+}
+
+.pybox-clear:hover { color: #94a3b8; border-color: #374151; }
+
+.pybox-output-area {
+  padding: 0 24px 20px;
+  background: #060c1a;
+}
+
+.pybox-output-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #374151;
+  padding: 14px 0 10px;
+  font-family: 'JetBrains Mono', monospace;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pybox-output-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #1e293b;
+}
+
+.pybox-console {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #94a3b8;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+  min-height: 40px;
+}
+
+.pybox-console .py-out { color: #94a3b8; }
+.pybox-console .py-err { color: #f87171; }
+.pybox-console .py-ok  { color: #34d399; }
+.pybox-console .py-info { color: #60a5fa; }
+
+.pybox-chart-wrap {
+  background: #ffffff;
+  border-radius: 8px;
+  margin-top: 16px;
+  padding: 20px;
+  border: 1px solid #1e293b;
+  position: relative;
+}
+
+.pybox-chart-wrap canvas {
+  max-height: 340px;
+}
+
+.pybox-chart-placeholder {
+  text-align: center;
+  padding: 40px 20px;
+  color: #374151;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.pybox-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #64748b;
+  margin-left: auto;
+}
+
+.pybox-status .dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #374151;
+}
+
+.pybox-status.loading .dot {
+  background: #f59e0b;
+  animation: pulse 1s infinite;
+}
+
+.pybox-status.ready .dot { background: #34d399; }
+.pybox-status.error .dot { background: #f87171; }
+
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity: 0.4; } }
+
+.challenge-banner {
+  background: linear-gradient(135deg, #0f172a, #1e1b4b);
+  border: 1px solid #312e81;
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.challenge-icon { font-size: 28px; flex-shrink: 0; }
+
+.challenge-content h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #a5b4fc;
+  margin-bottom: 6px;
+  letter-spacing: 0.05em;
+}
+
+.challenge-content p {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.challenge-content ul {
+  margin: 8px 0 0 16px;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.9;
+}
+  </style>
+</head>
+<body>
+
+  <div class="app-layout">
+    <aside class="nav-sidebar">
+      <a href="index.html" class="nav-brand">WINN<span> Platforms</span></a>
+      <div class="nav-links">
+        <a href="index.html">About</a>
+        <a href="portfolio-software.html">Software</a>
+        <a href="portfolio-design.html">Design</a>
+        <a href="forum.html">WINNers</a>
+        <a href="writing.html">Writing</a>
+        <a href="news.html">News</a>
+        <div class="nav-dropdown open" data-nav-key="teaching">
+          <button class="nav-dropdown-btn" onclick="this.closest('.nav-dropdown').classList.toggle('open')">Teaching <span class="nav-dropdown-chevron">▾</span></button>
+          <div class="nav-dropdown-menu">
+            <a href="teaching.html" class="active">Bayesian Thinking</a>
+            <a href="#">Intro to Python</a>
+          </div>
+        </div>
+        <a href="consultation.html">Consultation</a>
+      </div>
+    </aside>
+    <main class="main-content" style="padding:0; overflow:hidden;">
+<!-- SIDEBAR -->
+<div class="teaching-wrap">
+<nav class="teaching-sidebar">
+  <div class="sidebar-logo">
+    <div class="title">Bayesian Thinking<br>in Precision Health</div>
+    <div class="subtitle">3-Week Learning Module</div>
+  </div>
+
+  <div class="nav-week">
+    <div class="nav-week-label"><span class="dot" style="background:#2563a8"></span>Overview</div>
+    <button class="nav-item active" onclick="showPage('home')">Course Home</button>
+    <button class="nav-item" onclick="showPage('syllabus')">Syllabus
+      <span class="nav-type">3-Week Curriculum</span>
+    </button>
+    <button class="nav-item" onclick="showPage('how-to')">How to Use This Lab</button>
+  </div>
+
+  <div class="nav-week">
+    <div class="nav-week-label"><span class="dot" style="background:#2563a8"></span>Week 1 — Foundations</div>
+    <button class="nav-item" onclick="showPage('w1-textbook')">Textbook
+      <span class="nav-type">Bayes' Theorem Basics</span>
+    </button>
+    <button class="nav-item" onclick="showPage('w1-lab')">Interactive Lab
+      <span class="nav-type">Coin Flip Explorer</span>
+    </button>
+    <button class="nav-item" onclick="showPage('w1-assignment')">Assignment
+      <span class="nav-type">Conceptual Questions</span>
+    </button>
+    <button class="nav-item" onclick="showPage('w1-answers')">Answer Sheet
+      <span class="nav-type">Instructor Resource</span>
+    </button>
+  </div>
+
+  <div class="nav-week">
+    <div class="nav-week-label"><span class="dot" style="background:#16a34a"></span>Week 2 — Beta Distributions</div>
+    <button class="nav-item" onclick="showPage('w2-textbook')">Textbook
+      <span class="nav-type">Prior, Likelihood & Posterior</span>
+    </button>
+    <button class="nav-item" onclick="showPage('w2-lab')">Interactive Lab
+      <span class="nav-type">Beta Distribution Shaper</span>
+    </button>
+    <button class="nav-item" onclick="showPage('w2-assignment')">Assignment
+      <span class="nav-type">Coding + Analysis</span>
+    </button>
+    <button class="nav-item" onclick="showPage('w2-answers')">Answer Sheet
+      <span class="nav-type">Instructor Resource</span>
+    </button>
+  </div>
+
+  <div class="nav-week">
+    <div class="nav-week-label"><span class="dot" style="background:#9333ea"></span>Week 3 — Precision Health</div>
+    <button class="nav-item" onclick="showPage('w3-textbook')">Textbook
+      <span class="nav-type">Bayesian Clinical Applications</span>
+    </button>
+    <button class="nav-item" onclick="showPage('w3-lab')">Interactive Lab
+      <span class="nav-type">Diagnostic Testing Simulator</span>
+    </button>
+    <button class="nav-item" onclick="showPage('w3-assignment')">Assignment
+      <span class="nav-type">Case Study + Code</span>
+    </button>
+    <button class="nav-item" onclick="showPage('w3-answers')">Answer Sheet
+      <span class="nav-type">Instructor Resource</span>
+    </button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="teaching-main">
+  <div class="topbar">
+    <div class="topbar-breadcrumb" id="breadcrumb">Home → <span>Course Overview</span></div>
+    <div id="week-badge" class="week-badge" style="background:#eff6ff;color:#2563a8">Overview</div>
+  </div>
+
+  <!-- ===================== HOME ===================== -->
+  <section class="page-section active" id="home">
+    <div class="home-hero">
+      <h1>Bayesian Thinking<br>in Precision Health</h1>
+      <p>An interactive 3-week module on Bayesian inference — from flipping coins to updating clinical diagnoses. Learn to reason under uncertainty like a scientist.</p>
+    </div>
+
+    <div class="week-cards">
+      <div class="week-card" onclick="showPage('w1-textbook')">
+        <div class="week-num" style="color:#2563a8">Week 1</div>
+        <h3>Foundations of Bayesian Reasoning</h3>
+        <p>Understand prior beliefs, evidence, and how to update beliefs rationally using Bayes' Theorem.</p>
+        <div class="item-list">
+          <div class="item">Textbook: Bayes' Theorem Basics</div>
+          <div class="item">Lab: Coin Flip Explorer</div>
+          <div class="item">Conceptual Assignment</div>
+        </div>
+      </div>
+      <div class="week-card" onclick="showPage('w2-textbook')">
+        <div class="week-num" style="color:#16a34a">Week 2</div>
+        <h3>The Beta Distribution & Sequential Updating</h3>
+        <p>Code your own Bayesian updating routine in Python or Java. Watch the posterior evolve with each observation.</p>
+        <div class="item-list">
+          <div class="item">Textbook: Beta Distributions</div>
+          <div class="item">Lab: Beta Shaper + Posterior Tracker</div>
+          <div class="item">Coding + Analysis Assignment</div>
+        </div>
+      </div>
+      <div class="week-card" onclick="showPage('w3-textbook')">
+        <div class="week-num" style="color:#9333ea">Week 3</div>
+        <h3>Bayesian Inference in Precision Health</h3>
+        <p>Apply Bayesian reasoning to real clinical scenarios — disease prevalence, diagnostic tests, and personalized risk.</p>
+        <div class="item-list">
+          <div class="item">Textbook: Clinical Applications</div>
+          <div class="item">Lab: Diagnostic Simulator</div>
+          <div class="item">Case Study Assignment</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-title">Learning Objectives</div>
+      By the end of this module, students will: (1) explain Bayes' Theorem in plain language, (2) implement Bayesian updating in Python or Java, (3) visualize how prior beliefs shift with evidence, and (4) apply Bayesian reasoning to at least one clinical diagnostic scenario.
+    </div>
+  </section>
+
+  <!-- ===================== SYLLABUS ===================== -->
+  <section class="page-section" id="syllabus">
+    <div class="section-eyebrow">Course Overview</div>
+    <h1 class="section-title">Course Syllabus</h1>
+    <div class="section-lead">Bayesian Thinking in Precision Health — a 3-week intensive module bridging statistical inference, scientific computing, and clinical application.</div>
+
+    <!-- Course info bar -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:40px;">
+      <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:18px 20px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);margin-bottom:6px">Format</div>
+        <div style="font-size:15px;font-weight:500">Hybrid / Flipped</div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:18px 20px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);margin-bottom:6px">Duration</div>
+        <div style="font-size:15px;font-weight:500">3 Weeks</div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:18px 20px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);margin-bottom:6px">Contact Hours</div>
+        <div style="font-size:15px;font-weight:500">~9 hrs / week</div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:18px 20px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);margin-bottom:6px">Total Points</div>
+        <div style="font-size:15px;font-weight:500">180 pts</div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:18px 20px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);margin-bottom:6px">Prerequisites</div>
+        <div style="font-size:15px;font-weight:500">Intro Stats, Python basics</div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:18px 20px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);margin-bottom:6px">Coding Languages</div>
+        <div style="font-size:15px;font-weight:500">Python or Java</div>
+      </div>
+    </div>
+
+    <!-- Course description -->
+    <div class="prose" style="margin-bottom:40px;">
+      <h2>Course Description</h2>
+      <p>This module introduces Bayesian statistical reasoning as a foundational tool for precision medicine and health informatics. Students will progress from first principles — Bayes' Theorem and prior beliefs — through hands-on implementation of Beta-Binomial updating, to real-world applications in clinical diagnostics, digital phenotyping, and personalized medicine.</p>
+      <p>The course is structured around an integrated interactive platform combining textbook readings, live browser-based simulations, and an embedded Python coding environment. No external software installation is required.</p>
+
+      <h2>Learning Objectives</h2>
+      <p>By the end of this module, students will be able to:</p>
+    </div>
+
+    <!-- Learning objectives as visual cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:40px;">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:18px 20px;display:flex;gap:14px;align-items:flex-start;">
+        
+        <div><div style="font-weight:600;font-size:13px;color:#1e40af;margin-bottom:4px;">LO 1 — Conceptual</div><div style="font-size:13px;color:#3730a3;line-height:1.6;">Explain Bayes' Theorem and the roles of prior, likelihood, and posterior in plain language</div></div>
+      </div>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:18px 20px;display:flex;gap:14px;align-items:flex-start;">
+        
+        <div><div style="font-weight:600;font-size:13px;color:#166534;margin-bottom:4px;">LO 2 — Technical</div><div style="font-size:13px;color:#14532d;line-height:1.6;">Implement Beta-Binomial updating in Python or Java from scratch</div></div>
+      </div>
+      <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;padding:18px 20px;display:flex;gap:14px;align-items:flex-start;">
+        
+        <div><div style="font-weight:600;font-size:13px;color:#6b21a8;margin-bottom:4px;">LO 3 — Visualization</div><div style="font-size:13px;color:#581c87;line-height:1.6;">Generate and interpret evolving posterior distribution charts across sequential observations</div></div>
+      </div>
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:18px 20px;display:flex;gap:14px;align-items:flex-start;">
+        
+        <div><div style="font-weight:600;font-size:13px;color:#92400e;margin-bottom:4px;">LO 4 — Applied</div><div style="font-size:13px;color:#78350f;line-height:1.6;">Apply Bayesian reasoning to diagnostic test interpretation, including sensitivity, specificity, and PPV</div></div>
+      </div>
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:18px 20px;display:flex;gap:14px;align-items:flex-start;">
+        
+        <div><div style="font-weight:600;font-size:13px;color:#991b1b;margin-bottom:4px;">LO 5 — Clinical</div><div style="font-size:13px;color:#7f1d1d;line-height:1.6;">Connect Bayesian sequential updating to at least one real precision health application</div></div>
+      </div>
+      <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:18px 20px;display:flex;gap:14px;align-items:flex-start;">
+        
+        <div><div style="font-weight:600;font-size:13px;color:#134e4a;margin-bottom:4px;">LO 6 — Critical Thinking</div><div style="font-size:13px;color:#115e59;line-height:1.6;">Distinguish Bayesian from frequentist reasoning and argue when each is preferable</div></div>
+      </div>
+    </div>
+
+    <!-- Weekly schedule — big visual timeline -->
+    <div class="prose"><h2>Weekly Schedule</h2></div>
+
+    <!-- Week 1 -->
+    <div style="border:1px solid #bfdbfe;border-radius:12px;overflow:hidden;margin-bottom:20px;">
+      <div style="background:linear-gradient(135deg,#1e3a5f,#2563a8);padding:20px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.2em;color:rgba(255,255,255,.5);margin-bottom:4px;">Week 1</div>
+          <div style="font-size:22px;font-family:'Crimson Pro',serif;font-weight:300;color:#fff;">Foundations of Bayesian Reasoning</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <span style="background:rgba(255,255,255,.12);color:#bfdbfe;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.15);">50 pts</span>
+          <span style="background:rgba(255,255,255,.12);color:#bfdbfe;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.15);">~9 hrs</span>
+        </div>
+      </div>
+      <div style="padding:24px 28px;background:#fff;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:20px;">
+          <div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:10px;">Topics Covered</div>
+            <ul style="font-size:13px;line-height:2.1;color:#374151;list-style:none;padding:0;">
+              <li>→ Probability as degree of belief</li>
+              <li>→ Bayes' Theorem: P(H|E) = P(E|H)·P(H)/P(E)</li>
+              <li>→ Prior, likelihood, posterior — definitions & intuition</li>
+              <li>→ Iterative belief updating</li>
+              <li>→ Frequentist vs. Bayesian paradigms</li>
+              <li>→ Clinical relevance: base rate fallacy</li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:10px;">Activities</div>
+            <ul style="font-size:13px;line-height:2.1;color:#374151;list-style:none;padding:0;">
+              <li>Read Week 1 Textbook (~60 min)</li>
+              <li>Coin Flip Explorer lab (~30 min)</li>
+              <li>Python coding challenge — sandbox (~45 min)</li>
+              <li>Assignment: 4 written/calc questions</li>
+            </ul>
+          </div>
+        </div>
+        <div style="background:#eff6ff;border-radius:6px;padding:14px 18px;font-size:13px;color:#1e40af;">
+          <strong>Assignment due end of Week 1 — 50 points:</strong> Conceptual explanation of prior/posterior (10 pts) · Bayes' Theorem calculation with disease prevalence (15 pts) · Lab observation writeup (10 pts) · Prior strength reflection (15 pts)
+        </div>
+      </div>
+    </div>
+
+    <!-- Week 2 -->
+    <div style="border:1px solid #bbf7d0;border-radius:12px;overflow:hidden;margin-bottom:20px;">
+      <div style="background:linear-gradient(135deg,#14532d,#16a34a);padding:20px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.2em;color:rgba(255,255,255,.5);margin-bottom:4px;">Week 2</div>
+          <div style="font-size:22px;font-family:'Crimson Pro',serif;font-weight:300;color:#fff;">The Beta Distribution & Sequential Updating</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <span style="background:rgba(255,255,255,.12);color:#bbf7d0;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.15);">60 pts</span>
+          <span style="background:rgba(255,255,255,.12);color:#bbf7d0;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.15);">~9 hrs</span>
+        </div>
+      </div>
+      <div style="padding:24px 28px;background:#fff;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:20px;">
+          <div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:10px;">Topics Covered</div>
+            <ul style="font-size:13px;line-height:2.1;color:#374151;list-style:none;padding:0;">
+              <li>→ The Beta distribution Beta(α, β)</li>
+              <li>→ α and β as pseudo-counts</li>
+              <li>→ Conjugate priors and the Binomial likelihood</li>
+              <li>→ Closed-form updating: Beta(α+h, β+t)</li>
+              <li>→ Posterior mean, mode, variance</li>
+              <li>→ Strong vs. weak priors — convergence speed</li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:10px;">Activities</div>
+            <ul style="font-size:13px;line-height:2.1;color:#374151;list-style:none;padding:0;">
+              <li>Read Week 2 Textbook (~60 min)</li>
+              <li>Beta Shaper + Sequential Updater labs (~40 min)</li>
+              <li>Python coding sandbox — Beta updater (~60 min)</li>
+              <li>Assignment: code + analysis + visualization</li>
+            </ul>
+          </div>
+        </div>
+        <div style="background:#f0fdf4;border-radius:6px;padding:14px 18px;font-size:13px;color:#166534;">
+          <strong>Assignment due end of Week 2 — 60 points:</strong> Implement flip_and_update() in Python/Java (25 pts) · Compare flat vs strong prior convergence (20 pts) · Produce posterior evolution plot (15 pts)
+        </div>
+      </div>
+    </div>
+
+    <!-- Week 3 -->
+    <div style="border:1px solid #e9d5ff;border-radius:12px;overflow:hidden;margin-bottom:36px;">
+      <div style="background:linear-gradient(135deg,#3b0764,#9333ea);padding:20px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.2em;color:rgba(255,255,255,.5);margin-bottom:4px;">Week 3</div>
+          <div style="font-size:22px;font-family:'Crimson Pro',serif;font-weight:300;color:#fff;">Bayesian Inference in Precision Health</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <span style="background:rgba(255,255,255,.12);color:#e9d5ff;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.15);">70 pts</span>
+          <span style="background:rgba(255,255,255,.12);color:#e9d5ff;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.15);">~9 hrs</span>
+        </div>
+      </div>
+      <div style="padding:24px 28px;background:#fff;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:20px;">
+          <div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:10px;">Topics Covered</div>
+            <ul style="font-size:13px;line-height:2.1;color:#374151;list-style:none;padding:0;">
+              <li>→ Sensitivity, specificity, PPV, NPV</li>
+              <li>→ Disease prevalence as a Bayesian prior</li>
+              <li>→ Sequential clinical test updating</li>
+              <li>→ Precision medicine: pharmacogenomics, biomarkers</li>
+              <li>→ Digital phenotyping & wearable data streams</li>
+              <li>→ The Bayesian brain: perception as inference</li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:10px;">Activities</div>
+            <ul style="font-size:13px;line-height:2.1;color:#374151;list-style:none;padding:0;">
+              <li>Read Week 3 Textbook (~60 min)</li>
+              <li>Diagnostic Testing Simulator lab (~30 min)</li>
+              <li>Python coding sandbox — clinical Bayesian (~60 min)</li>
+              <li>Assignment: case study + code + reflection</li>
+            </ul>
+          </div>
+        </div>
+        <div style="background:#faf5ff;border-radius:6px;padding:14px 18px;font-size:13px;color:#6b21a8;">
+          <strong>Assignment due end of Week 3 — 70 points:</strong> Alzheimer's biomarker case study (25 pts) · Sequential diagnostic simulator code (30 pts) · Precision health reflection (15 pts)
+        </div>
+      </div>
+    </div>
+
+    <!-- Grading table -->
+    <div class="prose"><h2>Grading Summary</h2></div>
+    <table style="margin-bottom:36px;">
+      <tr>
+        <th>Component</th><th>Week</th><th>Points</th><th>% of Total</th><th>Type</th>
+      </tr>
+      <tr><td>Assignment 1: Conceptual Foundations</td><td>Week 1</td><td>50</td><td>28%</td><td>Written + Calculation</td></tr>
+      <tr><td>Assignment 2: Beta-Binomial Coding</td><td>Week 2</td><td>60</td><td>33%</td><td>Code + Analysis</td></tr>
+      <tr><td>Assignment 3: Clinical Case Study</td><td>Week 3</td><td>70</td><td>39%</td><td>Case Study + Code</td></tr>
+      <tr style="font-weight:600;background:#f8f5f2;">
+        <td><strong>Total</strong></td><td>—</td><td><strong>180</strong></td><td><strong>100%</strong></td><td>—</td>
+      </tr>
+    </table>
+
+    <!-- Grading scale -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:40px;">
+      <div style="text-align:center;padding:16px 8px;background:#dcfce7;border-radius:8px;border:1px solid #86efac;">
+        <div style="font-weight:700;font-size:18px;color:#166534;">A</div>
+        <div style="font-size:12px;color:#15803d;margin-top:2px;">162–180 pts</div>
+        <div style="font-size:11px;color:#16a34a;margin-top:2px;">90–100%</div>
+      </div>
+      <div style="text-align:center;padding:16px 8px;background:#dbeafe;border-radius:8px;border:1px solid #93c5fd;">
+        <div style="font-weight:700;font-size:18px;color:#1e40af;">B</div>
+        <div style="font-size:12px;color:#1d4ed8;margin-top:2px;">144–161 pts</div>
+        <div style="font-size:11px;color:#2563a8;margin-top:2px;">80–89%</div>
+      </div>
+      <div style="text-align:center;padding:16px 8px;background:#fef9c3;border-radius:8px;border:1px solid #fde68a;">
+        <div style="font-weight:700;font-size:18px;color:#92400e;">C</div>
+        <div style="font-size:12px;color:#b45309;margin-top:2px;">126–143 pts</div>
+        <div style="font-size:11px;color:#d97706;margin-top:2px;">70–79%</div>
+      </div>
+      <div style="text-align:center;padding:16px 8px;background:#fee2e2;border-radius:8px;border:1px solid #fca5a5;">
+        <div style="font-weight:700;font-size:18px;color:#991b1b;">D</div>
+        <div style="font-size:12px;color:#b91c1c;margin-top:2px;">108–125 pts</div>
+        <div style="font-size:11px;color:#dc2626;margin-top:2px;">60–69%</div>
+      </div>
+      <div style="text-align:center;padding:16px 8px;background:#f3f4f6;border-radius:8px;border:1px solid #d1d5db;">
+        <div style="font-weight:700;font-size:18px;color:#374151;">F</div>
+        <div style="font-size:12px;color:#4b5563;margin-top:2px;">&lt; 108 pts</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:2px;">&lt; 60%</div>
+      </div>
+    </div>
+
+    <!-- Policies -->
+    <div class="prose">
+      <h2>Course Policies</h2>
+      <h3>Prerequisites</h3>
+      <p>Students should have completed an introductory statistics course covering basic probability. Familiarity with Python (variables, loops, functions) or Java (classes, methods) is expected for the Week 2 coding assignment. No prior Bayesian experience is required.</p>
+
+      <h3>Tools & Technology</h3>
+      <p>All course materials are embedded in the interactive HTML platform — no installation required. For the coding assignments, students may use the in-browser Python sandbox (powered by Pyodide) or submit code written in a local Python 3.8+ or Java 11+ environment. Required Python packages: <code>numpy</code>, <code>scipy</code>, <code>matplotlib</code>.</p>
+
+      <h3>Late Policy</h3>
+      <p>Assignments submitted within 48 hours of the deadline receive a 10% deduction. Submissions beyond 48 hours are not accepted without prior arrangement. Extensions may be granted for documented circumstances with at least 24 hours' notice.</p>
+
+      <h3>Academic Integrity</h3>
+      <p>Students are encouraged to discuss concepts with peers, but all written responses and submitted code must be independently authored. Use of AI coding assistants is permitted for Week 2 and 3 coding tasks provided the student can explain every line of their submission.</p>
+
+      <h3>Accessibility</h3>
+      <p>All interactive labs function in any modern browser without plugins. Students requiring alternative formats for any course material should contact the instructor at least one week in advance.</p>
+    </div>
+
+    <!-- Required tools callout -->
+    <div class="callout info" style="margin-top:32px;">
+      <div class="callout-title">Required Technical Setup (Week 1 Prep)</div>
+      For the in-browser sandbox: a modern browser with internet access (Chrome 90+ recommended). For local coding: Python 3.8+ with <code>pip install numpy scipy matplotlib</code>, or Java 11+ with Apache Commons Math. Verify your setup works before Week 2 begins.
+    </div>
+
+    <!-- CTA row -->
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:32px;">
+      <button class="btn btn-primary" onclick="showPage('w1-textbook')">Start Week 1 →</button>
+      <button class="btn btn-outline" onclick="showPage('how-to')">How to use this lab</button>
+    </div>
+  </section>
+
+  <!-- ===================== HOW TO USE ===================== -->
+  <section class="page-section" id="how-to">
+    <div class="section-eyebrow">Getting Started</div>
+    <h1 class="section-title">How to Use This Interactive Lab</h1>
+    <div class="prose">
+      <p class="section-lead">This platform is your laboratory, textbook, and workspace — all in one. Here's how to navigate it effectively.</p>
+
+      <h2>Navigation</h2>
+      <p>Use the <strong>sidebar on the left</strong> to move between weeks and content types. Each week contains four items:</p>
+      <table>
+        <tr><th>Item</th><th>Purpose</th><th>Who it's for</th></tr>
+        <tr><td><strong>Textbook</strong></td><td>Core reading material with examples, formulas, and explanations</td><td>All students — read before lab</td></tr>
+        <tr><td><strong>Interactive Lab</strong></td><td>Hands-on simulation to explore concepts visually</td><td>All students — during lab sessions</td></tr>
+        <tr><td><strong>Assignment</strong></td><td>Questions and coding tasks to complete for submission</td><td>All students — submit to instructor</td></tr>
+        <tr><td><strong>Answer Sheet</strong></td><td>Full solutions with explanations</td><td>Instructors only (initially)</td></tr>
+      </table>
+
+      <h2>Using the Interactive Labs</h2>
+      <p>The labs require no installation — they run directly in your browser. Each lab has:</p>
+      <ul style="margin: 12px 0 18px 20px; line-height: 2;">
+        <li><strong>Sliders and controls</strong> — adjust parameters and see results instantly</li>
+        <li><strong>Run Simulation buttons</strong> — execute coin flips or updates</li>
+        <li><strong>Live charts</strong> — watch distributions evolve in real time</li>
+        <li><strong>Statistics panel</strong> — track key metrics (α, β, mean, variance)</li>
+        <li><strong>Flip log</strong> — a scrollable record of every flip outcome</li>
+      </ul>
+
+      <h2>Coding Exercises</h2>
+      <p>Assignments include Python and Java code templates. You will write functions to simulate coin flips, update a Beta distribution, and visualize the posterior. The lab shows you the expected output so you can verify your code is correct.</p>
+
+      <div class="callout warning">
+        <div class="callout-title">Before You Start Week 1</div>
+        Make sure you have Python 3.8+ (with NumPy, SciPy, Matplotlib) OR a Java 11+ environment installed. The textbook code blocks can be copied directly into your editor.
+      </div>
+
+      <h2>Recommended Weekly Flow</h2>
+      <ol style="margin: 12px 0 18px 20px; line-height: 2.2;">
+        <li>Read the <strong>Textbook</strong> section (~45–60 min)</li>
+        <li>Open the <strong>Interactive Lab</strong> and explore for ~30 min</li>
+        <li>Complete the <strong>Assignment</strong> (coding + written responses)</li>
+        <li>Review the Answer Sheet <em>after</em> submitting</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===================== WEEK 1 TEXTBOOK ===================== -->
+  <section class="page-section" id="w1-textbook">
+    <div class="section-eyebrow">Week 1 — Textbook</div>
+    <h1 class="section-title">Bayes' Theorem:<br>Updating Beliefs with Evidence</h1>
+    <div class="section-lead">What does it mean to learn from data? Bayesian inference offers a mathematically precise answer — and it starts with a deceptively simple formula.</div>
+
+    <div class="prose">
+      <h2>1. The Problem of Uncertain Beliefs</h2>
+      <p>Imagine you find a coin on the street. Is it a fair coin? You don't know. Maybe it's perfectly balanced, maybe it's loaded to land heads 70% of the time. Your <em>prior belief</em> is that it's probably fair — but you're not certain.</p>
+      <p>Now you flip it 10 times and get 8 heads. Should you update your belief? Of course. But <em>by how much</em>? This is precisely the question Bayesian inference answers.</p>
+
+      <h2>2. The Formula</h2>
+      <p>Bayes' Theorem tells us how to update a probability when we receive new evidence:</p>
+
+      <div class="math-block">P(H | E) = P(E | H) × P(H) / P(E)</div>
+
+      <table>
+        <tr><th>Symbol</th><th>Name</th><th>Meaning</th></tr>
+        <tr><td><strong>P(H)</strong></td><td>Prior</td><td>Your belief in H <em>before</em> seeing evidence</td></tr>
+        <tr><td><strong>P(E|H)</strong></td><td>Likelihood</td><td>How probable is the evidence if H is true?</td></tr>
+        <tr><td><strong>P(H|E)</strong></td><td>Posterior</td><td>Your updated belief after seeing evidence E</td></tr>
+        <tr><td><strong>P(E)</strong></td><td>Marginal</td><td>Total probability of the evidence (normalizing constant)</td></tr>
+      </table>
+
+      <h2>3. An Intuitive Example: The Coin</h2>
+      <p>Let's define two hypotheses:</p>
+      <ul style="margin: 12px 0 18px 20px; line-height: 2.2;">
+        <li><strong>H₁</strong>: The coin is fair (P(heads) = 0.5)</li>
+        <li><strong>H₂</strong>: The coin is biased (P(heads) = 0.7)</li>
+      </ul>
+
+      <p>Suppose we start believing both hypotheses equally: P(H₁) = P(H₂) = 0.5. We flip the coin and get Heads.</p>
+
+      <div class="callout formula">
+        <div class="callout-title">Calculation</div>
+        <strong>P(Heads | fair)</strong> = 0.5 &nbsp;&nbsp; <strong>P(Heads | biased)</strong> = 0.7<br><br>
+        P(E) = 0.5 × 0.5 + 0.5 × 0.7 = 0.60<br><br>
+        <strong>P(fair | Heads)</strong> = (0.5 × 0.5) / 0.60 ≈ <strong>0.417</strong><br>
+        <strong>P(biased | Heads)</strong> = (0.7 × 0.5) / 0.60 ≈ <strong>0.583</strong>
+      </div>
+
+      <p>One heads made us <em>slightly more</em> convinced the coin is biased. Makes sense! Each flip is weak evidence, but evidence accumulates.</p>
+
+      <h2>4. The Key Insight: Updating Is Iterative</h2>
+      <p>The posterior from one update becomes the <em>prior</em> for the next update. This is the beating heart of Bayesian inference: beliefs evolve continuously as evidence arrives, making it perfectly suited to medical data streams, sensor readings, and longitudinal studies.</p>
+
+      <div class="callout success">
+        <div class="callout-title">Why This Matters in Healthcare</div>
+        A patient's test result doesn't exist in a vacuum. Bayesian reasoning lets us combine a test's sensitivity and specificity with the population prevalence of a disease to compute the true probability a positive test means the patient is sick — often strikingly different from what intuition suggests.
+      </div>
+
+      <h2>5. Frequentist vs. Bayesian Thinking</h2>
+      <table>
+        <tr><th>Approach</th><th>Question Asked</th><th>What's Random?</th></tr>
+        <tr><td>Frequentist</td><td>"What would happen over many repetitions?"</td><td>The data</td></tr>
+        <tr><td>Bayesian</td><td>"Given this data, what should I believe?"</td><td>The hypothesis</td></tr>
+      </table>
+      <p>Neither is universally superior — but Bayesian methods shine when prior knowledge is valuable and when you need to update beliefs sequentially.</p>
+
+      <h2>6. Summary</h2>
+      <div class="highlight-box">
+        Bayes' Theorem is a <em>machine for rational belief revision</em>. You start with a prior, multiply by the likelihood of observed evidence, and normalize. The result — the posterior — becomes your new, better-informed belief. Repeat with every new observation.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== WEEK 1 LAB ===================== -->
+  <section class="page-section" id="w1-lab">
+    <div class="section-eyebrow">Week 1 — Interactive Lab</div>
+    <h1 class="section-title">Coin Flip Explorer</h1>
+    <p style="color:var(--muted);margin-bottom:28px">Flip a coin with an unknown bias and watch how your belief about P(heads) updates with each observation.</p>
+
+    <div class="lab-container">
+      <div class="lab-header">
+        <h3>Bayesian Coin Flip Simulator</h3>
+        <p>Set the coin's true bias (hidden), choose your prior, and flip. Can you detect the bias?</p>
+      </div>
+      <div class="lab-body">
+        <div class="controls-grid">
+          <div class="control-group">
+            <label>True Coin Bias (hidden) <span style="font-size:10px;opacity:0.6">— pretend you don't know this</span></label>
+            <input type="range" id="trueBias" min="0.1" max="0.9" step="0.01" value="0.65">
+            <div class="val-display" id="trueBiasVal">0.65 (65% heads)</div>
+          </div>
+          <div class="control-group">
+            <label>Prior Belief: α (initial heads count)</label>
+            <input type="range" id="priorAlpha" min="1" max="20" step="1" value="2">
+            <div class="val-display" id="priorAlphaVal">α = 2</div>
+          </div>
+          <div class="control-group">
+            <label>Prior Belief: β (initial tails count)</label>
+            <input type="range" id="priorBeta" min="1" max="20" step="1" value="2">
+            <div class="val-display" id="priorBetaVal">β = 2</div>
+          </div>
+          <div class="control-group">
+            <label>Flips per batch</label>
+            <input type="number" id="batchSize" value="10" min="1" max="100">
+          </div>
+        </div>
+
+        <div class="coin-display">
+          <div class="coin heads" id="coinDisplay">H</div>
+          <div style="text-align:center;">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:4px">Last flip</div>
+            <div style="font-size:28px;font-weight:700;font-family:'JetBrains Mono',monospace" id="lastResult">—</div>
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="flipOnce()">Flip Once</button>
+          <button class="btn btn-success" onclick="flipBatch()">Flip Batch</button>
+          <button class="btn btn-outline" onclick="flip100()">Flip 100</button>
+          <button class="btn btn-danger" onclick="resetLab1()">Reset</button>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-card"><div class="stat-val" id="s1-total">0</div><div class="stat-label">Total Flips</div></div>
+          <div class="stat-card"><div class="stat-val" id="s1-heads" style="color:#16a34a">0</div><div class="stat-label">Heads</div></div>
+          <div class="stat-card"><div class="stat-val" id="s1-tails" style="color:#dc2626">0</div><div class="stat-label">Tails</div></div>
+          <div class="stat-card"><div class="stat-val" id="s1-mean">0.50</div><div class="stat-label">Posterior Mean</div></div>
+        </div>
+
+        <div class="chart-area">
+          <canvas id="lab1Chart"></canvas>
+        </div>
+
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.08em">Flip Log</div>
+        <div class="flip-log" id="flipLog">Flip the coin to begin...</div>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-title">What to Observe</div>
+      Notice how the posterior distribution (blue curve) starts wide and uncertain, then narrows and shifts as you accumulate more flips. With enough evidence, the posterior should converge near the true bias — even if your initial prior was wrong.
+    </div>
+
+    <!-- PYTHON SANDBOX W1 -->
+    <div class="challenge-banner">
+
+      <div class="challenge-content">
+        <h4>Python Coding Challenge — Write It Yourself</h4>
+        <p>Now code your own Bayesian coin flip simulator below. The starter template uses only built-in Python — no imports needed. Edit the code, click <strong>▶ Run</strong>, and see your posterior evolve in real time.</p>
+        <ul>
+          <li>Change <code>TRUE_BIAS</code> and <code>N_FLIPS</code> to explore different scenarios</li>
+          <li>Modify the prior (<code>alpha</code>, <code>beta</code>) and observe how it affects convergence</li>
+          <li>Try adding print statements to log the mean at every 10 flips</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="pybox" id="pybox-w1">
+      <div class="pybox-header">
+        <div class="pybox-header-left">
+          <div class="pybox-dots">
+            <div class="pybox-dot" style="background:#ef4444"></div>
+            <div class="pybox-dot" style="background:#f59e0b"></div>
+            <div class="pybox-dot" style="background:#22c55e"></div>
+          </div>
+          <div class="pybox-title"><strong>week1_coin_bayes.py</strong> &nbsp;— Bayesian Coin Flip</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="pybox-badge">Python 3.11 · Pyodide</div>
+          <div class="pybox-status" id="py-status-w1"><div class="dot"></div><span>loading…</span></div>
+        </div>
+      </div>
+
+      <div class="pybox-editor-wrap">
+        <textarea class="pybox-editor" id="py-editor-w1" spellcheck="false">import random
+import math
+
+# ══════════════════════════════════════════
+#  BAYESIAN COIN FLIP — Week 1 Starter
+#  Edit any value below and click ▶ Run!
+# ══════════════════════════════════════════
+
+TRUE_BIAS = 0.70     # The coin's real bias (pretend you don't know this)
+N_FLIPS   = 80       # How many coins to flip
+ALPHA     = 2        # Prior: pseudo-heads count (try 1 for flat prior)
+BETA      = 2        # Prior: pseudo-tails count
+
+# ── Gamma function for Beta PDF (no scipy needed) ──
+def lgamma(z):
+    c = [76.18009172947146, -86.50532032941677, 24.01409824083091,
+         -1.231739572450155, 1.208650973866179e-3, -5.395239384953e-6]
+    x = 1.000000000190015
+    for i, ci in enumerate(c):
+        x += ci / (z + i + 1)
+    t = z + 5.5
+    return 0.5*math.log(2*math.pi) + (z+0.5)*math.log(t) - t + math.log(x)
+
+def beta_pdf(x, a, b):
+    if x <= 0 or x >= 1: return 0.0
+    log_p = (a-1)*math.log(x) + (b-1)*math.log(1-x)
+    log_p -= lgamma(a) + lgamma(b) - lgamma(a+b)
+    return math.exp(log_p)
+
+# ── Simulate flips and update posterior ──
+alpha, beta = ALPHA, BETA
+heads_count, tails_count = 0, 0
+means = [alpha / (alpha + beta)]      # track posterior mean over time
+
+for flip_num in range(1, N_FLIPS + 1):
+    outcome = 1 if random.random() < TRUE_BIAS else 0
+    if outcome == 1:
+        alpha += 1
+        heads_count += 1
+    else:
+        beta += 1
+        tails_count += 1
+    means.append(alpha / (alpha + beta))
+
+# ── Compute final posterior curve ──
+theta_vals = [i / 99 for i in range(1, 99)]   # avoid 0 and 1
+pdf_vals   = [beta_pdf(t, alpha, beta) for t in theta_vals]
+prior_vals = [beta_pdf(t, ALPHA, BETA) for t in theta_vals]
+
+# ── Print a summary ──
+print(f"Flips: {N_FLIPS}  |  Heads: {heads_count}  |  Tails: {tails_count}")
+print(f"Posterior: Beta({alpha}, {beta})")
+print(f"Posterior mean: {alpha/(alpha+beta):.4f}  (true bias: {TRUE_BIAS})")
+print(f"Posterior std:  {((alpha*beta)/((alpha+beta)**2*(alpha+beta+1)))**0.5:.4f}")
+
+# ── Return data for visualization ──
+# (The lab reads these variables automatically)
+PLOT_DATA = {
+    "type": "dual",
+    "theta": theta_vals,
+    "prior": prior_vals,
+    "posterior": pdf_vals,
+    "means": means,
+    "true_bias": TRUE_BIAS,
+    "alpha": alpha,
+    "beta": beta,
+    "n": N_FLIPS,
+}</textarea>
+      </div>
+
+      <div class="pybox-toolbar">
+        <button class="pybox-run" id="py-run-w1" onclick="runPython('w1')" disabled>
+          <span class="run-icon">▶</span> Run Code
+        </button>
+        <span class="pybox-hint">Ctrl+Enter to run</span>
+        <button class="pybox-clear" onclick="clearOutput('w1')">Clear Output</button>
+      </div>
+
+      <div class="pybox-output-area">
+        <div class="pybox-output-label">console output</div>
+        <div class="pybox-console" id="py-console-w1"><span class="py-info">Python environment loading… this takes a few seconds on first use.</span></div>
+
+        <div class="pybox-output-label" style="margin-top:16px">visualization</div>
+        <div class="pybox-chart-wrap" id="py-chart-wrap-w1">
+          <div class="pybox-chart-placeholder">Run your code to generate a plot</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== WEEK 1 ASSIGNMENT ===================== -->
+  <section class="page-section" id="w1-assignment">
+    <div class="assignment-header">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.2em;opacity:0.5;margin-bottom:10px">Week 1 Assignment</div>
+      <h2 style="font-family:'Crimson Pro',serif;font-size:28px;font-weight:300">Conceptual Foundations of Bayesian Inference</h2>
+      <div class="assignment-meta">
+        <div class="meta-item">Due: <strong>End of Week 1</strong></div>
+        <div class="meta-item">Points: <strong>50</strong></div>
+        <div class="meta-item">Format: <strong>Written + Short Calculation</strong></div>
+      </div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 1 — 10 pts</div>
+      <div class="question-text">In your own words, explain the difference between a <em>prior</em>, a <em>likelihood</em>, and a <em>posterior</em> in Bayesian inference. Use the coin-flip scenario from the lab to ground your explanation.</div>
+      <div class="answer-space">Write your answer here (3–5 sentences)</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 2 — 15 pts</div>
+      <div class="question-text">A lab test for a rare disease returns positive. The disease affects 1% of the population. The test has 95% sensitivity (true positive rate) and 90% specificity (true negative rate). Using Bayes' Theorem, calculate the probability that a patient with a positive test actually has the disease. Show all steps.</div>
+      <div class="answer-space">Show your calculation here</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 3 — 10 pts</div>
+      <div class="question-text">Using the Week 1 Interactive Lab, set the true coin bias to 0.70 and start with a flat prior (α=1, β=1). Flip 50 times and record the posterior mean. Then flip another 50 times and record again. What pattern do you observe? Include screenshots or note the values.</div>
+      <div class="answer-space">Record your observations and explain the pattern</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 4 — 15 pts</div>
+      <div class="question-text">Why might a strong prior belief require a lot of evidence to overcome? Give an example from medicine where prior beliefs about disease prevalence substantially affect how we should interpret diagnostic test results.</div>
+      <div class="answer-space">Write your answer here (3–5 sentences)</div>
+    </div>
+  </section>
+
+  <!-- ===================== WEEK 1 ANSWERS ===================== -->
+  <section class="page-section" id="w1-answers">
+    <div class="assignment-header" style="background:linear-gradient(135deg,#14532d,#15803d)">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.2em;opacity:0.5;margin-bottom:10px">Instructor Resource</div>
+      <h2 style="font-family:'Crimson Pro',serif;font-size:28px;font-weight:300">Week 1 — Answer Sheet</h2>
+      <div class="assignment-meta">
+        <div class="meta-item" style="opacity:0.7">Full solutions with grading guidance</div>
+      </div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 1 — Model Answer</div>
+      <div class="question-text">In your own words, explain prior, likelihood, and posterior.</div>
+      <div class="answer-key">
+        <div class="answer-label">Answer</div>
+        The <strong>prior</strong> is your belief about the coin's fairness before any flips — e.g., "I think it's probably fair." The <strong>likelihood</strong> describes how probable the observed data (e.g., 8 heads in 10 flips) would be under a specific hypothesis (e.g., given that P(heads)=0.7). The <strong>posterior</strong> is your updated belief after combining the prior with the likelihood via Bayes' Theorem — it reflects what you now believe given the evidence. In the coin lab, the posterior distribution shifts toward higher P(heads) values when many heads are observed, reflecting rational belief revision.<br><br>
+        <em>Grading note: Award full credit for correct directional understanding. Accept varied wording. Deduct 3 pts if student confuses prior and posterior.</em>
+      </div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 2 — Model Answer</div>
+      <div class="question-text">Disease base rate 1%, sensitivity 95%, specificity 90%.</div>
+      <div class="answer-key">
+        <div class="answer-label">Full Calculation</div>
+        Let D = disease, T+ = positive test.<br><br>
+        P(D) = 0.01 &nbsp;&nbsp; P(T+|D) = 0.95 &nbsp;&nbsp; P(T+|¬D) = 0.10<br><br>
+        P(T+) = P(T+|D)·P(D) + P(T+|¬D)·P(¬D)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 0.95 × 0.01 + 0.10 × 0.99 = 0.0095 + 0.099 = 0.1085<br><br>
+        <strong>P(D|T+) = (0.95 × 0.01) / 0.1085 ≈ 0.0876 ≈ 8.76%</strong><br><br>
+        <em>Despite a 95% sensitive test, only ~9% of positives actually have the disease — because the disease is rare. This is the base rate fallacy.</em>
+      </div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 3 — Model Answer</div>
+      <div class="question-text">Lab observation with bias=0.70, flat prior.</div>
+      <div class="answer-key">
+        <div class="answer-label">Expected Observations</div>
+        After 50 flips: posterior mean should be approximately 0.63–0.72 (random variation).<br>
+        After 100 flips: posterior mean should be closer to 0.70, with a narrower distribution.<br><br>
+        <strong>Pattern:</strong> The posterior mean converges toward the true bias (0.70) as more data accumulates. The distribution also becomes narrower (more certain). This demonstrates the law of large numbers in a Bayesian framework.<br><br>
+        <em>Accept any reasonable empirical observation. Award full credit if student correctly describes convergence and reduced uncertainty.</em>
+      </div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 4 — Model Answer</div>
+      <div class="question-text">Strong priors and evidence requirements in medicine.</div>
+      <div class="answer-key">
+        <div class="answer-label">Answer</div>
+        A strong prior (e.g., concentrated Beta(20,20) belief in fairness) mathematically requires many data points to shift the posterior significantly, because the evidence must "outvote" the prior weight. In medicine, if a disease has prevalence of 0.01% (e.g., a rare genetic disorder), even a highly accurate test will produce mostly false positives in population screening — because P(Disease) in the prior is extremely low. The evidence of a positive test must contend with the strong prior probability of the patient <em>not</em> having the disease. This is why rare disease screening requires confirmation testing.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== WEEK 2 TEXTBOOK ===================== -->
+  <section class="page-section" id="w2-textbook">
+    <div class="section-eyebrow">Week 2 — Textbook</div>
+    <h1 class="section-title">The Beta Distribution:<br>A Prior Made for Probabilities</h1>
+    <div class="section-lead">The Beta distribution is the natural choice for representing uncertainty about a probability. It lives between 0 and 1, and it updates beautifully when new data arrives.</div>
+
+    <div class="prose">
+      <h2>1. Why We Need a Distribution for P</h2>
+      <p>In Week 1, we treated our hypotheses as discrete ("fair" vs. "biased"). But in reality, the coin's bias θ is a continuous value between 0 and 1. We need a probability distribution that lives on [0,1] and can represent all our uncertainty about θ.</p>
+      <p>Enter the <strong>Beta distribution</strong>: Beta(α, β).</p>
+
+      <div class="math-block">Beta(θ | α, β) ∝ θ^(α−1) · (1−θ)^(β−1)</div>
+
+      <h2>2. Understanding α and β</h2>
+      <p>Think of α and β as "pseudo-counts":</p>
+      <table>
+        <tr><th>Parameter</th><th>Intuition</th><th>Effect on Distribution</th></tr>
+        <tr><td><strong>α</strong></td><td>Prior heads observations</td><td>Shifts distribution right (toward 1)</td></tr>
+        <tr><td><strong>β</strong></td><td>Prior tails observations</td><td>Shifts distribution left (toward 0)</td></tr>
+        <tr><td><strong>α+β</strong></td><td>Total prior "confidence"</td><td>Concentration: higher = narrower = more certain</td></tr>
+      </table>
+
+      <p>A flat prior (total ignorance) is Beta(1,1) — a uniform distribution. "I believe the coin is fair, with moderate confidence" might be Beta(10,10).</p>
+
+      <h2>3. The Magic: Conjugate Updating</h2>
+      <p>The Beta distribution is a <em>conjugate prior</em> for the Binomial likelihood. This means: if you start with Beta(α, β) and observe <strong>h</strong> heads and <strong>t</strong> tails, your posterior is simply:</p>
+
+      <div class="math-block">Posterior = Beta(α + h, β + t)</div>
+
+      <p>No integration. No numerical approximation. Just add your counts to the prior parameters. This is the mathematical elegance that makes Beta-Binomial updating so powerful and intuitive.</p>
+
+      <h2>4. Python Implementation</h2>
+    </div>
+
+    <div class="code-block">
+      <div class="lang-tag">PYTHON</div>
+      <pre><span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="kw">import</span> matplotlib.pyplot <span class="kw">as</span> plt
+<span class="kw">from</span> scipy.stats <span class="kw">import</span> beta <span class="kw">as</span> beta_dist
+<span class="kw">import</span> random
+
+<span class="cm"># === PARAMETERS ===</span>
+TRUE_BIAS <span class="op">=</span> <span class="nm">0.65</span>        <span class="cm"># The "true" bias of the coin (unknown to us)</span>
+ALPHA_PRIOR <span class="op">=</span> <span class="nm">2</span>        <span class="cm"># Initial prior: pseudo-heads count</span>
+BETA_PRIOR  <span class="op">=</span> <span class="nm">2</span>        <span class="cm"># Initial prior: pseudo-tails count</span>
+N_FLIPS <span class="op">=</span> <span class="nm">100</span>           <span class="cm"># Number of coin flips to simulate</span>
+
+<span class="kw">def</span> <span class="fn">flip_coin</span>(p_heads<span class="op">=</span><span class="nm">0.5</span>):
+    <span class="st">"""Simulate a single biased coin flip."""</span>
+    <span class="kw">return</span> <span class="nm">1</span> <span class="kw">if</span> random.random() <span class="op">&lt;</span> p_heads <span class="kw">else</span> <span class="nm">0</span>
+
+<span class="kw">def</span> <span class="fn">update_posterior</span>(alpha, beta_param, outcome):
+    <span class="st">"""Update Beta parameters given a coin flip outcome (1=H, 0=T)."""</span>
+    <span class="kw">if</span> outcome <span class="op">==</span> <span class="nm">1</span>:   <span class="cm"># Heads</span>
+        alpha <span class="op">+=</span> <span class="nm">1</span>
+    <span class="kw">else</span>:              <span class="cm"># Tails</span>
+        beta_param <span class="op">+=</span> <span class="nm">1</span>
+    <span class="kw">return</span> alpha, beta_param
+
+<span class="cm"># === SIMULATION ===</span>
+alpha, beta_param <span class="op">=</span> ALPHA_PRIOR, BETA_PRIOR
+theta <span class="op">=</span> np.linspace(<span class="nm">0</span>, <span class="nm">1</span>, <span class="nm">200</span>)
+snapshots <span class="op">=</span> [(<span class="nm">0</span>, alpha, beta_param)]
+
+<span class="kw">for</span> i <span class="kw">in</span> range(N_FLIPS):
+    outcome <span class="op">=</span> <span class="fn">flip_coin</span>(TRUE_BIAS)
+    alpha, beta_param <span class="op">=</span> <span class="fn">update_posterior</span>(alpha, beta_param, outcome)
+    <span class="kw">if</span> (i <span class="op">+</span> <span class="nm">1</span>) <span class="kw">in</span> [<span class="nm">5</span>, <span class="nm">10</span>, <span class="nm">25</span>, <span class="nm">50</span>, <span class="nm">100</span>]:
+        snapshots.append((i <span class="op">+</span> <span class="nm">1</span>, alpha, beta_param))
+
+<span class="cm"># === PLOTTING ===</span>
+fig, axes <span class="op">=</span> plt.subplots(<span class="nm">1</span>, len(snapshots), figsize<span class="op">=</span>(<span class="nm">18</span>, <span class="nm">4</span>))
+<span class="kw">for</span> ax, (n, a, b) <span class="kw">in</span> zip(axes, snapshots):
+    y <span class="op">=</span> beta_dist.pdf(theta, a, b)
+    ax.fill_between(theta, y, alpha<span class="op">=</span><span class="nm">0.3</span>, color<span class="op">=</span><span class="st">'steelblue'</span>)
+    ax.plot(theta, y, color<span class="op">=</span><span class="st">'steelblue'</span>)
+    ax.axvline(TRUE_BIAS, color<span class="op">=</span><span class="st">'red'</span>, ls<span class="op">=</span><span class="st">'--'</span>, alpha<span class="op">=</span><span class="nm">0.7</span>)
+    ax.set_title(<span class="st">f'n={n}\nBeta({a},{b})'</span>)
+    ax.set_xlabel(<span class="st">'θ (P heads)'</span>)
+plt.suptitle(<span class="st">'Posterior Evolution: Beta-Binomial Updating'</span>, fontsize<span class="op">=</span><span class="nm">14</span>)
+plt.tight_layout()
+plt.savefig(<span class="st">'posterior_evolution.png'</span>, dpi<span class="op">=</span><span class="nm">150</span>)
+plt.show()</pre>
+    </div>
+
+    <div class="prose">
+      <h2>5. Java Implementation</h2>
+    </div>
+
+    <div class="code-block">
+      <div class="lang-tag">JAVA</div>
+      <pre><span class="kw">import</span> org.apache.commons.math3.distribution.BetaDistribution;
+<span class="kw">import</span> java.util.Random;
+
+<span class="kw">public class</span> <span class="fn">BayesianCoinFlip</span> {
+    <span class="kw">private double</span> alpha;
+    <span class="kw">private double</span> beta;
+    <span class="kw">private final double</span> trueBias;
+    <span class="kw">private final</span> Random rng <span class="op">=</span> <span class="kw">new</span> Random();
+
+    <span class="kw">public</span> <span class="fn">BayesianCoinFlip</span>(<span class="kw">double</span> alpha, <span class="kw">double</span> beta, <span class="kw">double</span> trueBias) {
+        <span class="kw">this</span>.alpha    <span class="op">=</span> alpha;
+        <span class="kw">this</span>.beta     <span class="op">=</span> beta;
+        <span class="kw">this</span>.trueBias <span class="op">=</span> trueBias;
+    }
+
+    <span class="cm">/** Simulate one coin flip and update the posterior. */</span>
+    <span class="kw">public boolean</span> <span class="fn">flipAndUpdate</span>() {
+        <span class="kw">boolean</span> heads <span class="op">=</span> rng.nextDouble() <span class="op">&lt;</span> trueBias;
+        <span class="kw">if</span> (heads) alpha<span class="op">++</span>; <span class="kw">else</span> beta<span class="op">++</span>;
+        <span class="kw">return</span> heads;
+    }
+
+    <span class="kw">public double</span> <span class="fn">posteriorMean</span>() { <span class="kw">return</span> alpha <span class="op">/</span> (alpha <span class="op">+</span> beta); }
+    <span class="kw">public double</span> <span class="fn">posteriorVariance</span>() {
+        <span class="kw">double</span> n <span class="op">=</span> alpha <span class="op">+</span> beta;
+        <span class="kw">return</span> (alpha <span class="op">*</span> beta) <span class="op">/</span> (n <span class="op">*</span> n <span class="op">*</span> (n <span class="op">+</span> <span class="nm">1</span>));
+    }
+
+    <span class="kw">public static void</span> <span class="fn">main</span>(String[] args) {
+        BayesianCoinFlip sim <span class="op">=</span> <span class="kw">new</span> <span class="fn">BayesianCoinFlip</span>(<span class="nm">2</span>, <span class="nm">2</span>, <span class="nm">0.65</span>);
+        <span class="kw">int</span>[] snappoints <span class="op">=</span> {<span class="nm">5</span>, <span class="nm">10</span>, <span class="nm">25</span>, <span class="nm">50</span>, <span class="nm">100</span>};
+        <span class="kw">int</span> next <span class="op">=</span> <span class="nm">0</span>;
+        <span class="kw">for</span> (<span class="kw">int</span> i <span class="op">=</span> <span class="nm">1</span>; i <span class="op">&lt;=</span> <span class="nm">100</span>; i<span class="op">++</span>) {
+            sim.<span class="fn">flipAndUpdate</span>();
+            <span class="kw">if</span> (next <span class="op">&lt;</span> snappoints.length <span class="op">&amp;&amp;</span> i <span class="op">==</span> snappoints[next]) {
+                System.out.<span class="fn">printf</span>(<span class="st">"n=%3d | Mean: %.3f | Var: %.5f%n"</span>,
+                    i, sim.<span class="fn">posteriorMean</span>(), sim.<span class="fn">posteriorVariance</span>());
+                next<span class="op">++</span>;
+            }
+        }
+    }
+}</pre>
+    </div>
+  </section>
+
+  <!-- ===================== WEEK 2 LAB ===================== -->
+  <section class="page-section" id="w2-lab">
+    <div class="section-eyebrow">Week 2 — Interactive Lab</div>
+    <h1 class="section-title">Beta Distribution Shaper</h1>
+    <p style="color:var(--muted);margin-bottom:28px">Explore how α and β shape the Beta distribution. Then run the full sequential Bayesian updating simulation.</p>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('beta-shaper', this)">Beta Shaper</button>
+      <button class="tab-btn" onclick="switchTab('sequential', this)">Sequential Updating</button>
+    </div>
+
+    <div class="tab-panel active" id="beta-shaper">
+      <div class="lab-container">
+        <div class="lab-header" style="background:linear-gradient(135deg,#14532d,#16a34a)">
+          <h3>Beta Distribution Explorer</h3>
+          <p>Adjust α and β to shape your prior belief about P(heads). Observe mean, mode, and variance.</p>
+        </div>
+        <div class="lab-body">
+          <div class="controls-grid">
+            <div class="control-group">
+              <label>α (alpha) — pseudo-heads</label>
+              <input type="range" id="shapeAlpha" min="0.5" max="30" step="0.5" value="2" oninput="updateBetaShape()">
+              <div class="val-display" id="shapeAlphaVal">α = 2.0</div>
+            </div>
+            <div class="control-group">
+              <label>β (beta) — pseudo-tails</label>
+              <input type="range" id="shapeBeta" min="0.5" max="30" step="0.5" value="2" oninput="updateBetaShape()">
+              <div class="val-display" id="shapeBetaVal">β = 2.0</div>
+            </div>
+          </div>
+
+          <div class="stats-row">
+            <div class="stat-card"><div class="stat-val" id="bs-mean" style="color:#16a34a">0.50</div><div class="stat-label">Mean (α/(α+β))</div></div>
+            <div class="stat-card"><div class="stat-val" id="bs-mode">0.50</div><div class="stat-label">Mode</div></div>
+            <div class="stat-card"><div class="stat-val" id="bs-var">0.050</div><div class="stat-label">Variance</div></div>
+            <div class="stat-card"><div class="stat-val" id="bs-95ci">—</div><div class="stat-label">95% Credible Interval</div></div>
+          </div>
+
+          <div class="chart-area">
+            <canvas id="betaShapeChart"></canvas>
+          </div>
+
+          <div class="callout info">
+            <strong>Try these presets:</strong>
+            <button class="btn btn-outline" onclick="setShape(1,1)" style="margin:4px 8px;padding:6px 14px;font-size:12px">Flat Prior (1,1)</button>
+            <button class="btn btn-outline" onclick="setShape(2,2)" style="margin:4px 8px;padding:6px 14px;font-size:12px">Weak Fair (2,2)</button>
+            <button class="btn btn-outline" onclick="setShape(10,10)" style="margin:4px 8px;padding:6px 14px;font-size:12px">Strong Fair (10,10)</button>
+            <button class="btn btn-outline" onclick="setShape(7,3)" style="margin:4px 8px;padding:6px 14px;font-size:12px">Biased Prior (7,3)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="sequential">
+      <div class="lab-container">
+        <div class="lab-header" style="background:linear-gradient(135deg,#14532d,#16a34a)">
+          <h3>Sequential Bayesian Updating</h3>
+          <p>Run a full simulation and watch posterior snapshots at 5, 10, 25, 50, and 100 flips.</p>
+        </div>
+        <div class="lab-body">
+          <div class="controls-grid">
+            <div class="control-group">
+              <label>True Coin Bias</label>
+              <input type="range" id="seqBias" min="0.1" max="0.9" step="0.01" value="0.70" oninput="document.getElementById('seqBiasVal').textContent='θ = '+this.value">
+              <div class="val-display" id="seqBiasVal">θ = 0.70</div>
+            </div>
+            <div class="control-group">
+              <label>Starting α</label>
+              <input type="number" id="seqAlpha" value="2" min="1" max="20">
+            </div>
+            <div class="control-group">
+              <label>Starting β</label>
+              <input type="number" id="seqBeta" value="2" min="1" max="20">
+            </div>
+            <div class="control-group">
+              <label>Total Flips</label>
+              <input type="number" id="seqFlips" value="100" min="20" max="500">
+            </div>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-success" onclick="runSequential()">▶ Run Simulation</button>
+          </div>
+          <div class="chart-area" style="height:360px">
+            <canvas id="seqChart"></canvas>
+          </div>
+          <div id="seqTable" style="margin-top:16px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PYTHON CODING SANDBOX — Week 2 -->
+    <div class="challenge-banner" style="margin-top:36px">
+
+      <div class="challenge-content">
+        <h4>Python Coding Challenge — Build the Beta Updater</h4>
+        <p>Write your own Beta-Binomial sequential updater below. The code computes the posterior at multiple snapshots and renders an overlay chart — all inside your browser.</p>
+        <ul>
+          <li>Change <code>TRUE_BIAS</code>, <code>ALPHA</code>, <code>BETA</code>, and <code>N_FLIPS</code></li>
+          <li>Modify <code>SNAP_AT</code> to choose which flip counts to snapshot</li>
+          <li>Try a strong prior Beta(20,20) vs flat Beta(1,1) — compare convergence speed</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="pybox" id="pybox-w2">
+      <div class="pybox-header">
+        <div class="pybox-header-left">
+          <div class="pybox-dots">
+            <div class="pybox-dot" style="background:#ef4444"></div>
+            <div class="pybox-dot" style="background:#f59e0b"></div>
+            <div class="pybox-dot" style="background:#22c55e"></div>
+          </div>
+          <div class="pybox-title"><strong>week2_beta_updater.py</strong> &nbsp;— Beta Distribution Updater</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="pybox-badge">Python 3.11 · Pyodide</div>
+          <div class="pybox-status" id="py-status-w2"><div class="dot"></div><span>loading…</span></div>
+        </div>
+      </div>
+
+      <div class="pybox-editor-wrap">
+        <textarea class="pybox-editor" id="py-editor-w2" spellcheck="false">import random
+import math
+
+# ══════════════════════════════════════════════
+#  BETA-BINOMIAL UPDATER — Week 2 Starter
+#  Edit, then click ▶ Run to visualize!
+# ══════════════════════════════════════════════
+
+TRUE_BIAS = 0.72   # Real coin bias
+ALPHA     = 2      # Prior α (pseudo-heads)  — try 1 or 20
+BETA      = 2      # Prior β (pseudo-tails)  — try 1 or 20
+N_FLIPS   = 150    # Total flips to simulate
+
+SNAP_AT   = [0, 5, 15, 40, 100, 150]  # Snapshot checkpoints
+
+# ── Gamma/Beta helpers (pure Python) ──
+def lgamma(z):
+    c = [76.18009172947146,-86.50532032941677,24.01409824083091,
+         -1.231739572450155,1.208650973866179e-3,-5.395239384953e-6]
+    x = 1.000000000190015
+    for i,ci in enumerate(c): x += ci/(z+i+1)
+    t = z + 5.5
+    return 0.5*math.log(2*math.pi)+(z+0.5)*math.log(t)-t+math.log(x)
+
+def beta_pdf(x, a, b):
+    if x <= 0 or x >= 1: return 0.0
+    return math.exp((a-1)*math.log(x)+(b-1)*math.log(1-x)-lgamma(a)-lgamma(b)+lgamma(a+b))
+
+# ── Run the simulation ──
+theta = [i/199 for i in range(1, 199)]
+
+snapshots = []
+a, b = ALPHA, BETA
+snaps = sorted(set(s for s in SNAP_AT if 0 <= s <= N_FLIPS))
+
+if 0 in snaps:
+    snapshots.append({"n": 0, "a": a, "b": b,
+                       "pdf": [beta_pdf(t, a, b) for t in theta]})
+
+for flip_i in range(1, N_FLIPS + 1):
+    outcome = 1 if random.random() < TRUE_BIAS else 0
+    if outcome == 1: a += 1
+    else:            b += 1
+    if flip_i in snaps:
+        mean = a / (a + b)
+        var  = (a*b) / ((a+b)**2 * (a+b+1))
+        snapshots.append({"n": flip_i, "a": a, "b": b,
+                           "pdf": [beta_pdf(t, a, b) for t in theta],
+                           "mean": mean, "var": var})
+        print(f"n={flip_i:4d} | Beta({a},{b}) | mean={mean:.4f} | std={var**0.5:.4f}")
+
+print(f"\nFinal posterior: Beta({a},{b})")
+print(f"Posterior mean: {a/(a+b):.4f} vs true bias {TRUE_BIAS}")
+
+# ── Return structured data for chart ──
+PLOT_DATA = {
+    "type": "snapshots",
+    "theta": theta,
+    "snapshots": snapshots,
+    "true_bias": TRUE_BIAS,
+}</textarea>
+      </div>
+
+      <div class="pybox-toolbar">
+        <button class="pybox-run" id="py-run-w2" onclick="runPython('w2')" disabled>
+          <span class="run-icon">▶</span> Run Code
+        </button>
+        <span class="pybox-hint">Ctrl+Enter to run</span>
+        <button class="pybox-clear" onclick="clearOutput('w2')">Clear Output</button>
+      </div>
+
+      <div class="pybox-output-area">
+        <div class="pybox-output-label">console output</div>
+        <div class="pybox-console" id="py-console-w2"><span class="py-info">Python environment shared — already loaded if you ran Week 1.</span></div>
+
+        <div class="pybox-output-label" style="margin-top:16px">visualization — posterior snapshots overlay</div>
+        <div class="pybox-chart-wrap" id="py-chart-wrap-w2">
+          <div class="pybox-chart-placeholder">Run your code to generate a snapshot overlay chart</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== WEEK 2 ASSIGNMENT ===================== -->
+  <section class="page-section" id="w2-assignment">
+    <div class="assignment-header" style="background:linear-gradient(135deg,#14532d,#1e5e3a)">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.2em;opacity:0.5;margin-bottom:10px">Week 2 Assignment</div>
+      <h2 style="font-family:'Crimson Pro',serif;font-size:28px;font-weight:300">Coding the Beta-Binomial Updater</h2>
+      <div class="assignment-meta">
+        <div class="meta-item">Due: <strong>End of Week 2</strong></div>
+        <div class="meta-item">Points: <strong>60</strong></div>
+        <div class="meta-item">Format: <strong>Code Submission + Analysis</strong></div>
+      </div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 1 — Coding (25 pts)</div>
+      <div class="question-text">Implement the <code>flip_and_update()</code> function in Python (or the Java equivalent). Your function should accept the current α and β, simulate one coin flip using a given true bias, and return the updated (α, β) pair. Run 200 flips and print the posterior mean every 10 flips.</div>
+      <div class="answer-space">Submit your code file (.py or .java) along with printed output</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 2 — Analysis (20 pts)</div>
+      <div class="question-text">Run two experiments: (A) Start with Beta(1,1) — flat prior. (B) Start with Beta(20,20) — strong "fair coin" prior. Both times use a true bias of θ = 0.75 and flip 100 times. Compare the posterior means and widths (variance) after 100 flips. Which prior recovered the true bias more quickly? Why?</div>
+      <div class="answer-space">Write your analysis (4–6 sentences) and include code output</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 3 — Visualization (15 pts)</div>
+      <div class="question-text">Produce a plot showing the posterior Beta distribution at n = 0 (prior), 10, 50, and 200 flips. Use a vertical dashed line to mark the true bias. Label each curve with its (α, β) values. Submit the saved image file.</div>
+      <div class="answer-space">Attach image file: posterior_evolution.png</div>
+    </div>
+  </section>
+
+  <!-- ===================== WEEK 2 ANSWERS ===================== -->
+  <section class="page-section" id="w2-answers">
+    <div class="assignment-header" style="background:linear-gradient(135deg,#14532d,#15803d)">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.2em;opacity:0.5;margin-bottom:10px">Instructor Resource</div>
+      <h2 style="font-family:'Crimson Pro',serif;font-size:28px;font-weight:300">Week 2 — Answer Sheet</h2>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 1 — Reference Code (Python)</div>
+      <div class="answer-key">
+        <div class="answer-label">Model Implementation</div>
+        <pre style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;white-space:pre-wrap">
+import random
+
+def flip_and_update(alpha, beta, true_bias):
+    outcome = 1 if random.random() &lt; true_bias else 0
+    if outcome == 1:
+        alpha += 1
+    else:
+        beta += 1
+    return alpha, beta
+
+alpha, beta = 2, 2
+for i in range(200):
+    alpha, beta = flip_and_update(alpha, beta, 0.70)
+    if (i + 1) % 10 == 0:
+        print(f"n={i+1:3d} | Posterior mean = {alpha/(alpha+beta):.4f}")
+        </pre>
+        Expected output: posterior mean converges toward ~0.70 over 200 flips.
+      </div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 2 — Expected Analysis</div>
+      <div class="answer-key">
+        <div class="answer-label">Key Points</div>
+        Experiment A (Beta(1,1)): After 100 flips with θ=0.75, expected α≈76, β≈26. Posterior mean ≈ 76/102 ≈ 0.745. Narrow distribution.<br><br>
+        Experiment B (Beta(20,20)): After 100 flips with θ=0.75, expected α≈95, β≈45. Posterior mean ≈ 95/140 ≈ 0.679. Wider and slower to converge.<br><br>
+        <strong>Flat prior recovers true bias more quickly</strong> because the data can dominate without fighting a strong prior assumption of fairness. The strong prior requires more evidence to shift. Grading: award credit for correct directional reasoning even if numeric values differ.
+      </div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 3 — Visualization Rubric</div>
+      <div class="answer-key">
+        <div class="answer-label">Grading Criteria</div>
+        5 pts: Correct Beta distributions plotted at each snapshot<br>
+        5 pts: Distributions visually narrow and shift toward true bias over time<br>
+        3 pts: True bias dashed line present<br>
+        2 pts: Proper labels (α, β values, n, axes)
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== WEEK 3 TEXTBOOK ===================== -->
+  <section class="page-section" id="w3-textbook">
+    <div class="section-eyebrow">Week 3 — Textbook</div>
+    <h1 class="section-title">Bayesian Inference<br>in Precision Health</h1>
+    <div class="section-lead">From coin flips to clinical decisions — Bayesian reasoning is transforming how we diagnose disease, personalize treatment, and interpret biomarker data.</div>
+
+    <div class="prose">
+      <h2>1. The Clinical Relevance of Base Rates</h2>
+      <p>In Week 1, we showed that even a 95%-accurate test for a 1% prevalence disease is only 8.76% likely to be correct on a positive result. This is not a flaw in the test — it's a fundamental property of probability that physicians must internalize.</p>
+
+      <div class="callout warning">
+        <div class="callout-title">The Base Rate Fallacy</div>
+        Studies show that many physicians intuitively give test sensitivity and specificity more weight than disease prevalence when interpreting test results. Bayesian literacy directly counters this dangerous cognitive error.
+      </div>
+
+      <h2>2. Sensitivity, Specificity, and Predictive Values</h2>
+      <table>
+        <tr><th>Metric</th><th>Formula</th><th>Bayesian Interpretation</th></tr>
+        <tr><td><strong>Sensitivity (TPR)</strong></td><td>TP / (TP + FN)</td><td>P(Test+ | Disease+) = Likelihood</td></tr>
+        <tr><td><strong>Specificity (TNR)</strong></td><td>TN / (TN + FP)</td><td>1 − P(Test+ | Disease−)</td></tr>
+        <tr><td><strong>PPV</strong></td><td>TP / (TP + FP)</td><td>P(Disease+ | Test+) = Posterior</td></tr>
+        <tr><td><strong>NPV</strong></td><td>TN / (TN + FN)</td><td>P(Disease− | Test−) = Posterior</td></tr>
+      </table>
+
+      <p>PPV and NPV are the <em>clinically actionable</em> numbers — and both depend critically on disease prevalence (the prior).</p>
+
+      <h2>3. Sequential Updating in Patient Care</h2>
+      <p>Bayesian updating mirrors how good clinicians think. A physician's initial assessment ("fever + cough → 30% probability of pneumonia") is a prior. A chest X-ray is evidence. The updated probability is the posterior. A positive culture is more evidence. The final treatment decision is informed by the final posterior.</p>
+
+      <h2>4. Precision Medicine Applications</h2>
+      <ul style="margin: 12px 0 18px 20px; line-height: 2.3;">
+        <li><strong>Pharmacogenomics</strong> — Bayesian models update drug response probabilities given genotype</li>
+        <li><strong>Cancer screening</strong> — Combining PSA, family history, and imaging with Bayesian networks</li>
+        <li><strong>Wearable sensor data</strong> — Continuously updating arrhythmia risk from ECG streams</li>
+        <li><strong>Clinical trial design</strong> — Bayesian adaptive trials can stop early for efficacy or futility</li>
+        <li><strong>Digital phenotyping</strong> — Updating behavioral models from smartphone sensor data over time</li>
+      </ul>
+
+      <h2>5. The Bayesian Brain</h2>
+      <p>Remarkably, neuroscientists now believe the brain itself performs Bayesian inference — combining prior expectations (based on experience) with sensory evidence to construct perception. In this sense, Bayesian thinking is not just a statistical method — it's how intelligence works.</p>
+
+      <div class="highlight-box">
+        <em>"Bayesian inference is the mathematics of learning. It describes, in a unified framework, how any rational agent — human, clinical algorithm, or AI — should update beliefs when new information arrives."</em>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== WEEK 3 LAB ===================== -->
+  <section class="page-section" id="w3-lab">
+    <div class="section-eyebrow">Week 3 — Interactive Lab</div>
+    <h1 class="section-title">Diagnostic Testing Simulator</h1>
+    <p style="color:var(--muted);margin-bottom:28px">Simulate clinical Bayesian inference. Adjust disease prevalence and test performance, and see how posterior probability changes with sequential testing.</p>
+
+    <div class="lab-container">
+      <div class="lab-header" style="background:linear-gradient(135deg,#3b0764,#9333ea)">
+        <h3>Bayesian Diagnostic Simulator</h3>
+        <p>Set prevalence, sensitivity, and specificity. Run tests and update your clinical probability estimate.</p>
+      </div>
+      <div class="lab-body">
+        <div class="controls-grid">
+          <div class="control-group">
+            <label>Disease Prevalence (Prior)</label>
+            <input type="range" id="prevalence" min="0.001" max="0.3" step="0.001" value="0.01" oninput="updateDiagnostic()">
+            <div class="val-display" id="prevalenceVal">1.0%</div>
+          </div>
+          <div class="control-group">
+            <label>Test Sensitivity (P(+|Disease))</label>
+            <input type="range" id="sensitivity" min="0.5" max="0.999" step="0.001" value="0.95" oninput="updateDiagnostic()">
+            <div class="val-display" id="sensitivityVal">95.0%</div>
+          </div>
+          <div class="control-group">
+            <label>Test Specificity (P(−|No Disease))</label>
+            <input type="range" id="specificity" min="0.5" max="0.999" step="0.001" value="0.90" oninput="updateDiagnostic()">
+            <div class="val-display" id="specificityVal">90.0%</div>
+          </div>
+          <div class="control-group">
+            <label>Patient has disease?</label>
+            <select id="hasDisease">
+              <option value="0.8">Yes (simulate true positive)</option>
+              <option value="0.2">No (simulate false positive risk)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-card"><div class="stat-val" id="d-prior">1.0%</div><div class="stat-label">Prior Probability</div></div>
+          <div class="stat-card"><div class="stat-val" id="d-ppv" style="color:#9333ea">—</div><div class="stat-label">PPV (P(Disease|+))</div></div>
+          <div class="stat-card"><div class="stat-val" id="d-npv">—</div><div class="stat-label">NPV (P(No Disease|−))</div></div>
+          <div class="stat-card"><div class="stat-val" id="d-tests">0</div><div class="stat-label">Tests Run</div></div>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="runOneTest()">Run One Test</button>
+          <button class="btn btn-danger" onclick="resetDiag()">Reset Patient</button>
+        </div>
+
+        <div class="chart-area">
+          <canvas id="diagChart"></canvas>
+        </div>
+
+        <div id="diagLog" style="background:#f8f5f2;border:1px solid var(--border);border-radius:8px;padding:16px;font-size:13px;line-height:1.8;min-height:60px;color:var(--muted);font-style:italic">
+          Run a test to see clinical interpretation...
+        </div>
+      </div>
+    </div>
+
+    <div class="callout success">
+      <div class="callout-title">Clinical Insight</div>
+      Notice how running the same test multiple times on a positive patient gradually increases your certainty. Also observe how a negative test dramatically reduces probability — sometimes more than a positive test raises it.
+    </div>
+
+    <!-- PYTHON CODING SANDBOX — Week 3 -->
+    <div class="challenge-banner" style="margin-top:8px">
+
+      <div class="challenge-content">
+        <h4>Python Coding Challenge — Clinical Bayesian Inference</h4>
+        <p>Code a full diagnostic Bayesian simulator. Adjust disease parameters, simulate multiple tests, and visualize how clinical certainty evolves — all in pure Python running in your browser.</p>
+        <ul>
+          <li>Set <code>HAS_DISEASE = True/False</code> to test both patient types</li>
+          <li>Try rare disease: <code>PREVALENCE = 0.005</code> — notice how hard it is to reach certainty</li>
+          <li>Add a second independent test type by defining <code>sens2, spec2</code> and interleaving</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="pybox" id="pybox-w3">
+      <div class="pybox-header">
+        <div class="pybox-header-left">
+          <div class="pybox-dots">
+            <div class="pybox-dot" style="background:#ef4444"></div>
+            <div class="pybox-dot" style="background:#f59e0b"></div>
+            <div class="pybox-dot" style="background:#22c55e"></div>
+          </div>
+          <div class="pybox-title"><strong>week3_diagnostic_bayes.py</strong> &nbsp;— Clinical Bayesian Simulator</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="pybox-badge">Python 3.11 · Pyodide</div>
+          <div class="pybox-status" id="py-status-w3"><div class="dot"></div><span>loading…</span></div>
+        </div>
+      </div>
+
+      <div class="pybox-editor-wrap">
+        <textarea class="pybox-editor" id="py-editor-w3" spellcheck="false">import random
+
+# ══════════════════════════════════════════════════
+#  CLINICAL BAYESIAN DIAGNOSTIC SIMULATOR — Week 3
+#  Edit parameters, click ▶ Run, see the chart!
+# ══════════════════════════════════════════════════
+
+PREVALENCE  = 0.08    # Prior probability of disease (8%)
+SENSITIVITY = 0.92    # P(test+ | has disease)
+SPECIFICITY = 0.87    # P(test- | no disease)
+HAS_DISEASE = True    # Set to False for disease-free patient
+N_TESTS     = 8       # Number of sequential tests to run
+
+# ─────────────────────────────────────────────────
+# You can define a SECOND test type for Week 3 bonus:
+SENSITIVITY_2 = 0.80
+SPECIFICITY_2 = 0.97
+USE_ALTERNATING = False   # Alternate between test 1 and test 2
+# ─────────────────────────────────────────────────
+
+def bayes_update(prior, sensitivity, specificity, test_positive):
+    """Apply one Bayes step: update prior given a test result."""
+    fp_rate = 1 - specificity
+    if test_positive:
+        likelihood_pos = sensitivity
+        likelihood_neg = fp_rate
+    else:
+        likelihood_pos = 1 - sensitivity
+        likelihood_neg = specificity
+    numerator   = likelihood_pos * prior
+    denominator = numerator + likelihood_neg * (1 - prior)
+    return numerator / denominator
+
+def simulate_test(sensitivity, specificity, has_disease):
+    """Simulate a single test outcome."""
+    if has_disease:
+        return random.random() < sensitivity      # True positive
+    else:
+        return random.random() < (1-specificity)  # False positive
+
+# ── Run simulation ──
+prior   = PREVALENCE
+history = [prior]
+labels  = ["Prior"]
+results = []
+
+for i in range(1, N_TESTS + 1):
+    if USE_ALTERNATING and i % 2 == 0:
+        s, sp = SENSITIVITY_2, SPECIFICITY_2
+        test_name = f"Test {i} (B)"
+    else:
+        s, sp = SENSITIVITY, SPECIFICITY
+        test_name = f"Test {i} (A)"
+
+    pos = simulate_test(s, sp, HAS_DISEASE)
+    posterior = bayes_update(prior, s, sp, pos)
+
+    result_str = "POS" if pos else "NEG"
+    delta = (posterior - prior) * 100
+    print(f"{test_name}: {result_str}  |  {prior*100:.2f}% → {posterior*100:.2f}%  (Δ {delta:+.2f}%)")
+
+    history.append(posterior)
+    labels.append(test_name)
+    results.append(pos)
+    prior = posterior
+
+# ── Clinical interpretation ──
+final = history[-1]
+print(f"\n{'─'*50}")
+print(f"Patient has disease: {HAS_DISEASE}")
+print(f"Final P(disease):    {final*100:.2f}%")
+if final > 0.80:
+    verdict = "HIGH — strong evidence of disease"
+elif final > 0.40:
+    verdict = "MODERATE — inconclusive, further testing recommended"
+else:
+    verdict = "LOW — disease unlikely"
+print(f"Clinical verdict:    {verdict}")
+
+# Also compute theoretical PPV/NPV
+ppv = (SENSITIVITY*PREVALENCE) / (SENSITIVITY*PREVALENCE + (1-SPECIFICITY)*(1-PREVALENCE))
+npv = (SPECIFICITY*(1-PREVALENCE)) / (SPECIFICITY*(1-PREVALENCE) + (1-SENSITIVITY)*PREVALENCE)
+print(f"\nTest A  PPV: {ppv*100:.1f}%  |  NPV: {npv*100:.1f}%")
+
+# ── Return data for chart ──
+PLOT_DATA = {
+    "type": "diagnostic",
+    "labels": labels,
+    "history": [h * 100 for h in history],
+    "results": results,
+    "prevalence": PREVALENCE * 100,
+    "has_disease": HAS_DISEASE,
+}</textarea>
+      </div>
+
+      <div class="pybox-toolbar">
+        <button class="pybox-run" id="py-run-w3" onclick="runPython('w3')" disabled>
+          <span class="run-icon">▶</span> Run Code
+        </button>
+        <span class="pybox-hint">Ctrl+Enter to run</span>
+        <button class="pybox-clear" onclick="clearOutput('w3')">Clear Output</button>
+      </div>
+
+      <div class="pybox-output-area">
+        <div class="pybox-output-label">console output</div>
+        <div class="pybox-console" id="py-console-w3"><span class="py-info">Python environment shared — runs instantly if already loaded.</span></div>
+
+        <div class="pybox-output-label" style="margin-top:16px">visualization — posterior probability trajectory</div>
+        <div class="pybox-chart-wrap" id="py-chart-wrap-w3">
+          <div class="pybox-chart-placeholder">Run your code to generate the diagnostic trajectory chart</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== WEEK 3 ASSIGNMENT ===================== -->
+  <section class="page-section" id="w3-assignment">
+    <div class="assignment-header" style="background:linear-gradient(135deg,#3b0764,#6b21a8)">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.2em;opacity:0.5;margin-bottom:10px">Week 3 Assignment</div>
+      <h2 style="font-family:'Crimson Pro',serif;font-size:28px;font-weight:300">Bayesian Reasoning in Clinical Cases</h2>
+      <div class="assignment-meta">
+        <div class="meta-item">Due: <strong>End of Week 3</strong></div>
+        <div class="meta-item">Points: <strong>70</strong></div>
+        <div class="meta-item">Format: <strong>Case Study + Code + Reflection</strong></div>
+      </div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 1 — Case Study (25 pts)</div>
+      <div class="question-text">
+        <strong>Scenario:</strong> A new biomarker test for early Alzheimer's disease has 90% sensitivity and 85% specificity. In the general population over age 65, roughly 10% have early Alzheimer's. A 68-year-old patient tests positive.<br><br>
+        (a) Calculate P(Alzheimer's | Positive test).<br>
+        (b) The same patient undergoes a second independent test (same metrics) and again tests positive. Calculate the updated probability.<br>
+        (c) Explain in plain language why two positive tests increase certainty substantially more than one.
+      </div>
+      <div class="answer-space">Show all calculations and written explanation</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 2 — Coding (30 pts)</div>
+      <div class="question-text">
+        Write a Python or Java program that simulates sequential Bayesian diagnostic updating. The program should: (1) Accept prevalence, sensitivity, specificity as inputs, (2) Simulate a patient who either has or doesn't have the disease, (3) Run up to 5 tests, updating the posterior after each, (4) Plot the posterior probability trajectory. Use the Week 3 lab as a reference for expected behavior.
+      </div>
+      <div class="answer-space">Submit code file and output plot</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 3 — Reflection (15 pts)</div>
+      <div class="question-text">
+        Describe one real-world precision health application where Bayesian reasoning is (or could be) applied. What is the prior? What is the evidence (likelihood)? What does the posterior represent in clinical practice? How might this change patient care?
+      </div>
+      <div class="answer-space">Write 4–6 sentences</div>
+    </div>
+  </section>
+
+  <!-- ===================== WEEK 3 ANSWERS ===================== -->
+  <section class="page-section" id="w3-answers">
+    <div class="assignment-header" style="background:linear-gradient(135deg,#14532d,#15803d)">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.2em;opacity:0.5;margin-bottom:10px">Instructor Resource</div>
+      <h2 style="font-family:'Crimson Pro',serif;font-size:28px;font-weight:300">Week 3 — Answer Sheet</h2>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 1 — Case Study Answers</div>
+      <div class="answer-key">
+        <div class="answer-label">Part (a): First Positive Test</div>
+        P(D) = 0.10, P(+|D) = 0.90, P(+|¬D) = 0.15<br>
+        P(+) = 0.90×0.10 + 0.15×0.90 = 0.09 + 0.135 = 0.225<br>
+        <strong>P(D|+) = 0.09 / 0.225 = 0.400 (40%)</strong>
+      </div>
+      <div class="answer-key" style="margin-top:12px">
+        <div class="answer-label">Part (b): Second Positive Test — Use posterior from (a) as new prior</div>
+        New prior = 0.40<br>
+        P(+) = 0.90×0.40 + 0.15×0.60 = 0.36 + 0.09 = 0.45<br>
+        <strong>P(D|++) = 0.36 / 0.45 = 0.800 (80%)</strong>
+      </div>
+      <div class="answer-key" style="margin-top:12px">
+        <div class="answer-label">Part (c): Explanation</div>
+        Each positive test updates the prior upward. The second test starts from a much higher prior (40% vs 10%), so the same likelihood ratio produces a much larger jump. The multiplicative nature of Bayesian updating means early tests are relatively weak (fighting against a strong "no disease" prior), while later tests operate from a higher baseline and can dramatically concentrate probability. This is why confirmatory testing is so powerful — each result compounds the certainty from the last.
+      </div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 2 — Reference Code</div>
+      <div class="answer-key">
+        <div class="answer-label">Python Solution</div>
+        <pre style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;white-space:pre-wrap">
+import random
+import matplotlib.pyplot as plt
+
+def run_diagnostic_simulation(prevalence, sensitivity, specificity, has_disease, n_tests=5):
+    fp_rate = 1 - specificity
+    prior = prevalence
+    history = [prior]
+
+    for _ in range(n_tests):
+        # Simulate test outcome
+        if has_disease:
+            test_pos = random.random() &lt; sensitivity
+        else:
+            test_pos = random.random() &lt; fp_rate
+
+        if test_pos:
+            likelihood = sensitivity
+            likelihood_neg = fp_rate
+        else:
+            likelihood = 1 - sensitivity
+            likelihood_neg = specificity
+
+        # Bayes update
+        numerator = likelihood * prior
+        denominator = numerator + likelihood_neg * (1 - prior)
+        posterior = numerator / denominator
+        history.append(posterior)
+        prior = posterior
+
+    return history
+
+history = run_diagnostic_simulation(0.10, 0.90, 0.85, has_disease=True)
+plt.plot(range(len(history)), [h*100 for h in history], 'o-', color='purple')
+plt.xlabel('Tests Completed')
+plt.ylabel('P(Disease) %')
+plt.title('Sequential Bayesian Diagnostic Updating')
+plt.grid(True, alpha=0.3)
+plt.savefig('diagnostic_trajectory.png', dpi=150)
+plt.show()
+        </pre>
+      </div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-num">Question 3 — Sample Strong Answer</div>
+      <div class="answer-key">
+        <div class="answer-label">Model Answer</div>
+        In digital phenotyping for depression monitoring, smartphone sensor data (movement, screen time, call frequency) serves as ongoing evidence. The prior might be established from a patient's clinical history — a known baseline depression risk score. The likelihood is derived from a trained model of how behavioral signals correlate with depressive episodes. The posterior updates daily, giving clinicians a continuously refined estimate of current mental health status. This could enable early intervention — alerting care teams when posterior risk crosses a threshold — before the patient presents in crisis, fundamentally shifting care from reactive to proactive.
+      </div>
+    </div>
+  </section>
+
+</main>
+
+</div><!-- /teaching-main -->
+</div><!-- /teaching-wrap -->
+
+<script>
+// ===== NAVIGATION =====
+const pages = {
+  'home': { label: 'Course Overview', week: 'Overview', weekColor: '#eff6ff', weekTextColor: '#2563a8' },
+  'syllabus': { label: 'Course Syllabus', week: 'Overview', weekColor: '#eff6ff', weekTextColor: '#2563a8' },
+  'how-to': { label: 'How to Use This Lab', week: 'Overview', weekColor: '#eff6ff', weekTextColor: '#2563a8' },
+  'w1-textbook': { label: 'Week 1 — Textbook', week: 'Week 1', weekColor: '#eff6ff', weekTextColor: '#2563a8' },
+  'w1-lab': { label: 'Week 1 — Lab', week: 'Week 1', weekColor: '#eff6ff', weekTextColor: '#2563a8' },
+  'w1-assignment': { label: 'Week 1 — Assignment', week: 'Week 1', weekColor: '#eff6ff', weekTextColor: '#2563a8' },
+  'w1-answers': { label: 'Week 1 — Answer Sheet', week: 'Week 1', weekColor: '#eff6ff', weekTextColor: '#2563a8' },
+  'w2-textbook': { label: 'Week 2 — Textbook', week: 'Week 2', weekColor: '#f0fdf4', weekTextColor: '#16a34a' },
+  'w2-lab': { label: 'Week 2 — Lab', week: 'Week 2', weekColor: '#f0fdf4', weekTextColor: '#16a34a' },
+  'w2-assignment': { label: 'Week 2 — Assignment', week: 'Week 2', weekColor: '#f0fdf4', weekTextColor: '#16a34a' },
+  'w2-answers': { label: 'Week 2 — Answer Sheet', week: 'Week 2', weekColor: '#f0fdf4', weekTextColor: '#16a34a' },
+  'w3-textbook': { label: 'Week 3 — Textbook', week: 'Week 3', weekColor: '#faf5ff', weekTextColor: '#9333ea' },
+  'w3-lab': { label: 'Week 3 — Lab', week: 'Week 3', weekColor: '#faf5ff', weekTextColor: '#9333ea' },
+  'w3-assignment': { label: 'Week 3 — Assignment', week: 'Week 3', weekColor: '#faf5ff', weekTextColor: '#9333ea' },
+  'w3-answers': { label: 'Week 3 — Answer Sheet', week: 'Week 3', weekColor: '#faf5ff', weekTextColor: '#9333ea' },
+};
+
+function showPage(id) {
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b => {
+    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes(`'${id}'`)) b.classList.add('active');
+  });
+  const meta = pages[id] || {};
+  document.getElementById('breadcrumb').innerHTML = `Home → <span>${meta.label || id}</span>`;
+  const badge = document.getElementById('week-badge');
+  badge.textContent = meta.week || '';
+  badge.style.background = meta.weekColor || '#eff6ff';
+  badge.style.color = meta.weekTextColor || '#2563a8';
+  window.scrollTo(0,0);
+}
+
+function switchTab(panelId, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(panelId).classList.add('active');
+}
+
+// ===== WEEK 1 LAB =====
+let lab1Chart = null;
+let lab1State = { alpha: 2, beta: 2, heads: 0, tails: 0, flips: 0, log: [] };
+
+function initLab1() {
+  const sliders = ['trueBias','priorAlpha','priorBeta'];
+  sliders.forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+      document.getElementById('trueBiasVal').textContent = document.getElementById('trueBias').value + ' (' + Math.round(document.getElementById('trueBias').value * 100) + '% heads)';
+      document.getElementById('priorAlphaVal').textContent = 'α = ' + document.getElementById('priorAlpha').value;
+      document.getElementById('priorBetaVal').textContent = 'β = ' + document.getElementById('priorBeta').value;
+    });
+  });
+
+  const ctx = document.getElementById('lab1Chart').getContext('2d');
+  const theta = Array.from({length:101}, (_,i) => i/100);
+  lab1Chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: theta.map(v => v.toFixed(2)),
+      datasets: [{
+        label: 'Posterior Beta Distribution',
+        data: theta.map(t => betaPDF(t, lab1State.alpha, lab1State.beta)),
+        fill: true,
+        backgroundColor: 'rgba(37,99,168,0.12)',
+        borderColor: '#2563a8',
+        tension: 0.4,
+        pointRadius: 0
+      },{
+        label: 'Prior',
+        data: theta.map(t => betaPDF(t, lab1State.alpha, lab1State.beta)),
+        fill: false,
+        borderColor: '#9ca3af',
+        borderDash: [6,4],
+        tension: 0.4,
+        pointRadius: 0
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' } },
+      scales: {
+        x: { title: { display: true, text: 'θ = P(Heads)' } },
+        y: { title: { display: true, text: 'Density' }, beginAtZero: true }
+      }
+    }
+  });
+  updateLab1Chart();
+}
+
+function betaPDF(x, a, b) {
+  if (x <= 0 || x >= 1) return 0;
+  return Math.exp(lnBeta(a, b, x));
+}
+
+function lnBeta(a, b, x) {
+  return (a - 1) * Math.log(x) + (b - 1) * Math.log(1 - x) - logBetaFn(a, b);
+}
+
+function logBetaFn(a, b) {
+  return lgamma(a) + lgamma(b) - lgamma(a + b);
+}
+
+function lgamma(z) {
+  // Stirling approximation
+  if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - lgamma(1 - z);
+  z -= 1;
+  let x = 0.99999999999980993;
+  const c = [676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  c.forEach((ci, i) => x += ci / (z + i + 1));
+  const t = z + 7.5;
+  return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+}
+
+function doFlip(n) {
+  const trueBias = parseFloat(document.getElementById('trueBias').value);
+  const priorA = parseInt(document.getElementById('priorAlpha').value);
+  const priorB = parseInt(document.getElementById('priorBeta').value);
+
+  if (lab1State.flips === 0) {
+    lab1State.alpha = priorA;
+    lab1State.beta = priorB;
+    if (lab1Chart) {
+      lab1Chart.data.datasets[1].data = Array.from({length:101},(_,i)=>betaPDF(i/100, priorA, priorB));
+      lab1Chart.update('none');
+    }
+  }
+
+  const coin = document.getElementById('coinDisplay');
+  for (let i = 0; i < n; i++) {
+    const heads = Math.random() < trueBias;
+    if (heads) { lab1State.alpha++; lab1State.heads++; }
+    else { lab1State.beta++; lab1State.tails++; }
+    lab1State.flips++;
+    const sym = heads ? 'H' : 'T';
+    lab1State.log.unshift(`<span class="${sym}">${sym}</span>`);
+    if (i === n-1) {
+      document.getElementById('lastResult').textContent = heads ? 'HEADS' : 'TAILS';
+      coin.className = 'coin ' + (heads ? 'heads' : 'tails') + ' flipping';
+      coin.textContent = heads ? 'H' : 'T';
+      setTimeout(() => coin.classList.remove('flipping'), 500);
+    }
+  }
+
+  updateLab1Stats();
+  updateLab1Chart();
+  document.getElementById('flipLog').innerHTML = lab1State.log.slice(0, 80).join(' ') || 'No flips yet';
+}
+
+function flipOnce() { doFlip(1); }
+function flipBatch() { doFlip(parseInt(document.getElementById('batchSize').value) || 10); }
+function flip100() { doFlip(100); }
+
+function resetLab1() {
+  const priorA = parseInt(document.getElementById('priorAlpha').value);
+  const priorB = parseInt(document.getElementById('priorBeta').value);
+  lab1State = { alpha: priorA, beta: priorB, heads: 0, tails: 0, flips: 0, log: [] };
+  document.getElementById('lastResult').textContent = '—';
+  document.getElementById('flipLog').textContent = 'Flip the coin to begin...';
+  updateLab1Stats();
+  updateLab1Chart();
+}
+
+function updateLab1Stats() {
+  document.getElementById('s1-total').textContent = lab1State.flips;
+  document.getElementById('s1-heads').textContent = lab1State.heads;
+  document.getElementById('s1-tails').textContent = lab1State.tails;
+  const mean = lab1State.alpha / (lab1State.alpha + lab1State.beta);
+  document.getElementById('s1-mean').textContent = mean.toFixed(3);
+}
+
+function updateLab1Chart() {
+  if (!lab1Chart) return;
+  const theta = Array.from({length:101}, (_,i) => i/100);
+  lab1Chart.data.datasets[0].data = theta.map(t => betaPDF(t, lab1State.alpha, lab1State.beta));
+  lab1Chart.data.datasets[0].label = `Posterior Beta(${lab1State.alpha}, ${lab1State.beta})`;
+  lab1Chart.update('none');
+}
+
+// ===== WEEK 2 LAB: Beta Shaper =====
+let betaShapeChart = null;
+
+function initBetaShapeChart() {
+  const ctx = document.getElementById('betaShapeChart').getContext('2d');
+  betaShapeChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: Array.from({length:99},(_,i)=>((i+1)/100).toFixed(2)), datasets: [] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { title: { display: true, text: 'θ' } }, y: { title: { display: true, text: 'Density' }, beginAtZero: true } }
+    }
+  });
+  updateBetaShape();
+}
+
+function updateBetaShape() {
+  const a = parseFloat(document.getElementById('shapeAlpha').value);
+  const b = parseFloat(document.getElementById('shapeBeta').value);
+  document.getElementById('shapeAlphaVal').textContent = 'α = ' + a.toFixed(1);
+  document.getElementById('shapeBetaVal').textContent = 'β = ' + b.toFixed(1);
+
+  const mean = a / (a + b);
+  const variance = (a * b) / ((a + b) ** 2 * (a + b + 1));
+  const mode = a > 1 && b > 1 ? ((a-1)/(a+b-2)).toFixed(3) : (a <= 1 ? '0 (at boundary)' : '1 (at boundary)');
+
+  document.getElementById('bs-mean').textContent = mean.toFixed(3);
+  document.getElementById('bs-mode').textContent = mode;
+  document.getElementById('bs-var').textContent = variance.toFixed(4);
+
+  // Approximate 95% CI using beta quantiles (simple normal approx)
+  const sd = Math.sqrt(variance);
+  const lo = Math.max(0, mean - 1.96*sd).toFixed(3);
+  const hi = Math.min(1, mean + 1.96*sd).toFixed(3);
+  document.getElementById('bs-95ci').textContent = `[${lo}, ${hi}]`;
+
+  if (!betaShapeChart) return;
+  const theta = Array.from({length:99}, (_,i) => (i+1)/100);
+  betaShapeChart.data.datasets = [{
+    data: theta.map(t => betaPDF(t, a, b)),
+    fill: true,
+    backgroundColor: 'rgba(22,163,74,0.15)',
+    borderColor: '#16a34a',
+    tension: 0.4,
+    pointRadius: 0
+  }];
+  betaShapeChart.update('none');
+}
+
+function setShape(a, b) {
+  document.getElementById('shapeAlpha').value = a;
+  document.getElementById('shapeBeta').value = b;
+  updateBetaShape();
+}
+
+// ===== WEEK 2 LAB: Sequential =====
+let seqChart = null;
+
+function initSeqChart() {
+  const ctx = document.getElementById('seqChart').getContext('2d');
+  seqChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: [], datasets: [] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' } },
+      scales: {
+        x: { title: { display: true, text: 'θ' } },
+        y: { title: { display: true, text: 'Density' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function runSequential() {
+  const trueBias = parseFloat(document.getElementById('seqBias').value);
+  let alpha = parseInt(document.getElementById('seqAlpha').value) || 2;
+  let beta = parseInt(document.getElementById('seqBeta').value) || 2;
+  const nFlips = parseInt(document.getElementById('seqFlips').value) || 100;
+  const snapAt = [0, 5, 10, 25, 50, nFlips].filter(v => v <= nFlips);
+  const unique = [...new Set(snapAt)];
+
+  const theta = Array.from({length:99}, (_,i)=>(i+1)/100);
+  const colors = ['#9ca3af','#3b82f6','#10b981','#f59e0b','#ef4444','#9333ea'];
+  const snapshots = [];
+
+  snapshots.push({ n: 0, alpha, beta });
+  let a = alpha, b = beta, nextSnap = 1;
+
+  for (let i = 1; i <= nFlips; i++) {
+    const heads = Math.random() < trueBias;
+    if (heads) a++; else b++;
+    if (nextSnap < unique.length && i === unique[nextSnap]) {
+      snapshots.push({ n: i, alpha: a, beta: b });
+      nextSnap++;
+    }
+  }
+
+  if (!seqChart) return;
+  seqChart.data.labels = theta.map(t => t.toFixed(2));
+  seqChart.data.datasets = snapshots.map((s, idx) => ({
+    label: `n=${s.n} Beta(${s.alpha},${s.beta})`,
+    data: theta.map(t => betaPDF(t, s.alpha, s.beta)),
+    fill: false,
+    borderColor: colors[idx % colors.length],
+    tension: 0.4,
+    pointRadius: 0,
+    borderWidth: idx === snapshots.length - 1 ? 3 : 1.5
+  }));
+  seqChart.update();
+
+  let tableHTML = '<table><tr><th>Flips</th><th>α</th><th>β</th><th>Posterior Mean</th><th>Variance</th></tr>';
+  snapshots.forEach(s => {
+    const mean = (s.alpha / (s.alpha + s.beta)).toFixed(4);
+    const v = ((s.alpha * s.beta) / ((s.alpha+s.beta)**2 * (s.alpha+s.beta+1))).toFixed(5);
+    tableHTML += `<tr><td>${s.n}</td><td>${s.alpha}</td><td>${s.beta}</td><td>${mean}</td><td>${v}</td></tr>`;
+  });
+  tableHTML += '</table>';
+  document.getElementById('seqTable').innerHTML = tableHTML;
+}
+
+// ===== WEEK 3 LAB: Diagnostic =====
+let diagChart = null;
+let diagState = { prior: 0.01, nTests: 0, history: [] };
+
+function initDiagChart() {
+  const ctx = document.getElementById('diagChart').getContext('2d');
+  diagChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['Prior'],
+      datasets: [{
+        label: 'P(Disease)',
+        data: [diagState.prior * 100],
+        borderColor: '#9333ea',
+        backgroundColor: 'rgba(147,51,234,0.1)',
+        fill: true,
+        pointRadius: 6,
+        pointBackgroundColor: '#9333ea',
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        y: { min: 0, max: 100, title: { display: true, text: 'P(Disease) %' } },
+        x: { title: { display: true, text: 'Test Number' } }
+      }
+    }
+  });
+  updateDiagnostic();
+}
+
+function updateDiagnostic() {
+  const prev = parseFloat(document.getElementById('prevalence').value);
+  const sens = parseFloat(document.getElementById('sensitivity').value);
+  const spec = parseFloat(document.getElementById('specificity').value);
+  document.getElementById('prevalenceVal').textContent = (prev*100).toFixed(1) + '%';
+  document.getElementById('sensitivityVal').textContent = (sens*100).toFixed(1) + '%';
+  document.getElementById('specificityVal').textContent = (spec*100).toFixed(1) + '%';
+  document.getElementById('d-prior').textContent = (prev*100).toFixed(1) + '%';
+
+  const ppv = (sens * prev) / (sens * prev + (1-spec) * (1-prev));
+  const npv = (spec * (1-prev)) / (spec * (1-prev) + (1-sens) * prev);
+  document.getElementById('d-ppv').textContent = (ppv*100).toFixed(1) + '%';
+  document.getElementById('d-npv').textContent = (npv*100).toFixed(1) + '%';
+}
+
+function resetDiag() {
+  const prevalence = parseFloat(document.getElementById('prevalence').value);
+  diagState = { prior: prevalence, nTests: 0, history: [prevalence] };
+  document.getElementById('d-tests').textContent = '0';
+  document.getElementById('diagLog').innerHTML = 'Run a test to see clinical interpretation...';
+  if (diagChart) {
+    diagChart.data.labels = ['Prior'];
+    diagChart.data.datasets[0].data = [prevalence * 100];
+    diagChart.update();
+  }
+  updateDiagnostic();
+}
+
+function runOneTest() {
+  const sens = parseFloat(document.getElementById('sensitivity').value);
+  const spec = parseFloat(document.getElementById('specificity').value);
+  const hasDiseaseProbability = parseFloat(document.getElementById('hasDisease').value);
+  const fp_rate = 1 - spec;
+
+  const prior = diagState.prior;
+  const patientHasDisease = Math.random() < hasDiseaseProbability;
+  let testPositive;
+  if (patientHasDisease) {
+    testPositive = Math.random() < sens;
+  } else {
+    testPositive = Math.random() < fp_rate;
+  }
+
+  const likelihood = testPositive ? sens : (1 - sens);
+  const likelihoodNeg = testPositive ? fp_rate : spec;
+  const numerator = likelihood * prior;
+  const denominator = numerator + likelihoodNeg * (1 - prior);
+  const posterior = numerator / denominator;
+
+  diagState.nTests++;
+  diagState.prior = posterior;
+  diagState.history.push(posterior);
+
+  document.getElementById('d-tests').textContent = diagState.nTests;
+
+  const log = document.getElementById('diagLog');
+  const result = testPositive ? 'POSITIVE' : 'NEGATIVE';
+  const change = ((posterior - prior) * 100).toFixed(1);
+  const direction = posterior > prior ? '⬆' : '⬇';
+  log.innerHTML = `<strong>Test ${diagState.nTests}:</strong> ${result}<br>
+Prior: ${(prior*100).toFixed(1)}% → Posterior: <strong>${(posterior*100).toFixed(1)}%</strong> ${direction} (${change > 0 ? '+' : ''}${change}%)<br>
+<em>Interpretation: ${posterior > 0.5 ? 'Disease now more likely than not. Consider confirmatory testing or treatment.' : posterior > 0.2 ? 'Meaningful probability of disease. Continue investigation.' : 'Disease remains unlikely but not ruled out.'}</em>`;
+
+  if (diagChart) {
+    diagChart.data.labels.push(`Test ${diagState.nTests}`);
+    diagChart.data.datasets[0].data.push(posterior * 100);
+    diagChart.update();
+  }
+}
+
+// ===== PYODIDE PYTHON SANDBOX =====
+let pyodide = null;
+let pyReady = false;
+const pyCharts = {};
+
+async function initPyodide() {
+  try {
+    ['w1','w2','w3'].forEach(id => setStatus(id, 'loading', 'loading…'));
+    pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/" });
+    pyReady = true;
+    ['w1','w2','w3'].forEach(id => {
+      setStatus(id, 'ready', 'ready');
+      const btn = document.getElementById('py-run-' + id);
+      if (btn) { btn.disabled = false; btn.innerHTML = '<span class="run-icon">▶</span> Run Code'; }
+      const con = document.getElementById('py-console-' + id);
+      if (con) con.innerHTML = '<span class="py-ok">✓ Python ready — click ▶ Run to execute your code</span>';
+    });
+    document.querySelectorAll('.pybox-editor').forEach(ta => {
+      ta.addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          runPython(ta.id.replace('py-editor-', ''));
+        }
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          const s = ta.selectionStart;
+          ta.value = ta.value.substring(0, s) + '    ' + ta.value.substring(ta.selectionEnd);
+          ta.selectionStart = ta.selectionEnd = s + 4;
+        }
+      });
+    });
+  } catch(err) {
+    ['w1','w2','w3'].forEach(id => {
+      setStatus(id, 'error', 'load failed');
+      const con = document.getElementById('py-console-' + id);
+      if (con) con.innerHTML = `<span class="py-err">Failed to load Python: ${err.message}</span>`;
+    });
+  }
+}
+
+function setStatus(id, cls, text) {
+  const el = document.getElementById('py-status-' + id);
+  if (!el) return;
+  el.className = 'pybox-status ' + cls;
+  el.innerHTML = `<div class="dot"></div><span>${text}</span>`;
+}
+
+function clearOutput(id) {
+  const con = document.getElementById('py-console-' + id);
+  if (con) con.innerHTML = '<span class="py-info">Output cleared.</span>';
+  const wrap = document.getElementById('py-chart-wrap-' + id);
+  if (wrap) wrap.innerHTML = '<div class="pybox-chart-placeholder">Run your code to generate a plot</div>';
+  if (pyCharts[id]) { try { pyCharts[id].destroy(); } catch(e){} delete pyCharts[id]; }
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function runPython(id) {
+  if (!pyReady) { alert('Python is still loading — please wait a moment.'); return; }
+  const btn = document.getElementById('py-run-' + id);
+  const code = document.getElementById('py-editor-' + id).value;
+  const con  = document.getElementById('py-console-' + id);
+  const wrap = document.getElementById('py-chart-wrap-' + id);
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="run-icon">⏳</span> Running…';
+  setStatus(id, 'loading', 'running');
+  con.innerHTML = '';
+
+  let stdout = '';
+  pyodide.setStdout({ batched: s => { stdout += s + '\n'; } });
+  pyodide.setStderr({ batched: s => { stdout += s + '\n'; } });
+
+  try {
+    await pyodide.runPythonAsync(code);
+    con.innerHTML = stdout.trim()
+      ? `<span class="py-out">${escHtml(stdout.trim())}</span>`
+      : `<span class="py-ok">✓ Ran successfully — no print output.</span>`;
+
+    let plotData = null;
+    try {
+      const raw = pyodide.globals.get('PLOT_DATA');
+      if (raw) plotData = raw.toJs({ dict_converter: Object.fromEntries });
+    } catch(e) {}
+
+    if (plotData) renderPyChart(id, plotData, wrap);
+    else wrap.innerHTML = '<div class="pybox-chart-placeholder" style="color:#6b7280">No <code>PLOT_DATA</code> defined — add it to see a chart.</div>';
+
+    setStatus(id, 'ready', 'done ✓');
+  } catch(err) {
+    con.innerHTML = `<span class="py-err">${escHtml(stdout)}\n${escHtml(err.message)}</span>`;
+    setStatus(id, 'error', 'error');
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<span class="run-icon">▶</span> Run Code';
+}
+
+function jsArr(v) {
+  // safely convert pyodide proxy or plain array to JS array
+  if (!v) return [];
+  try { return Array.from(v); } catch(e) { return []; }
+}
+
+function pyObjGet(obj, key) {
+  if (obj instanceof Map) return obj.get(key);
+  if (typeof obj === 'object') return obj[key];
+  return undefined;
+}
+
+function renderPyChart(id, data, wrap) {
+  if (pyCharts[id]) { try { pyCharts[id].destroy(); } catch(e){} }
+  wrap.innerHTML = '<canvas id="py-canvas-' + id + '"></canvas>';
+  const ctx = document.getElementById('py-canvas-' + id).getContext('2d');
+  const pal = ['#6366f1','#f59e0b','#10b981','#ef4444','#3b82f6','#ec4899','#8b5cf6','#14b8a6','#f97316','#06b6d4'];
+
+  const type = data instanceof Map ? data.get('type') : data.type;
+
+  if (type === 'dual') {
+    // Week 1
+    const theta = jsArr(data instanceof Map ? data.get('theta') : data.theta);
+    const prior = jsArr(data instanceof Map ? data.get('prior') : data.prior);
+    const post  = jsArr(data instanceof Map ? data.get('posterior') : data.posterior);
+    const means = jsArr(data instanceof Map ? data.get('means') : data.means);
+    const alpha = data instanceof Map ? data.get('alpha') : data.alpha;
+    const beta  = data instanceof Map ? data.get('beta')  : data.beta;
+    const n     = data instanceof Map ? data.get('n')     : data.n;
+    const tb    = data instanceof Map ? data.get('true_bias') : data.true_bias;
+
+    pyCharts[id] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: theta.map(v => (+v).toFixed(2)),
+        datasets: [
+          { label: 'Prior', data: prior, borderColor: '#9ca3af', borderDash: [6,4], fill: false, tension: 0.4, pointRadius: 0, borderWidth: 1.5 },
+          { label: `Posterior Beta(${alpha},${beta}) — n=${n}`, data: post, borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2.5 }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' }, title: { display: true, text: `n=${n} | true bias=${tb}`, font: { size: 12 } } },
+        scales: { x: { title: { display: true, text: 'θ = P(Heads)' } }, y: { beginAtZero: true, title: { display: true, text: 'Density' } } }
+      }
+    });
+
+    // Sparkline for posterior mean trajectory
+    if (means.length > 0) {
+      const sk = document.createElement('div');
+      sk.style.cssText = 'margin-top:14px;height:90px;';
+      const sc = document.createElement('canvas');
+      sk.appendChild(sc);
+      wrap.appendChild(sk);
+      new Chart(sc.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: means.map((_,i) => i),
+          datasets: [
+            { label: 'Posterior Mean', data: means, borderColor: '#f59e0b', fill: false, tension: 0.3, pointRadius: 0, borderWidth: 2 },
+            { label: 'True Bias', data: means.map(() => +tb), borderColor: '#ef4444', borderDash: [4,4], fill: false, pointRadius: 0, borderWidth: 1.5 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'top', labels: { font: { size: 10 } } } },
+          scales: { x: { display: false }, y: { min: 0, max: 1, title: { display: true, text: 'Mean', font: { size: 10 } } } }
+        }
+      });
+    }
+
+  } else if (type === 'snapshots') {
+    // Week 2
+    const theta = jsArr(data instanceof Map ? data.get('theta') : data.theta);
+    const snaps = jsArr(data instanceof Map ? data.get('snapshots') : data.snapshots);
+    const tb    = data instanceof Map ? data.get('true_bias') : data.true_bias;
+
+    const datasets = snaps.map((s, i) => {
+      const n   = pyObjGet(s, 'n');
+      const a   = pyObjGet(s, 'a');
+      const b   = pyObjGet(s, 'b');
+      const pdf = jsArr(pyObjGet(s, 'pdf'));
+      const isLast = i === snaps.length - 1;
+      return {
+        label: `n=${n} Beta(${a},${b})`,
+        data: pdf,
+        borderColor: pal[i % pal.length],
+        backgroundColor: isLast ? pal[i % pal.length].replace('#','rgba(') + ',0.1)' : 'transparent',
+        fill: isLast,
+        tension: 0.4,
+        pointRadius: 0,
+        borderWidth: isLast ? 3 : 1.8
+      };
+    });
+
+    // Add vertical line at true_bias via a fake scatter point
+    pyCharts[id] = new Chart(ctx, {
+      type: 'line',
+      data: { labels: theta.map(v => (+v).toFixed(2)), datasets },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top', labels: { font: { size: 11 } } },
+          title: { display: true, text: `Posterior Snapshots | true bias = ${tb}`, font: { size: 13 } }
+        },
+        scales: {
+          x: { title: { display: true, text: 'θ = P(Heads)' } },
+          y: { beginAtZero: true, title: { display: true, text: 'Density' } }
+        }
+      }
+    });
+
+  } else if (type === 'diagnostic') {
+    // Week 3
+    const labels  = jsArr(data instanceof Map ? data.get('labels')  : data.labels);
+    const history = jsArr(data instanceof Map ? data.get('history') : data.history);
+    const results = jsArr(data instanceof Map ? data.get('results') : data.results);
+    const hd      = data instanceof Map ? data.get('has_disease') : data.has_disease;
+    const prev    = data instanceof Map ? data.get('prevalence')  : data.prevalence;
+
+    const ptColors = ['#6366f1', ...results.map(r => r ? '#ef4444' : '#10b981')];
+    const ptRadius = [5, ...results.map(() => 7)];
+
+    pyCharts[id] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'P(Disease) %',
+            data: history,
+            borderColor: hd ? '#ef4444' : '#10b981',
+            backgroundColor: hd ? 'rgba(239,68,68,0.08)' : 'rgba(16,185,129,0.08)',
+            fill: true, tension: 0.3,
+            pointRadius: ptRadius,
+            pointBackgroundColor: ptColors,
+            pointBorderColor: '#fff', pointBorderWidth: 2,
+            borderWidth: 2.5
+          },
+          { label: 'Decision threshold (50%)', data: labels.map(()=>50), borderColor:'#374151', borderDash:[6,4], fill:false, pointRadius:0, borderWidth:1.5 },
+          { label: `Prior prevalence (${(+prev).toFixed(1)}%)`, data: labels.map(()=>+prev), borderColor:'#9ca3af', borderDash:[3,6], fill:false, pointRadius:0, borderWidth:1 }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top', labels: { font: { size: 11 } } },
+          title: { display: true, text: `Diagnostic trajectory | Patient ${hd ? 'HAS' : 'does NOT have'} disease`, font: { size: 13 } }
+        },
+        scales: {
+          x: { title: { display: true, text: 'Test #' } },
+          y: { min: 0, max: 100, title: { display: true, text: 'P(Disease) %' } }
+        }
+      }
+    });
+  }
+}
+
+// ===== INIT =====
+window.addEventListener('load', () => {
+  initLab1();
+  initPyodide();
+  // Lazy-init other charts when their section becomes visible
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        if (e.target.id === 'w2-lab' && !betaShapeChart) initBetaShapeChart();
+        if (e.target.id === 'w2-lab' && !seqChart) initSeqChart();
+        if (e.target.id === 'w3-lab' && !diagChart) initDiagChart();
+      }
+    });
+  }, { threshold: 0.1 });
+
+  ['w2-lab','w3-lab'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el);
+  });
+
+  // Also init on page show
+  const origShowPage = showPage;
+  window.showPage = function(id) {
+    origShowPage(id);
+    setTimeout(() => {
+      if ((id === 'w2-lab') && !betaShapeChart) initBetaShapeChart();
+      if ((id === 'w2-lab') && !seqChart) initSeqChart();
+      if ((id === 'w3-lab') && !diagChart) initDiagChart();
+    }, 100);
+  };
+});
+</script>
+    </main>
+  <aside class="sidebar-user">
+    <div class="nav-user" id="nav-user" style="display:none"></div>
+    <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign In</a>
+    <button class="btn btn-ghost btn-sm" id="nav-logout" style="display:none">Sign Out</button>
+  </aside>
+  <aside class="sidebar-controls">
+    <div class="controls-group">
+      <span class="controls-group-label">Theme</span>
+      <div class="controls-theme">
+        <button type="button" id="theme-light">Light</button>
+        <button type="button" id="theme-dark">Dark</button>
+      </div>
+    </div>
+    <div class="controls-group">
+      <span class="controls-group-label">Font</span>
+      <div class="controls-font">
+        <button type="button" class="font-option" data-font="inter" aria-label="Inter">Aa</button>
+        <button type="button" class="font-option" data-font="georgia" aria-label="Georgia">Aa</button>
+        <button type="button" class="font-option" data-font="system" aria-label="System">Aa</button>
+      </div>
+    </div>
+    <div class="controls-group">
+      <span class="controls-group-label">Size</span>
+      <div class="controls-font-size">
+        <button type="button" class="font-size-option" data-size="s">S</button>
+        <button type="button" class="font-size-option" data-size="m">M</button>
+        <button type="button" class="font-size-option" data-size="l">L</button>
+      </div>
+    </div>
+  </aside>
+  </div>
+
+  <footer class="footer">
+    <div class="container"><p>© 2026 WINN Platforms</p></div>
+  </footer>
+
+  <script type="module">
+    import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js?v=3";
+    import { initLayoutControls } from "./js/layout-controls.js";
+    import { logVisit, showStats } from "./js/analytics.js";
+    import { initNavVisibility } from "./js/nav-visibility.js";
+
+    initLayoutControls();
+    logVisit("teaching");
+
+    document.getElementById("nav-logout").addEventListener("click", async () => {
+      await logout();
+      showToast("Signed out.", "info");
+      window.location.reload();
+    });
+
+    initAuth(async (user, role) => {
+      updateNavUI(user, role);
+      await initNavVisibility(role);
+      if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
+      showStats(role);
+    });
+  </script>
+</body>
+</html>
