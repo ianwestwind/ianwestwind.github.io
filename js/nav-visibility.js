@@ -22,8 +22,8 @@ const HREF_TO_KEY = {
   "consultation.html":       "consultation",
 };
 
-const DEFAULT_ORDER = ["software", "design", "forum", "writing", "news", "consultation"];
-const DEFAULT_STATE = { software: true, design: true, forum: true, writing: true, news: true, consultation: true };
+const DEFAULT_ORDER = ["software", "design", "forum", "writing", "news", "teaching", "consultation"];
+const DEFAULT_STATE = { software: true, design: true, forum: true, writing: true, news: true, teaching: true, consultation: true };
 let _state = { ...DEFAULT_STATE };
 let _order = [...DEFAULT_ORDER];
 
@@ -44,7 +44,18 @@ export async function initNavVisibility(role) {
       if (Array.isArray(data.order) && data.order.length) {
         const stored  = data.order.filter(k => DEFAULT_ORDER.includes(k));
         const missing = DEFAULT_ORDER.filter(k => !stored.includes(k));
-        _order = [...stored, ...missing];
+        // Insert each missing key at its correct DEFAULT_ORDER position rather
+        // than appending them all at the end (handles new keys added after save).
+        _order = [...stored];
+        for (const key of missing) {
+          const di = DEFAULT_ORDER.indexOf(key);
+          let at = _order.length;
+          for (let i = di - 1; i >= 0; i--) {
+            const pos = _order.indexOf(DEFAULT_ORDER[i]);
+            if (pos !== -1) { at = pos + 1; break; }
+          }
+          _order.splice(at, 0, key);
+        }
       }
     } else {
       _state = { ...DEFAULT_STATE };
@@ -100,9 +111,12 @@ function _applyOrder(isAdmin) {
   const navLinks = document.querySelector(".nav-sidebar .nav-links");
   if (!navLinks) return;
   _order.forEach(key => {
-    const sel = isAdmin
-      ? `.nav-link-row[data-nav-key="${key}"]`
-      : `a[data-nav-key="${key}"]`;
+    // Teaching uses a div.nav-dropdown; regular items use .nav-link-row (admin) or a (visitor)
+    const sel = key === "teaching"
+      ? `[data-nav-key="${key}"]`
+      : isAdmin
+        ? `.nav-link-row[data-nav-key="${key}"]`
+        : `a[data-nav-key="${key}"]`;
     const el = navLinks.querySelector(sel);
     if (el) navLinks.appendChild(el);
   });
@@ -157,8 +171,12 @@ function _addDragEvents(row) {
 async function _saveDragOrder() {
   const navLinks = document.querySelector(".nav-sidebar .nav-links");
   if (!navLinks) return;
-  _order = [...navLinks.querySelectorAll(".nav-link-row[data-nav-key]")]
+  // Collect ordered keys from .nav-link-row items (draggable links), then
+  // re-insert any non-draggable keys (e.g. "teaching") at their current position.
+  const rowKeys = [...navLinks.querySelectorAll(".nav-link-row[data-nav-key]")]
     .map(r => r.dataset.navKey);
+  const allEls  = [...navLinks.querySelectorAll("[data-nav-key]")];
+  _order = allEls.map(el => el.dataset.navKey);
   try {
     await setDoc(NAV_DOC, { ..._state, order: _order });
   } catch (e) {

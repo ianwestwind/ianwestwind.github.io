@@ -307,6 +307,72 @@ html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="consultation.html"] {
   opacity: 0.6;
 }
 
+/* Teaching dropdown in nav */
+.nav-dropdown {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-dropdown-btn {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 400;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  transition: color var(--transition);
+}
+
+.nav-dropdown-btn:hover {
+  color: var(--text-secondary);
+}
+
+.nav-dropdown-chevron {
+  font-size: 0.65rem;
+  opacity: 0.5;
+  transition: transform 0.2s;
+}
+
+.nav-dropdown.open .nav-dropdown-chevron {
+  transform: rotate(180deg);
+}
+
+.nav-dropdown-menu {
+  display: none;
+  flex-direction: column;
+}
+
+.nav-dropdown.open .nav-dropdown-menu {
+  display: flex;
+}
+
+.nav-dropdown-menu a {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+  padding: 0.4rem 1rem 0.4rem 1.75rem;
+  transition: color var(--transition);
+}
+
+.nav-dropdown-menu a:hover {
+  color: var(--text-secondary);
+}
+
+[data-theme="light"] .nav-dropdown-menu a.active {
+  color: #000;
+}
+
+[data-theme="dark"] .nav-dropdown-menu a.active {
+  color: #fff;
+}
+
 /* Two right sidebars: (1) user — email, status, signout on one line; (2) theme, font, size */
 .sidebar-user {
   width: var(--sidebar-user-width);
