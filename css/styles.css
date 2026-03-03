@@ -353,23 +353,29 @@ html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="consultation.html"] {
   display: flex;
 }
 
-.nav-dropdown-menu a {
+/* Higher specificity to override .nav-sidebar .nav-links a */
+.nav-sidebar .nav-links .nav-dropdown-menu a {
   color: var(--text-muted);
   font-size: 0.85rem;
   font-weight: 400;
-  padding: 0.4rem 1rem 0.4rem 1.75rem;
+  padding: 0.35rem 1rem 0.35rem 1.5rem;
   transition: color var(--transition);
 }
 
-.nav-dropdown-menu a:hover {
+.nav-sidebar .nav-links .nav-dropdown-menu a::before {
+  content: "– ";
+  opacity: 0.4;
+}
+
+.nav-sidebar .nav-links .nav-dropdown-menu a:hover {
   color: var(--text-secondary);
 }
 
-[data-theme="light"] .nav-dropdown-menu a.active {
+[data-theme="light"] .nav-sidebar .nav-links .nav-dropdown-menu a.active {
   color: #000;
 }
 
-[data-theme="dark"] .nav-dropdown-menu a.active {
+[data-theme="dark"] .nav-sidebar .nav-links .nav-dropdown-menu a.active {
   color: #fff;
 }
 
