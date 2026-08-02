@@ -1,6 +1,8 @@
 // WINN Platforms — layout-controls.js
 // Theme, font, and font-size controls (right sidebar). Persists to localStorage.
 
+import { initTeachingLock } from "./teaching-lock.js";
+
 const THEME_KEY = "winn-theme";
 const FONT_KEY = "winn-font";
 const FONTSIZE_KEY = "winn-fontsize";
@@ -86,4 +88,6 @@ export function initLayoutControls() {
       }
     });
   });
+
+  initTeachingLock();
 }
