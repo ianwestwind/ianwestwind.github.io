@@ -295,6 +295,8 @@
     logVisit("index");
 
     const PROFILE_DOC = doc(db, "site_config", "profile");
+    const DEFAULT_BIO =
+      "Ian Kim is an Assistant Professor at the University of Michigan School of Kinesiology, Director of the Multimodal Intelligence Lab, and Senior Data Science & AI Lead for the Stanford Human Screenome Project.";
     let _currentRole = "guest";
     let _profileData = null;
     let _pendingPhotoUrl = null; // photo uploaded during edit session
@@ -304,6 +306,16 @@
     function esc(s) {
       if (!s) return "";
       const d = document.createElement("div"); d.textContent = s; return d.innerHTML;
+    }
+
+    function _isPlaceholderBio(bio) {
+      if (bio == null) return true;
+      const t = String(bio).trim();
+      return !t || /needs to be filled/i.test(t);
+    }
+
+    function _resolvedBio(bio) {
+      return _isPlaceholderBio(bio) ? DEFAULT_BIO : String(bio).trim();
     }
 
     // ---- Photo upload → crop modal ----
@@ -411,10 +423,10 @@
       if (d.eyebrow !== undefined) document.getElementById("profile-eyebrow").textContent = d.eyebrow;
       if (d.role    !== undefined) document.getElementById("profile-role").innerHTML = esc(d.role).replace(/·/g, "&nbsp;·&nbsp;");
 
-      // Bio — split on blank lines into paragraphs
-      if (d.bio !== undefined) {
+      // Bio — ignore Firestore placeholders; split on blank lines into paragraphs
+      {
         const bioContainer = document.getElementById("profile-bio-content");
-        const paras = d.bio.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+        const paras = _resolvedBio(d.bio).split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
         if (paras.length) {
           bioContainer.innerHTML = paras.map(p => `<p class="profile-text">${esc(p)}</p>`).join("");
         }
@@ -482,7 +494,21 @@
       try {
         const snap = await getDoc(PROFILE_DOC);
         _profileData = snap.exists() ? snap.data() : null;
+
+        // Persist the real bio when Firestore still has the placeholder (admin only)
+        if (_profileData && _isPlaceholderBio(_profileData.bio) && hasRole(_currentRole, "admin")) {
+          const healed = { ..._profileData, bio: DEFAULT_BIO };
+          try {
+            await setDoc(PROFILE_DOC, healed);
+            _profileData = healed;
+          } catch (e) { console.warn("bio heal", e); }
+        }
+
         if (_profileData) _renderProfile(_profileData);
+        else {
+          // No Firestore doc yet — still show the default bio from HTML/DEFAULT_BIO
+          _renderProfile({ bio: DEFAULT_BIO });
+        }
         _renderCollabs(_profileData?.collaborators || []);
       } catch (e) { console.warn("loadProfile", e); }
     }
@@ -505,13 +531,8 @@
       document.getElementById("pf-eyebrow").value = d?.eyebrow ?? document.getElementById("profile-eyebrow")?.textContent ?? "";
       document.getElementById("pf-role").value    = d?.role    ?? document.getElementById("profile-role")?.textContent    ?? "";
 
-      // Bio: from Firestore, or reconstruct from visible paragraphs
-      if (d?.bio !== undefined) {
-        document.getElementById("pf-bio").value = d.bio;
-      } else {
-        const paras = [...document.querySelectorAll("#profile-bio-content .profile-text")];
-        document.getElementById("pf-bio").value = paras.map(el => el.textContent.trim()).join("\n\n");
-      }
+      // Bio: never surface the Firestore placeholder in the editor
+      document.getElementById("pf-bio").value = _resolvedBio(d?.bio);
 
       // Tags: from Firestore, or reconstruct from visible tag chips
       if (Array.isArray(d?.tags)) {
