@@ -1,5 +1,5 @@
 // ============================================================
-// WINN Platforms — Cloud Functions
+// Multimodal Intelligence Lab — Cloud Functions
 // Sends approval/rejection emails when a consultation booking
 // status changes to "approved" or "rejected".
 //
@@ -42,7 +42,7 @@ function _buildGoogleCalUrl(ts, durationMins, videoLink) {
   const fmt = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
   const params = new URLSearchParams({
     action:   "TEMPLATE",
-    text:     "Consultation - WINN Platforms",
+    text:     "Consultation - Multimodal Intelligence Lab",
     dates:    `${fmt(start)}/${fmt(end)}`,
     details:  `Join at: ${videoLink}`,
     location: videoLink,
@@ -96,11 +96,11 @@ exports.onConsultationStatusChange = onDocumentUpdated(
         ? _buildGoogleCalUrl(after.slotDateTime, durationMins, videoLink)
         : "";
 
-      subject  = "Your Consultation is Confirmed — WINN Platforms";
+      subject  = "Your Consultation is Confirmed — Multimodal Intelligence Lab";
       htmlBody = `
         <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#111">
           <h2 style="margin-bottom:4px">Consultation Confirmed ✓</h2>
-          <p style="color:#666;margin-top:0;font-size:14px">WINN Platforms</p>
+          <p style="color:#666;margin-top:0;font-size:14px">Multimodal Intelligence Lab</p>
           <hr style="border:none;border-top:1px solid #ddd;margin:16px 0"/>
           <p>Hi ${recipientName},</p>
           <p>${approvalMessage}</p>
@@ -123,21 +123,21 @@ exports.onConsultationStatusChange = onDocumentUpdated(
             </a>
           </p>` : ""}
           <hr style="border:none;border-top:1px solid #ddd;margin:24px 0 12px"/>
-          <p style="font-size:12px;color:#999">WINN Platforms</p>
+          <p style="font-size:12px;color:#999">Multimodal Intelligence Lab</p>
         </div>`;
     } else {
-      subject  = "Consultation Request Update — WINN Platforms";
+      subject  = "Consultation Request Update — Multimodal Intelligence Lab";
       htmlBody = `
         <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#111">
           <h2 style="margin-bottom:4px">Consultation Request Update</h2>
-          <p style="color:#666;margin-top:0;font-size:14px">WINN Platforms</p>
+          <p style="color:#666;margin-top:0;font-size:14px">Multimodal Intelligence Lab</p>
           <hr style="border:none;border-top:1px solid #ddd;margin:16px 0"/>
           <p>Hi ${recipientName},</p>
           <p>Thank you for your interest in a consultation. Unfortunately, we are unable to
              accommodate your request for <strong>${dateLabel}</strong>.</p>
           <p>Please visit the site to browse other available time slots and submit a new request.</p>
           <hr style="border:none;border-top:1px solid #ddd;margin:24px 0 12px"/>
-          <p style="font-size:12px;color:#999">WINN Platforms</p>
+          <p style="font-size:12px;color:#999">Multimodal Intelligence Lab</p>
         </div>`;
     }
 
@@ -151,7 +151,7 @@ exports.onConsultationStatusChange = onDocumentUpdated(
       body: JSON.stringify({
         // Update `from` to a verified domain address after Resend domain setup.
         // Until then, only delivers to the email tied to your Resend account.
-        from:    "WINN Platforms <onboarding@resend.dev>",
+        from:    "Multimodal Intelligence Lab <onboarding@resend.dev>",
         to:      [recipientEmail],
         subject,
         html:    htmlBody,

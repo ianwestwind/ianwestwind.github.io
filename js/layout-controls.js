@@ -1,4 +1,4 @@
-// WINN Platforms — layout-controls.js
+// Multimodal Intelligence Lab — layout-controls.js
 // Theme, font, and font-size controls (right sidebar). Persists to localStorage.
 
 import { initTeachingLock } from "./teaching-lock.js";

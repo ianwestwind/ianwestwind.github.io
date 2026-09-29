@@ -1,5 +1,5 @@
 /* ============================================================
-   WINN Platforms — styles.css
+   Multimodal Intelligence Lab — styles.css
    Minimal, text-focused, black / white / grey only
    ============================================================ */
 
@@ -141,6 +141,7 @@ p { color: var(--text-secondary); }
   border-bottom: none;
   margin-bottom: 0.5rem;
   letter-spacing: -0.02em;
+  line-height: 1.3;
 }
 
 .nav-sidebar .nav-brand span { color: var(--text-primary); }
@@ -194,6 +195,7 @@ p { color: var(--text-secondary); }
   border-bottom: none;
   margin-bottom: 0.5rem;
   letter-spacing: -0.02em;
+  line-height: 1.3;
 }
 
 .nav-sidebar .nav-brand span { color: var(--text-primary); }

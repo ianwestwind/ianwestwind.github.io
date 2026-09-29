@@ -1,5 +1,5 @@
 // ============================================================
-// WINN Platforms — discussion.js
+// Multimodal Intelligence Lab — discussion.js
 // Hash-routed list/detail view with image attachment support
 // ============================================================
 

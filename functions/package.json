@@ -1,7 +1,7 @@
 {
   "name": "winn-consultation-functions",
   "version": "1.0.0",
-  "description": "Firebase Cloud Functions for WINN Platforms consultation emails",
+  "description": "Firebase Cloud Functions for Multimodal Intelligence Lab consultation emails",
   "engines": {
     "node": "20"
   },

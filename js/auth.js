@@ -1,5 +1,5 @@
 // ============================================================
-// WINN Platforms — auth.js
+// Multimodal Intelligence Lab — auth.js
 // Handles login, registration, logout, session state, roles
 // ============================================================
 

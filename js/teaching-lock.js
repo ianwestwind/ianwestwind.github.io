@@ -1,5 +1,5 @@
 // ============================================================
-// WINN Platforms — teaching-lock.js
+// Multimodal Intelligence Lab — teaching-lock.js
 // Password-gates the Teaching nav dropdown. Unlock persists
 // for the browser session via sessionStorage.
 // ============================================================

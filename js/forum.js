@@ -1,5 +1,5 @@
 // ============================================================
-// WINN Platforms — forum.js
+// Multimodal Intelligence Lab — forum.js
 // Forum posts with rich editor, thumbnails, and attachments
 // ============================================================
 

@@ -1,5 +1,5 @@
 // ============================================================
-// WINN Platforms — analytics.js
+// Multimodal Intelligence Lab — analytics.js
 // Visitor tracking: log page visits to Firestore, display stats
 // for admins in the nav sidebar.
 // ============================================================

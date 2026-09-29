@@ -1,5 +1,5 @@
 // ============================================================
-// WINN Platforms — nav-visibility.js
+// Multimodal Intelligence Lab — nav-visibility.js
 // Admin can show/hide and drag-to-reorder individual nav links.
 // State persists in Firestore site_config/nav_visibility.
 // ============================================================

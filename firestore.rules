@@ -1,5 +1,5 @@
 // ============================================================
-// WINN Platforms — Firestore Security Rules
+// Multimodal Intelligence Lab — Firestore Security Rules
 //
 // Deploy via: firebase deploy --only firestore:rules
 // Or paste directly in Firebase Console → Firestore → Rules

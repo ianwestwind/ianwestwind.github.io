@@ -1,5 +1,5 @@
 // ============================================================
-// WINN Platforms — announcements.js
+// Multimodal Intelligence Lab — announcements.js
 // Hash-routed list/detail; moderator/admin can post/delete
 // ============================================================
 

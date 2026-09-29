@@ -1,5 +1,5 @@
 // ============================================================
-// WINN Platforms — firebase-config.js
+// Multimodal Intelligence Lab — firebase-config.js
 //
 // SETUP INSTRUCTIONS:
 // 1. Go to https://console.firebase.google.com/

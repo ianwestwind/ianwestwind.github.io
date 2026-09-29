@@ -1,5 +1,5 @@
 // ============================================================
-// WINN Platforms — editor.js
+// Multimodal Intelligence Lab — editor.js
 // Quill rich-text editor with Firebase Storage for image / video / audio
 // and helpers for thumbnail & general file attachments.
 // ============================================================

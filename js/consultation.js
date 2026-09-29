@@ -1,5 +1,5 @@
 // ============================================================
-// WINN Platforms — consultation.js
+// Multimodal Intelligence Lab — consultation.js
 // Admin manages time slots; logged-in users pick a slot and
 // submit a booking request.
 // ============================================================
@@ -463,9 +463,9 @@ function _buildGoogleCalUrl(ts, durationMins, videoLink) {
   const fmt = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
   const params = new URLSearchParams({
     action:   "TEMPLATE",
-    text:     "Consultation - WINN Platforms",
+    text:     "Consultation - Multimodal Intelligence Lab",
     dates:    `${fmt(start)}/${fmt(end)}`,
-    details:  videoLink ? `Join at: ${videoLink}` : "Consultation with WINN Platforms",
+    details:  videoLink ? `Join at: ${videoLink}` : "Consultation with Multimodal Intelligence Lab",
     location: videoLink || "",
   });
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
@@ -482,12 +482,12 @@ function _buildIcsDataUri(ts, durationMins, videoLink) {
   const ics = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//WINN Platforms//EN",
+    "PRODID:-//Multimodal Intelligence Lab//EN",
     "BEGIN:VEVENT",
     `UID:${uid}`,
     `DTSTART:${fmt(start)}`,
     `DTEND:${fmt(end)}`,
-    "SUMMARY:Consultation - WINN Platforms",
+    "SUMMARY:Consultation - Multimodal Intelligence Lab",
     videoLink ? `LOCATION:${videoLink}` : "",
     videoLink ? `DESCRIPTION:Join at: ${videoLink}` : "",
     "END:VEVENT",

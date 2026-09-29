@@ -1,5 +1,5 @@
 // ============================================================
-// WINN Platforms — writing.js
+// Multimodal Intelligence Lab — writing.js
 // Writing posts (moderator+ can post); thumbnail cards + scheduling
 // ============================================================
 

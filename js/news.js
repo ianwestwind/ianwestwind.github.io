@@ -1,5 +1,5 @@
 // ============================================================
-// WINN Platforms — news.js
+// Multimodal Intelligence Lab — news.js
 // News posts (moderator/admin only); scrollable full-content feed
 // ============================================================
 
