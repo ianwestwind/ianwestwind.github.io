@@ -162,6 +162,14 @@
               <label for="collab-url">Profile URL <span style="color:var(--text-muted)">(optional)</span></label>
               <input type="url" id="collab-url" placeholder="https://…" />
             </div>
+            <div class="form-group" style="margin-top:.75rem">
+              <label>Photo <span style="color:var(--text-muted)">(optional)</span></label>
+              <label class="file-input-label">
+                Upload photo
+                <input type="file" id="collab-photo-input" accept="image/*" />
+              </label>
+              <div id="collab-photo-preview"></div>
+            </div>
             <p class="form-error" id="collab-form-error"></p>
             <div style="display:flex;gap:.5rem;margin-top:.5rem">
               <button type="submit" class="btn btn-primary btn-sm">Add</button>
@@ -300,7 +308,9 @@
     let _currentRole = "guest";
     let _profileData = null;
     let _pendingPhotoUrl = null; // photo uploaded during edit session
+    let _pendingCollabPhotoUrl = null;
     let _cropper      = null;
+    let _cropPurpose  = "profile"; // "profile" | "collab"
 
     // ---- Helpers ----
     function esc(s) {
@@ -319,11 +329,10 @@
     }
 
     // ---- Photo upload → crop modal ----
-    document.getElementById("profile-photo-input").addEventListener("change", () => {
-      const file = document.getElementById("profile-photo-input").files[0];
-      document.getElementById("profile-photo-input").value = "";
+    function _openCropper(file, purpose) {
       if (!file) return;
       if (file.size > 10 * 1024 * 1024) { showToast("Photo exceeds 10 MB.", "error"); return; }
+      _cropPurpose = purpose;
 
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -336,7 +345,7 @@
 
         cropImg.onload = () => {
           _cropper = new Cropper(cropImg, {
-            aspectRatio: 1 / 1.3,
+            aspectRatio: purpose === "collab" ? 1 : 1 / 1.3,
             viewMode:    1,
             movable:     true,
             zoomable:    true,
@@ -351,6 +360,20 @@
         cropImg.src = e.target.result;
       };
       reader.readAsDataURL(file);
+    }
+
+    document.getElementById("profile-photo-input").addEventListener("change", () => {
+      const input = document.getElementById("profile-photo-input");
+      const file = input.files[0];
+      input.value = "";
+      _openCropper(file, "profile");
+    });
+
+    document.getElementById("collab-photo-input").addEventListener("change", () => {
+      const input = document.getElementById("collab-photo-input");
+      const file = input.files[0];
+      input.value = "";
+      _openCropper(file, "collab");
     });
 
     document.getElementById("crop-cancel-btn").addEventListener("click", () => {
@@ -360,18 +383,31 @@
 
     document.getElementById("crop-confirm-btn").addEventListener("click", () => {
       if (!_cropper) return;
-      const canvas = _cropper.getCroppedCanvas({ width: 400, height: 520 });
+      const purpose = _cropPurpose;
+      const canvas = purpose === "collab"
+        ? _cropper.getCroppedCanvas({ width: 256, height: 256 })
+        : _cropper.getCroppedCanvas({ width: 400, height: 520 });
       _cropper.destroy(); _cropper = null;
       document.getElementById("crop-modal").style.display = "none";
 
       showToast("Uploading photo…", "info");
       canvas.toBlob(async (blob) => {
         try {
-          const r = ref(storage, `profile/photo-${Date.now()}.jpg`);
+          const path = purpose === "collab"
+            ? `profile/collab-${Date.now()}.jpg`
+            : `profile/photo-${Date.now()}.jpg`;
+          const r = ref(storage, path);
           await uploadBytes(r, blob, { contentType: "image/jpeg" });
-          _pendingPhotoUrl = await getDownloadURL(r);
-          const prev = document.getElementById("profile-photo-preview");
-          prev.innerHTML = `<div class="thumb-preview" style="margin-top:.5rem"><img src="${esc(_pendingPhotoUrl)}" alt="Photo preview" style="max-height:80px;border-radius:var(--radius)" /><p style="font-size:.8rem;color:var(--text-muted);margin:.25rem 0 0">Photo ready — click Save to apply</p></div>`;
+          const url = await getDownloadURL(r);
+          if (purpose === "collab") {
+            _pendingCollabPhotoUrl = url;
+            document.getElementById("collab-photo-preview").innerHTML =
+              `<div class="thumb-preview" style="margin-top:.5rem"><img src="${esc(url)}" alt="Photo preview" class="collab-photo" style="height:2.4rem" /><p style="font-size:.8rem;color:var(--text-muted);margin:.25rem 0 0">Photo ready</p></div>`;
+          } else {
+            _pendingPhotoUrl = url;
+            document.getElementById("profile-photo-preview").innerHTML =
+              `<div class="thumb-preview" style="margin-top:.5rem"><img src="${esc(url)}" alt="Photo preview" style="max-height:80px;border-radius:var(--radius)" /><p style="font-size:.8rem;color:var(--text-muted);margin:.25rem 0 0">Photo ready — click Save to apply</p></div>`;
+          }
           showToast("Photo ready.", "success");
         } catch { showToast("Photo upload failed.", "error"); }
       }, "image/jpeg", 0.92);
@@ -447,6 +483,19 @@
       }
     }
 
+    function _collabInitials(name) {
+      const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+      if (!parts.length) return "";
+      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    function _resetCollabForm() {
+      document.getElementById("collab-form").reset();
+      _pendingCollabPhotoUrl = null;
+      document.getElementById("collab-photo-preview").innerHTML = "";
+    }
+
     // ---- Render collaborators ----
     function _renderCollabs(collabs) {
       const list    = document.getElementById("collab-list");
@@ -455,15 +504,24 @@
         list.innerHTML = `<p style="color:var(--text-muted);font-size:.9rem">No collaborators added yet.</p>`;
         return;
       }
-      list.innerHTML = collabs.map((c, i) => `
+      list.innerHTML = collabs.map((c, i) => {
+        const photo = c.photoUrl
+          ? `<img class="collab-photo" src="${esc(c.photoUrl)}" alt="" />`
+          : `<span class="collab-photo collab-photo-placeholder" aria-hidden="true">${esc(_collabInitials(c.name))}</span>`;
+        const person = `
+          ${photo}
+          <span class="collab-meta">
+            <span class="collab-entry-name">${esc(c.name)}</span>
+            <span class="collab-entry-inst">${esc(c.affiliation || "")}</span>
+          </span>`;
+        return `
         <div class="collab-entry" data-index="${i}">
           ${c.url
-            ? `<a href="${esc(c.url)}" class="collab-entry-name" target="_blank" rel="noopener">${esc(c.name)}</a>`
-            : `<span class="collab-entry-name">${esc(c.name)}</span>`}
-          <span class="collab-entry-inst">${esc(c.affiliation || "")}</span>
+            ? `<a href="${esc(c.url)}" class="collab-person" target="_blank" rel="noopener">${person}</a>`
+            : `<div class="collab-person">${person}</div>`}
           ${isAdmin ? `<button type="button" class="btn btn-ghost btn-sm remove-collab-btn" data-index="${i}" style="margin-left:auto;font-size:.75rem;padding:.15rem .5rem;color:var(--text-muted)">✕</button>` : ""}
-        </div>
-      `).join("");
+        </div>`;
+      }).join("");
 
       if (isAdmin) {
         list.querySelectorAll(".remove-collab-btn").forEach(btn => {
@@ -612,7 +670,7 @@
     document.getElementById("collab-cancel-btn").addEventListener("click", () => {
       document.getElementById("add-collab-wrap").style.display = "none";
       document.getElementById("add-collab-btn").style.display  = "";
-      document.getElementById("collab-form").reset();
+      _resetCollabForm();
     });
 
     document.getElementById("collab-form").addEventListener("submit", async (e) => {
@@ -623,13 +681,14 @@
       const name        = document.getElementById("collab-name").value.trim();
       const affiliation = document.getElementById("collab-affiliation").value.trim();
       const url         = document.getElementById("collab-url").value.trim() || null;
+      const photoUrl    = _pendingCollabPhotoUrl || null;
 
       if (!name) { errEl.textContent = "Name is required."; errEl.classList.add("visible"); return; }
 
-      const collabs = [...(_profileData?.collaborators || []), { name, affiliation, url }];
+      const collabs = [...(_profileData?.collaborators || []), { name, affiliation, url, photoUrl }];
       await _saveCollabs(collabs);
 
-      document.getElementById("collab-form").reset();
+      _resetCollabForm();
       document.getElementById("add-collab-wrap").style.display = "none";
       document.getElementById("add-collab-btn").style.display  = "";
     });
@@ -661,9 +720,6 @@
     .link-row input { padding: .4rem .6rem; background: var(--input-bg, var(--bg-card)); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-size: .9rem; }
     .link-row .link-url   { flex: 2; }
     .link-row .link-label { flex: 1; }
-    .collab-entry { display: flex; align-items: center; gap: .75rem; }
-    a.collab-entry-name { color: var(--accent); text-decoration: none; }
-    a.collab-entry-name:hover { text-decoration: underline; }
   </style>
 </body>
 </html>

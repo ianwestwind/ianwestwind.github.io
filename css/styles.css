@@ -1951,33 +1951,85 @@ html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="consultation.html"] {
   color: var(--text-muted);
 }
 
-/* Collaborators — text-first list layout */
+/* Collaborators — two per row; name over affiliation, small photo beside both lines */
 .collab-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 0;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 2rem;
 }
 
 .collab-entry {
-  padding: 0.6rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 0;
   border-bottom: 1px solid var(--border);
+  min-width: 0;
 }
 
 .collab-entry:nth-child(-n+2) { border-top: 1px solid var(--border); }
+
+.collab-person {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  flex: 1;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Square matches name line + affiliation line (0.88×1.25 + gap + 0.77×1.35). */
+.collab-photo {
+  width: 2.26rem;
+  height: 2.26rem;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: 2px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  display: block;
+}
+
+.collab-photo-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
+.collab-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.12rem;
+}
 
 .collab-entry-name {
   display: block;
   font-size: 0.88rem;
   font-weight: 600;
+  line-height: 1.25;
   color: var(--text-primary);
-  margin-bottom: 0.1rem;
 }
+
+a.collab-person:hover .collab-entry-name { text-decoration: underline; }
 
 .collab-entry-inst {
   display: block;
   font-size: 0.77rem;
   color: var(--text-muted);
-  line-height: 1.4;
+  line-height: 1.35;
+}
+
+@media (max-width: 520px) {
+  .collab-list { grid-template-columns: 1fr; column-gap: 0; }
+  .collab-entry:nth-child(-n+2) { border-top: none; }
+  .collab-entry:first-child { border-top: 1px solid var(--border); }
 }
 
 /* Selected projects — text-first */
