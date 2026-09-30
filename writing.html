@@ -16,12 +16,21 @@
 <body>
   <div class="app-layout">
     <aside class="nav-sidebar">
-      <a href="index.html" class="nav-brand">Multimodal Intelligence&nbsp;Lab</a>
+      <a href="index.html" class="nav-brand">Overfitting &amp; Prayer</a>
       <div class="nav-links">
         <a href="index.html">About</a>
         <a href="portfolio-software.html">Software</a>
         <a href="portfolio-design.html">Design</a>
-        <a href="forum.html">WINNers</a>
+        <div class="nav-dropdown" data-nav-key="forum">
+          <div class="nav-dropdown-head">
+            <a href="forum.html" class="nav-dropdown-btn">Research <span class="nav-dropdown-chevron">▾</span></a>
+          </div>
+          <div class="nav-dropdown-menu">
+            <a href="forum.html?section=lead">LEAD</a>
+            <a href="forum.html?section=winn">WINN</a>
+            <a href="forum.html?section=publications">Publications</a>
+          </div>
+        </div>
         <a href="writing.html" class="active">Writing</a>
         <a href="news.html">News</a>
         <div class="nav-dropdown" data-nav-key="teaching">
@@ -32,6 +41,7 @@
           </div>
         </div>
         <a href="consultation.html">Consultation</a>
+        <a href="timeline.html">Timeline</a>
       </div>
     </aside>
     <main class="main-content">
@@ -179,12 +189,15 @@
   </div>
 
   </main>
-  <aside class="sidebar-user">
-    <div class="nav-user" id="nav-user" style="display:none"></div>
-    <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign In</a>
-    <button class="btn btn-ghost btn-sm" id="nav-logout" style="display:none">Sign Out</button>
-  </aside>
   <aside class="sidebar-controls">
+    <div class="controls-group controls-account">
+      <span class="controls-group-label" id="nav-user-email" hidden></span>
+      <div class="controls-theme controls-account-actions">
+        <span class="nav-role-badge" id="nav-role-badge" hidden></span>
+        <a href="settings.html" id="nav-settings" hidden>Settings</a>
+        <a href="login.html" id="nav-login">Sign In</a>
+      </div>
+    </div>
     <div class="controls-group">
       <span class="controls-group-label">Theme</span>
       <div class="controls-theme">
@@ -208,6 +221,7 @@
         <button type="button" class="font-size-option" data-size="l">L</button>
       </div>
     </div>
+    <button type="button" class="controls-signout" id="nav-logout" hidden>Sign Out</button>
   </aside>
   </div>
 
@@ -216,7 +230,7 @@
   </footer>
 
   <script type="module">
-    import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js?v=3";
+    import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js?v=8";
     import { initLayoutControls } from "./js/layout-controls.js";
     import { initWritingPage, submitWriting } from "./js/writing.js?v=3";
     import { logVisit, showStats } from "./js/analytics.js";
@@ -227,7 +241,7 @@
     initWritingPage("guest"); // load posts immediately for all visitors
 
     document.getElementById("nav-logout").addEventListener("click", async () => {
-      await logout();
+      if (!(await logout())) return;
       showToast("Signed out.", "info");
       window.location.reload();
     });

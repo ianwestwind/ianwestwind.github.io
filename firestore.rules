@@ -50,15 +50,14 @@ service cloud.firestore {
         && request.resource.data.role == 'regular'
         && request.resource.data.email == request.auth.token.email;
 
-      // A user can update their own displayName only
-      // Role changes are admin-only
+      // A user can update their own profile fields except role.
+      // Email may change only to the address on their Auth token.
       allow update: if
-        // Own profile: only displayName allowed
         (isOwner(uid)
           && request.resource.data.role == resource.data.role
-          && request.resource.data.email == resource.data.email)
+          && (request.resource.data.email == resource.data.email
+              || request.resource.data.email == request.auth.token.email))
         ||
-        // Admin can update anything
         hasRole('admin');
 
       // Only admin can delete user documents

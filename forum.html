@@ -3,23 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WINNers · Multimodal Intelligence Lab</title>
+  <title>Research · Multimodal Intelligence Lab</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 </head>
 <body>
   <div class="app-layout">
     <aside class="nav-sidebar">
-      <a href="index.html" class="nav-brand">Multimodal Intelligence&nbsp;Lab</a>
+      <a href="index.html" class="nav-brand">Overfitting &amp; Prayer</a>
       <div class="nav-links">
         <a href="index.html">About</a>
         <a href="portfolio-software.html">Software</a>
         <a href="portfolio-design.html">Design</a>
-        <a href="forum.html" class="active">WINNers</a>
+        <div class="nav-dropdown open" data-nav-key="forum">
+          <div class="nav-dropdown-head">
+            <a href="forum.html" class="nav-dropdown-btn">Research <span class="nav-dropdown-chevron">▾</span></a>
+          </div>
+          <div class="nav-dropdown-menu">
+            <a href="forum.html?section=lead">LEAD</a>
+            <a href="forum.html?section=winn">WINN</a>
+            <a href="forum.html?section=publications">Publications</a>
+          </div>
+        </div>
         <a href="writing.html">Writing</a>
         <a href="news.html">News</a>
         <div class="nav-dropdown" data-nav-key="teaching">
@@ -30,14 +41,68 @@
           </div>
         </div>
         <a href="consultation.html">Consultation</a>
+        <a href="timeline.html">Timeline</a>
       </div>
     </aside>
     <main class="main-content">
   <div class="page-wrapper">
+    <div id="research-overview">
+      <div class="page-title-bar">
+        <div class="container" style="display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+          <div>
+            <h1>Research</h1>
+            <p>Overview</p>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="research-edit-btn" hidden>Edit</button>
+        </div>
+      </div>
+      <div class="section-sm container">
+        <div id="research-edit-wrap" class="post-form" hidden>
+          <h3>Edit overview</h3>
+          <form id="research-form">
+            <div class="form-group">
+              <label for="research-text-input">Text</label>
+              <textarea id="research-text-input" rows="7" placeholder="Overview text…" style="width:100%;resize:vertical;padding:.5rem .7rem;background:var(--input-bg,var(--bg-card));border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:.93rem;line-height:1.6;font-family:inherit"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Image <span style="color:var(--text-muted)">(optional, max 10 MB)</span></label>
+              <label class="file-input-label">
+                Upload image
+                <input type="file" id="research-photo-input" accept="image/*" />
+              </label>
+              <div id="research-photo-preview"></div>
+            </div>
+            <p class="form-error" id="research-form-error"></p>
+            <div style="display:flex;gap:.5rem;">
+              <button type="submit" class="btn btn-primary btn-sm" id="research-save-btn">Save</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="research-cancel-btn">Cancel</button>
+            </div>
+          </form>
+        </div>
+        <div class="research-overview" id="research-display">
+          <div class="research-photo-placeholder" id="research-photo">Image</div>
+          <div class="research-text" id="research-text"><p>Placeholder text for the research overview. An admin can replace this with a description of the work.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="research-section" hidden>
+      <div class="page-title-bar">
+        <div class="container">
+          <h1 id="research-section-title"></h1>
+          <p id="research-section-sub"></p>
+        </div>
+      </div>
+      <div class="section-sm container">
+        <div id="research-section-body"></div>
+      </div>
+    </div>
+
+    <div id="winn-view" hidden>
     <div class="page-title-bar">
       <div class="container">
-        <h1>WINNers</h1>
-        <p>Community discussions — threaded by topic</p>
+        <h1>Team WINN</h1>
+        <p>Workflow Innovation</p>
       </div>
     </div>
 
@@ -171,15 +236,19 @@
 
       <div id="detail-view" style="display:none"></div>
     </div>
+    </div>
   </div>
 
   </main>
-  <aside class="sidebar-user">
-    <div class="nav-user" id="nav-user" style="display:none"></div>
-    <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign In</a>
-    <button class="btn btn-ghost btn-sm" id="nav-logout" style="display:none">Sign Out</button>
-  </aside>
   <aside class="sidebar-controls">
+    <div class="controls-group controls-account">
+      <span class="controls-group-label" id="nav-user-email" hidden></span>
+      <div class="controls-theme controls-account-actions">
+        <span class="nav-role-badge" id="nav-role-badge" hidden></span>
+        <a href="settings.html" id="nav-settings" hidden>Settings</a>
+        <a href="login.html" id="nav-login">Sign In</a>
+      </div>
+    </div>
     <div class="controls-group">
       <span class="controls-group-label">Theme</span>
       <div class="controls-theme">
@@ -203,6 +272,7 @@
         <button type="button" class="font-size-option" data-size="l">L</button>
       </div>
     </div>
+    <button type="button" class="controls-signout" id="nav-logout" hidden>Sign Out</button>
   </aside>
   </div>
 
@@ -210,42 +280,276 @@
     <div class="container"><p>© 2026 Multimodal Intelligence Lab</p></div>
   </footer>
 
+  <div id="research-crop-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.88); align-items:center; justify-content:center; padding:1rem;">
+    <div style="background:var(--bg-primary);padding:1rem;max-width:640px;width:100%;">
+      <div style="max-height:60vh;overflow:hidden;margin-bottom:1rem;">
+        <img id="research-crop-img" src="" alt="" style="display:block;max-width:100%;" />
+      </div>
+      <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+        <button type="button" class="btn btn-ghost btn-sm" id="research-crop-cancel">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" id="research-crop-confirm">Use this image</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
-    import { initAuth, updateNavUI, logout, hasRole, showToast } from "./js/auth.js?v=3";
+    import { initAuth, updateNavUI, logout, hasRole, showToast } from "./js/auth.js?v=8";
     import { initLayoutControls } from "./js/layout-controls.js";
     import { initForumPage, submitForumPost } from "./js/forum.js";
     import { logVisit, showStats } from "./js/analytics.js";
     import { initNavVisibility } from "./js/nav-visibility.js";
+    import { db, storage } from "./js/firebase-config.js";
+    import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
     initLayoutControls();
     logVisit("forum");
 
+    const RESEARCH_DOC = doc(db, "site_config", "research");
+    const DEFAULT_RESEARCH_TEXT = "Placeholder text for the research overview. An admin can replace this with a description of the work.";
+    const SECTION_COPY = {
+      lead: ["Team LEAD", "Life, Environment, AI & Data", "LEAD entries will appear here."],
+      publications: ["Publications", "Papers and reports", "Publications will appear here."]
+    };
+    const section = new URLSearchParams(location.search).get("section");
+    let _research = { text: DEFAULT_RESEARCH_TEXT, photoUrl: null };
+    let _pendingResearchPhoto = null;
+    let _researchCropper = null;
+
+    function esc(s) {
+      const d = document.createElement("div");
+      d.textContent = s || "";
+      return d.innerHTML;
+    }
+
+    function showView() {
+      const isWinn = section === "winn";
+      const isSection = section === "lead" || section === "publications";
+      document.getElementById("research-overview").hidden = isWinn || isSection;
+      document.getElementById("research-section").hidden = !isSection;
+      document.getElementById("winn-view").hidden = !isWinn;
+      if (isSection) {
+        const [title, sub, body] = SECTION_COPY[section];
+        document.getElementById("research-section-title").textContent = title;
+        document.getElementById("research-section-sub").textContent = sub;
+        document.getElementById("research-section-body").innerHTML =
+          `<div class="empty-state"><p>${esc(body)}</p></div>`;
+        document.title = `${title} · Research`;
+      } else if (isWinn) {
+        document.title = "Team WINN · Research";
+      } else {
+        document.title = "Research · Multimodal Intelligence Lab";
+        renderResearchText(_research.text);
+      }
+    }
+
+    function renderResearchText(text) {
+      const paras = String(text || "").split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+      const html = (paras.length ? paras : [DEFAULT_RESEARCH_TEXT])
+        .map(p => `<p>${esc(p)}</p>`).join("");
+      document.getElementById("research-text").innerHTML = html;
+    }
+
+    function renderResearchPhoto(url) {
+      const el = document.getElementById("research-photo");
+      if (url) {
+        const img = document.createElement("img");
+        img.className = "research-photo";
+        img.src = url;
+        img.alt = "";
+        el.replaceWith(img);
+        img.id = "research-photo";
+      } else if (el.tagName === "IMG") {
+        const box = document.createElement("div");
+        box.className = "research-photo-placeholder";
+        box.id = "research-photo";
+        box.textContent = "Image";
+        el.replaceWith(box);
+      } else {
+        el.textContent = "Image";
+        el.className = "research-photo-placeholder";
+      }
+    }
+
+    function showResearchPreview(url, note) {
+      const preview = document.getElementById("research-photo-preview");
+      preview.innerHTML = url
+        ? `<div class="thumb-preview" style="margin-top:.5rem"><img src="${esc(url)}" alt="Image preview" style="max-height:120px" /><p style="font-size:.8rem;color:var(--text-muted);margin:.25rem 0 0">${esc(note || "")}</p></div>`
+        : "";
+    }
+
+    async function loadResearch() {
+      try {
+        const snap = await getDoc(RESEARCH_DOC);
+        if (snap.exists()) {
+          const data = snap.data();
+          _research = {
+            text: data.text || DEFAULT_RESEARCH_TEXT,
+            photoUrl: data.photoUrl || null
+          };
+        }
+      } catch (e) {
+        console.warn("loadResearch", e);
+      }
+      renderResearchText(_research.text);
+      renderResearchPhoto(_research.photoUrl);
+    }
+
+    function openResearchEditor() {
+      _pendingResearchPhoto = null;
+      document.getElementById("research-text-input").value = _research.text || "";
+      showResearchPreview(_research.photoUrl, _research.photoUrl ? "Current image. Upload a new one to replace it." : "");
+      document.getElementById("research-form-error").textContent = "";
+      document.getElementById("research-form-error").classList.remove("visible");
+      document.getElementById("research-edit-wrap").hidden = false;
+      document.getElementById("research-edit-btn").hidden = true;
+      document.getElementById("research-display").hidden = true;
+    }
+
+    function closeResearchEditor() {
+      document.getElementById("research-edit-wrap").hidden = true;
+      document.getElementById("research-edit-btn").hidden = false;
+      document.getElementById("research-display").hidden = false;
+      _pendingResearchPhoto = null;
+    }
+
     document.getElementById("nav-logout").addEventListener("click", async () => {
-      await logout();
+      if (!(await logout())) return;
       showToast("Signed out.", "info");
       window.location.reload();
     });
+
+    showView();
 
     initAuth(async (user, role) => {
       updateNavUI(user, role);
       await initNavVisibility(role);
       if (user) { const el = document.getElementById("drawer-login"); if (el) el.style.display = "none"; }
 
-      const gate      = document.getElementById("post-gate");
-      const toggleBtn = document.getElementById("toggle-form-btn");
-
-      if (!hasRole(role, "regular")) {
-        gate.innerHTML = `
-          <div class="access-gate">
-            <h3>Sign in to post</h3>
-            <p>You need a registered account to post. All visitors can read.</p>
-            <a href="login.html" class="btn btn-primary btn-sm">Sign In / Register</a>
-          </div>`;
-        if (toggleBtn) toggleBtn.style.display = "none";
+      const isOverview = section !== "winn" && section !== "lead" && section !== "publications";
+      if (isOverview) {
+        document.getElementById("research-edit-btn").hidden = !hasRole(role, "admin");
+        await loadResearch();
       }
 
-      await initForumPage();
+      if (section === "winn") {
+        const gate      = document.getElementById("post-gate");
+        const toggleBtn = document.getElementById("toggle-form-btn");
+
+        if (!hasRole(role, "regular")) {
+          gate.innerHTML = `
+            <div class="access-gate">
+              <h3>Sign in to post</h3>
+              <p>You need a registered account to post. All visitors can read.</p>
+              <a href="login.html" class="btn btn-primary btn-sm">Sign In / Register</a>
+            </div>`;
+          if (toggleBtn) toggleBtn.style.display = "none";
+        }
+
+        await initForumPage();
+      }
       showStats(role);
+    });
+
+    document.getElementById("research-edit-btn").addEventListener("click", openResearchEditor);
+    document.getElementById("research-cancel-btn").addEventListener("click", closeResearchEditor);
+
+    document.getElementById("research-photo-input").addEventListener("change", () => {
+      const input = document.getElementById("research-photo-input");
+      const file = input.files[0];
+      input.value = "";
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) { showToast("Image exceeds 10 MB.", "error"); return; }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const cropImg = document.getElementById("research-crop-img");
+        const modal = document.getElementById("research-crop-modal");
+        if (_researchCropper) { _researchCropper.destroy(); _researchCropper = null; }
+        cropImg.src = "";
+        modal.style.display = "flex";
+        cropImg.onload = () => {
+          _researchCropper = new Cropper(cropImg, {
+            aspectRatio: 4 / 3,
+            viewMode: 1,
+            movable: true,
+            zoomable: true,
+            rotatable: false,
+            guides: false,
+            center: true,
+            highlight: false,
+            background: false
+          });
+        };
+        cropImg.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById("research-crop-cancel").addEventListener("click", () => {
+      document.getElementById("research-crop-modal").style.display = "none";
+      if (_researchCropper) { _researchCropper.destroy(); _researchCropper = null; }
+    });
+
+    document.getElementById("research-crop-confirm").addEventListener("click", () => {
+      if (!_researchCropper) return;
+      const canvas = _researchCropper.getCroppedCanvas({ width: 960, height: 720 });
+      _researchCropper.destroy();
+      _researchCropper = null;
+      document.getElementById("research-crop-modal").style.display = "none";
+      showToast("Uploading image…", "info");
+      canvas.toBlob(async (blob) => {
+        try {
+          const previous = _pendingResearchPhoto;
+          const storageRef = ref(storage, `profile/research-${Date.now()}.jpg`);
+          await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
+          const url = await getDownloadURL(storageRef);
+          _pendingResearchPhoto = url;
+          if (previous && previous !== _research.photoUrl) {
+            try { await deleteObject(ref(storage, previous)); } catch { /* unused upload */ }
+          }
+          showResearchPreview(url, "Image ready — click Save to apply");
+          showToast("Image ready.", "success");
+        } catch {
+          showToast("Image upload failed.", "error");
+        }
+      }, "image/jpeg", 0.92);
+    });
+
+    document.getElementById("research-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById("research-form-error");
+      const saveBtn = document.getElementById("research-save-btn");
+      errEl.textContent = "";
+      errEl.classList.remove("visible");
+      const text = document.getElementById("research-text-input").value.trim();
+      if (!text) {
+        errEl.textContent = "Text is required.";
+        errEl.classList.add("visible");
+        return;
+      }
+      const photoUrl = _pendingResearchPhoto || _research.photoUrl || null;
+      const oldPhoto = _research.photoUrl;
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving…";
+      try {
+        const data = { text, photoUrl };
+        await setDoc(RESEARCH_DOC, data);
+        _research = data;
+        _pendingResearchPhoto = null;
+        renderResearchText(text);
+        renderResearchPhoto(photoUrl);
+        closeResearchEditor();
+        showToast("Overview saved.", "success");
+        if (oldPhoto && oldPhoto !== photoUrl) {
+          try { await deleteObject(ref(storage, oldPhoto)); } catch { /* already gone */ }
+        }
+      } catch (err) {
+        errEl.textContent = err.message || "Save failed.";
+        errEl.classList.add("visible");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save";
+      }
     });
 
     document.getElementById("forum-form").addEventListener("submit", async e => {

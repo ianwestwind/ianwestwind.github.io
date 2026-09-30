@@ -90,4 +90,34 @@ export function initLayoutControls() {
   });
 
   initTeachingLock();
+  initResearchNav();
+}
+
+function initResearchNav() {
+  const onResearch = /\/forum\.html$/.test(location.pathname) || location.pathname.endsWith("/forum.html");
+  const section = new URLSearchParams(location.search).get("section");
+
+  document.querySelectorAll(".nav-dropdown[data-nav-key='forum']").forEach((dropdown) => {
+    const btn = dropdown.querySelector(".nav-dropdown-btn");
+    if (!btn || btn.dataset.researchBound === "1") return;
+    btn.dataset.researchBound = "1";
+
+    if (onResearch) dropdown.classList.add("open");
+    if (onResearch && !section) btn.classList.add("active");
+    dropdown.querySelectorAll(".nav-dropdown-menu a").forEach((link) => {
+      const target = new URL(link.getAttribute("href"), location.href);
+      if (onResearch && target.searchParams.get("section") === section) {
+        link.classList.add("active");
+      }
+    });
+
+    btn.addEventListener("click", (e) => {
+      const here = /\/forum\.html$/.test(location.pathname) || location.pathname.endsWith("/forum.html");
+      const current = new URLSearchParams(location.search).get("section");
+      if (here && !current) {
+        e.preventDefault();
+        dropdown.classList.toggle("open");
+      }
+    });
+  });
 }

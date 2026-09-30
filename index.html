@@ -15,12 +15,21 @@
   <div class="app-layout">
     <!-- ===== Left: vertical menu ===== -->
     <aside class="nav-sidebar">
-      <a href="index.html" class="nav-brand">Multimodal Intelligence&nbsp;Lab</a>
+      <a href="index.html" class="nav-brand">Overfitting &amp; Prayer</a>
       <div class="nav-links">
         <a href="index.html" class="active">About</a>
         <a href="portfolio-software.html">Software</a>
         <a href="portfolio-design.html">Design</a>
-        <a href="forum.html">WINNers</a>
+        <div class="nav-dropdown" data-nav-key="forum">
+          <div class="nav-dropdown-head">
+            <a href="forum.html" class="nav-dropdown-btn">Research <span class="nav-dropdown-chevron">▾</span></a>
+          </div>
+          <div class="nav-dropdown-menu">
+            <a href="forum.html?section=lead">LEAD</a>
+            <a href="forum.html?section=winn">WINN</a>
+            <a href="forum.html?section=publications">Publications</a>
+          </div>
+        </div>
         <a href="writing.html">Writing</a>
         <a href="news.html">News</a>
         <div class="nav-dropdown" data-nav-key="teaching">
@@ -31,6 +40,7 @@
           </div>
         </div>
         <a href="consultation.html">Consultation</a>
+        <a href="timeline.html">Timeline</a>
       </div>
     </aside>
 
@@ -171,9 +181,10 @@
               <div id="collab-photo-preview"></div>
             </div>
             <p class="form-error" id="collab-form-error"></p>
-            <div style="display:flex;gap:.5rem;margin-top:.5rem">
-              <button type="submit" class="btn btn-primary btn-sm">Add</button>
+            <div class="collab-form-actions">
+              <button type="submit" class="btn btn-primary btn-sm" id="collab-submit-btn">Add</button>
               <button type="button" class="btn btn-ghost btn-sm" id="collab-cancel-btn">Cancel</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="collab-delete-btn" hidden>Delete</button>
             </div>
           </form>
         </div>
@@ -225,13 +236,16 @@
   </div><!-- /.page-wrapper -->
   </main>
 
-  <!-- ===== Right: two sidebars ===== -->
-  <aside class="sidebar-user">
-    <div class="nav-user" id="nav-user" style="display:none"></div>
-    <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign In</a>
-    <button class="btn btn-ghost btn-sm" id="nav-logout" style="display:none">Sign Out</button>
-  </aside>
+  <!-- ===== Right: theme, font, size, and account ===== -->
   <aside class="sidebar-controls">
+    <div class="controls-group controls-account">
+      <span class="controls-group-label" id="nav-user-email" hidden></span>
+      <div class="controls-theme controls-account-actions">
+        <span class="nav-role-badge" id="nav-role-badge" hidden></span>
+        <a href="settings.html" id="nav-settings" hidden>Settings</a>
+        <a href="login.html" id="nav-login">Sign In</a>
+      </div>
+    </div>
     <div class="controls-group">
       <span class="controls-group-label">Theme</span>
       <div class="controls-theme">
@@ -255,6 +269,7 @@
         <button type="button" class="font-size-option" data-size="l">L</button>
       </div>
     </div>
+    <button type="button" class="controls-signout" id="nav-logout" hidden>Sign Out</button>
   </aside>
 </div><!-- /.app-layout -->
 
@@ -288,7 +303,7 @@
 
   <script type="module">
     import { auth, db, storage } from "./js/firebase-config.js";
-    import { initAuth, updateNavUI, logout, showToast, hasRole } from "./js/auth.js?v=3";
+    import { initAuth, updateNavUI, logout, showToast, hasRole } from "./js/auth.js?v=8";
     import { initLayoutControls } from "./js/layout-controls.js";
     import { logVisit, showStats } from "./js/analytics.js";
     import { initNavVisibility } from "./js/nav-visibility.js";
@@ -296,7 +311,7 @@
       doc, getDoc, setDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import {
-      ref, uploadBytes, getDownloadURL
+      ref, uploadBytes, getDownloadURL, deleteObject
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
     initLayoutControls();
@@ -309,6 +324,8 @@
     let _profileData = null;
     let _pendingPhotoUrl = null; // photo uploaded during edit session
     let _pendingCollabPhotoUrl = null;
+    let _editingCollabIndex = null;
+    let _editingCollabPhoto = null;
     let _cropper      = null;
     let _cropPurpose  = "profile"; // "profile" | "collab"
 
@@ -400,9 +417,12 @@
           await uploadBytes(r, blob, { contentType: "image/jpeg" });
           const url = await getDownloadURL(r);
           if (purpose === "collab") {
+            const previous = _pendingCollabPhotoUrl;
             _pendingCollabPhotoUrl = url;
-            document.getElementById("collab-photo-preview").innerHTML =
-              `<div class="thumb-preview" style="margin-top:.5rem"><img src="${esc(url)}" alt="Photo preview" class="collab-photo" style="height:2.4rem" /><p style="font-size:.8rem;color:var(--text-muted);margin:.25rem 0 0">Photo ready</p></div>`;
+            if (previous && previous !== _editingCollabPhoto) {
+              _deleteCollabPhoto(previous).catch(() => {});
+            }
+            _showCollabPhoto(url, "Photo ready");
           } else {
             _pendingPhotoUrl = url;
             document.getElementById("profile-photo-preview").innerHTML =
@@ -494,6 +514,9 @@
       document.getElementById("collab-form").reset();
       _pendingCollabPhotoUrl = null;
       document.getElementById("collab-photo-preview").innerHTML = "";
+      const errEl = document.getElementById("collab-form-error");
+      errEl.textContent = "";
+      errEl.classList.remove("visible");
     }
 
     // ---- Render collaborators ----
@@ -506,7 +529,7 @@
       }
       list.innerHTML = collabs.map((c, i) => {
         const photo = c.photoUrl
-          ? `<img class="collab-photo" src="${esc(c.photoUrl)}" alt="" />`
+          ? `<img class="collab-photo" src="${esc(c.photoUrl)}" alt="" draggable="false" />`
           : `<span class="collab-photo collab-photo-placeholder" aria-hidden="true">${esc(_collabInitials(c.name))}</span>`;
         const person = `
           ${photo}
@@ -514,37 +537,147 @@
             <span class="collab-entry-name">${esc(c.name)}</span>
             <span class="collab-entry-inst">${esc(c.affiliation || "")}</span>
           </span>`;
+        const handle = isAdmin
+          ? `<button type="button" class="collab-drag" aria-label="Drag to reorder" title="Drag to reorder"></button>`
+          : "";
         return `
         <div class="collab-entry" data-index="${i}">
+          ${handle}
           ${c.url
             ? `<a href="${esc(c.url)}" class="collab-person" target="_blank" rel="noopener">${person}</a>`
             : `<div class="collab-person">${person}</div>`}
-          ${isAdmin ? `<button type="button" class="btn btn-ghost btn-sm remove-collab-btn" data-index="${i}" style="margin-left:auto;font-size:.75rem;padding:.15rem .5rem;color:var(--text-muted)">✕</button>` : ""}
+          ${isAdmin ? `<button type="button" class="btn btn-ghost btn-sm edit-collab-btn" data-index="${i}">Edit</button>` : ""}
         </div>`;
       }).join("");
 
       if (isAdmin) {
-        list.querySelectorAll(".remove-collab-btn").forEach(btn => {
-          btn.addEventListener("click", () => _removeCollab(Number(btn.dataset.index)));
+        if (_editingCollabIndex != null) {
+          list.querySelector(`.collab-entry[data-index="${_editingCollabIndex}"]`)?.classList.add("is-editing");
+        }
+        list.querySelectorAll(".edit-collab-btn").forEach(btn => {
+          btn.addEventListener("click", () => _openCollabForm(Number(btn.dataset.index)));
         });
+        _enableCollabDrag(list);
+      }
+    }
+
+    function _showCollabPhoto(url, note) {
+      const preview = document.getElementById("collab-photo-preview");
+      if (!url) {
+        preview.innerHTML = "";
+        return;
+      }
+      preview.innerHTML =
+        `<div class="thumb-preview" style="margin-top:.5rem"><img src="${esc(url)}" alt="Photo preview" class="collab-photo" style="height:2.4rem" /><p style="font-size:.8rem;color:var(--text-muted);margin:.25rem 0 0">${esc(note || "")}</p></div>`;
+    }
+
+    function _collabOrderKey(list) {
+      return [...list.querySelectorAll(".collab-entry")].map(el => el.dataset.index).join(",");
+    }
+
+    function _placeCollabDrag(list, dragEl, x, y) {
+      const under = document.elementFromPoint(x, y);
+      const over = under?.closest(".collab-entry");
+      if (!over || over === dragEl || !list.contains(over)) return;
+      const box = over.getBoundingClientRect();
+      const listBox = list.getBoundingClientRect();
+      const twoCol = box.width < listBox.width * 0.75;
+      const after = twoCol && y >= box.top && y <= box.bottom
+        ? x > box.left + box.width / 2
+        : y > box.top + box.height / 2;
+      if (after) over.after(dragEl);
+      else over.before(dragEl);
+    }
+
+    function _enableCollabDrag(list) {
+      let dragEl = null;
+      let startOrder = "";
+
+      const finish = () => {
+        if (!dragEl) return;
+        dragEl.classList.remove("is-dragging");
+        const changed = _collabOrderKey(list) !== startOrder;
+        dragEl = null;
+        if (!changed) return;
+        const source = _profileData?.collaborators || [];
+        const next = [...list.querySelectorAll(".collab-entry")]
+          .map(el => source[Number(el.dataset.index)])
+          .filter(Boolean);
+        if (next.length !== source.length) {
+          _renderCollabs(source);
+          return;
+        }
+        _saveCollabs(next, "Order saved.");
+      };
+
+      list.querySelectorAll(".collab-drag").forEach(handle => {
+        handle.addEventListener("pointerdown", (e) => {
+          if (e.button !== 0) return;
+          const entry = handle.closest(".collab-entry");
+          if (!entry) return;
+          if (_editingCollabIndex != null) _closeCollabForm();
+          e.preventDefault();
+          dragEl = entry;
+          startOrder = _collabOrderKey(list);
+          entry.classList.add("is-dragging");
+          handle.setPointerCapture(e.pointerId);
+        });
+        handle.addEventListener("pointermove", (e) => {
+          if (!dragEl || !handle.hasPointerCapture(e.pointerId)) return;
+          _placeCollabDrag(list, dragEl, e.clientX, e.clientY);
+        });
+        handle.addEventListener("pointerup", finish);
+        handle.addEventListener("pointercancel", finish);
+      });
+    }
+
+    async function _deleteCollabPhoto(url) {
+      if (!url || typeof url !== "string") return;
+      let fileRef;
+      try {
+        fileRef = ref(storage, url);
+      } catch {
+        return;
+      }
+      if (!String(fileRef.fullPath || "").startsWith("profile/")) return;
+      try {
+        await deleteObject(fileRef);
+      } catch (err) {
+        if (err?.code === "storage/object-not-found") return;
+        throw err;
       }
     }
 
     async function _removeCollab(index) {
-      if (!confirm("Remove this collaborator?")) return;
       const collabs = [...(_profileData?.collaborators || [])];
+      const removed = collabs[index];
+      if (!removed) return false;
+      const hasPhoto = Boolean(removed.photoUrl);
+      if (!confirm(hasPhoto ? "Remove this collaborator and their photo?" : "Remove this collaborator?")) return false;
       collabs.splice(index, 1);
-      await _saveCollabs(collabs);
+      const stillUsed = collabs.some(c => c?.photoUrl && c.photoUrl === removed.photoUrl);
+      try {
+        if (hasPhoto && !stillUsed) await _deleteCollabPhoto(removed.photoUrl);
+      } catch (err) {
+        showToast("Could not delete the photo: " + err.message, "error");
+        return false;
+      }
+      return _saveCollabs(collabs, "Collaborator removed.");
     }
 
-    async function _saveCollabs(collabs) {
+    async function _saveCollabs(collabs, message = "Collaborators updated.") {
       try {
         const data = { ...(_profileData || {}), collaborators: collabs };
         await setDoc(PROFILE_DOC, data);
         _profileData = data;
         _renderCollabs(collabs);
-        showToast("Collaborators updated.", "success");
-      } catch (err) { showToast("Save failed: " + err.message, "error"); }
+        showToast(message, "success");
+        return true;
+      } catch (err) {
+        showToast("Save failed: " + err.message, "error");
+        _renderCollabs(_profileData?.collaborators || []);
+        return false;
+      }
     }
 
     // ---- Load profile ----
@@ -660,17 +793,65 @@
       }
     });
 
-    // ---- Add collaborator ----
-    document.getElementById("add-collab-btn").addEventListener("click", () => {
-      document.getElementById("add-collab-wrap").style.display = "block";
-      document.getElementById("add-collab-btn").style.display  = "none";
-      document.getElementById("collab-name").focus();
-    });
+    function _openCollabForm(index) {
+      const editing = Number.isInteger(index);
+      const collabs = _profileData?.collaborators || [];
+      const collab = editing ? collabs[index] : null;
+      if (editing && !collab) return;
 
-    document.getElementById("collab-cancel-btn").addEventListener("click", () => {
-      document.getElementById("add-collab-wrap").style.display = "none";
-      document.getElementById("add-collab-btn").style.display  = "";
+      const previousPending = _pendingCollabPhotoUrl;
+      const previousOriginal = _editingCollabPhoto;
       _resetCollabForm();
+      _editingCollabIndex = editing ? index : null;
+      _editingCollabPhoto = collab?.photoUrl || null;
+      if (previousPending && previousPending !== previousOriginal && previousPending !== _editingCollabPhoto) {
+        _deleteCollabPhoto(previousPending).catch(() => {});
+      }
+
+      if (collab) {
+        document.getElementById("collab-name").value = collab.name || "";
+        document.getElementById("collab-affiliation").value = collab.affiliation || "";
+        document.getElementById("collab-url").value = collab.url || "";
+        if (collab.photoUrl) _showCollabPhoto(collab.photoUrl, "Current photo. Upload a new one to replace it.");
+      }
+
+      document.getElementById("collab-submit-btn").textContent = editing ? "Save" : "Add";
+      document.getElementById("collab-delete-btn").hidden = !editing;
+      document.getElementById("add-collab-wrap").style.display = "block";
+      document.getElementById("add-collab-btn").style.display = "none";
+      document.querySelectorAll(".collab-entry.is-editing").forEach(el => el.classList.remove("is-editing"));
+      if (editing) {
+        document.querySelector(`.collab-entry[data-index="${index}"]`)?.classList.add("is-editing");
+      }
+      document.getElementById("add-collab-wrap").scrollIntoView({ behavior: "smooth", block: "nearest" });
+      document.getElementById("collab-name").focus();
+    }
+
+    function _closeCollabForm({ discardPending = true } = {}) {
+      const pending = _pendingCollabPhotoUrl;
+      const original = _editingCollabPhoto;
+      _editingCollabIndex = null;
+      _editingCollabPhoto = null;
+      _resetCollabForm();
+      document.getElementById("add-collab-wrap").style.display = "none";
+      document.getElementById("add-collab-btn").style.display = hasRole(_currentRole, "admin") ? "" : "none";
+      document.getElementById("collab-submit-btn").textContent = "Add";
+      document.getElementById("collab-delete-btn").hidden = true;
+      document.querySelectorAll(".collab-entry.is-editing").forEach(el => el.classList.remove("is-editing"));
+      if (discardPending && pending && pending !== original) {
+        _deleteCollabPhoto(pending).catch(() => {});
+      }
+    }
+
+    // ---- Add or edit collaborator ----
+    document.getElementById("add-collab-btn").addEventListener("click", () => _openCollabForm());
+
+    document.getElementById("collab-cancel-btn").addEventListener("click", () => _closeCollabForm());
+
+    document.getElementById("collab-delete-btn").addEventListener("click", async () => {
+      if (_editingCollabIndex == null) return;
+      const removed = await _removeCollab(_editingCollabIndex);
+      if (removed) _closeCollabForm();
     });
 
     document.getElementById("collab-form").addEventListener("submit", async (e) => {
@@ -681,16 +862,32 @@
       const name        = document.getElementById("collab-name").value.trim();
       const affiliation = document.getElementById("collab-affiliation").value.trim();
       const url         = document.getElementById("collab-url").value.trim() || null;
-      const photoUrl    = _pendingCollabPhotoUrl || null;
+      const editing     = _editingCollabIndex != null;
+      const photoUrl    = _pendingCollabPhotoUrl || (editing ? _editingCollabPhoto : null);
+      const oldPhoto    = editing ? _editingCollabPhoto : null;
 
       if (!name) { errEl.textContent = "Name is required."; errEl.classList.add("visible"); return; }
 
-      const collabs = [...(_profileData?.collaborators || []), { name, affiliation, url, photoUrl }];
-      await _saveCollabs(collabs);
+      const collabs = [...(_profileData?.collaborators || [])];
+      const entry = { name, affiliation, url, photoUrl };
+      if (editing) {
+        if (!collabs[_editingCollabIndex]) return;
+        collabs[_editingCollabIndex] = entry;
+      } else {
+        collabs.push(entry);
+      }
 
-      _resetCollabForm();
-      document.getElementById("add-collab-wrap").style.display = "none";
-      document.getElementById("add-collab-btn").style.display  = "";
+      const submitBtn = document.getElementById("collab-submit-btn");
+      submitBtn.disabled = true;
+      const ok = await _saveCollabs(collabs, editing ? "Collaborator updated." : "Collaborators updated.");
+      submitBtn.disabled = false;
+      if (!ok) return;
+
+      if (oldPhoto && oldPhoto !== photoUrl) {
+        const stillUsed = (_profileData?.collaborators || []).some(c => c?.photoUrl === oldPhoto);
+        if (!stillUsed) _deleteCollabPhoto(oldPhoto).catch(() => {});
+      }
+      _closeCollabForm({ discardPending: false });
     });
 
     // ---- Auth ----
@@ -709,7 +906,7 @@
     });
 
     document.getElementById("nav-logout").addEventListener("click", async () => {
-      await logout();
+      if (!(await logout())) return;
       showToast("Signed out.", "info");
       window.location.reload();
     });

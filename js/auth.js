@@ -8,12 +8,17 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  verifyBeforeUpdateEmail,
+  updatePassword
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -53,9 +58,11 @@ async function fetchRole(uid) {
 export function initAuth(callback) {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      _currentUser = user;
-      const fetched = await fetchRole(user.uid);
+      try { await user.reload(); } catch (e) { console.warn("user.reload:", e); }
+      _currentUser = auth.currentUser || user;
+      const fetched = await fetchRole(_currentUser.uid);
       _currentRole = typeof fetched === "string" ? fetched.trim().toLowerCase() : "regular";
+      await syncStoredEmail(_currentUser);
     } else {
       _currentUser = null;
       _currentRole = "guest";
@@ -88,7 +95,76 @@ export async function login(email, password) {
 
 // ---- Logout ----
 export async function logout() {
+  if (!window.confirm("Sign out?")) return false;
   await signOut(auth);
+  return true;
+}
+
+// Keep the Firestore profile email aligned with the Auth account
+// after a confirmed email change.
+async function syncStoredEmail(user) {
+  if (!user?.uid || !user.email) return;
+  try {
+    const ref = doc(db, "users", user.uid);
+    const snap = await getDoc(ref);
+    if (!snap.exists() || snap.data().email === user.email) return;
+    await updateDoc(ref, { email: user.email });
+  } catch (e) {
+    console.warn("syncStoredEmail:", e);
+  }
+}
+
+async function reauthenticate(currentPassword) {
+  const user = auth.currentUser;
+  if (!user?.email) {
+    const err = new Error("Sign in required.");
+    err.code = "auth/user-not-found";
+    throw err;
+  }
+  const credential = EmailAuthProvider.credential(user.email, currentPassword);
+  await reauthenticateWithCredential(user, credential);
+  return auth.currentUser;
+}
+
+// Sends a confirmation link to the new address. The sign-in email
+// changes only after that link is opened; initAuth then syncs Firestore.
+export async function changeEmail(newEmail, currentPassword) {
+  const user = await reauthenticate(currentPassword);
+  const email = String(newEmail || "").trim();
+  if (email.toLowerCase() === (user.email || "").toLowerCase()) {
+    const err = new Error("That is already your email.");
+    err.code = "auth/same-email";
+    throw err;
+  }
+  await verifyBeforeUpdateEmail(auth.currentUser, email);
+  return "pending";
+}
+
+export async function changePassword(currentPassword, newPassword) {
+  await reauthenticate(currentPassword);
+  if (newPassword === currentPassword) {
+    const err = new Error("Choose a different password.");
+    err.code = "auth/same-password";
+    throw err;
+  }
+  await updatePassword(auth.currentUser, newPassword);
+}
+
+export function friendlyAuthError(code) {
+  const map = {
+    "auth/email-already-in-use": "That email is already registered.",
+    "auth/invalid-email":        "Invalid email address.",
+    "auth/weak-password":        "Password must be at least 6 characters.",
+    "auth/user-not-found":       "No account found with that email.",
+    "auth/wrong-password":       "Incorrect password.",
+    "auth/invalid-credential":   "Current password is incorrect.",
+    "auth/requires-recent-login": "Please enter your current password and try again.",
+    "auth/too-many-requests":    "Too many attempts. Please try again later.",
+    "auth/same-email":           "That is already your email.",
+    "auth/same-password":        "Choose a password that is different from your current one.",
+    "auth/operation-not-allowed": "Email and password changes are not enabled for this site."
+  };
+  return map[code] || "An error occurred. Please try again.";
 }
 
 // ---- Update nav UI with auth state ----
@@ -97,26 +173,34 @@ function roleDisplayName(role) {
 }
 
 export function updateNavUI(user, role) {
-  const navUser    = document.getElementById("nav-user");
-  const navLogin   = document.getElementById("nav-login");
-  const navLogout  = document.getElementById("nav-logout");
+  const navEmail    = document.getElementById("nav-user-email");
+  const navBadge    = document.getElementById("nav-role-badge");
+  const navLogin    = document.getElementById("nav-login");
+  const navLogout   = document.getElementById("nav-logout");
+  const navSettings = document.getElementById("nav-settings");
 
-  if (!navUser) return; // nav elements not present on this page
+  if (!navEmail && !navLogin) return;
 
   if (user) {
-    const roleBadgeClass = `badge-${role}`;
-    const displayName = user.displayName || user.email;
-    navUser.innerHTML = `
-      <span>${escHtml(displayName)}</span>
-      <span class="nav-role-badge ${roleBadgeClass}">${escHtml(roleDisplayName(role))}</span>
-    `;
-    navUser.style.display  = "flex";
-    if (navLogin)  navLogin.style.display  = "none";
-    if (navLogout) navLogout.style.display = "inline-flex";
+    const email = user.email || user.displayName || "";
+    if (navEmail) {
+      navEmail.textContent = email;
+      navEmail.hidden = false;
+    }
+    if (navBadge) {
+      navBadge.className = `nav-role-badge badge-${role}`;
+      navBadge.textContent = roleDisplayName(role);
+      navBadge.hidden = false;
+    }
+    if (navLogin)    navLogin.hidden = true;
+    if (navSettings) navSettings.hidden = false;
+    if (navLogout)   navLogout.hidden = false;
   } else {
-    navUser.style.display  = "none";
-    if (navLogin)  navLogin.style.display  = "inline-flex";
-    if (navLogout) navLogout.style.display = "none";
+    if (navEmail)    navEmail.hidden = true;
+    if (navBadge)    navBadge.hidden = true;
+    if (navLogin)    navLogin.hidden = false;
+    if (navSettings) navSettings.hidden = true;
+    if (navLogout)   navLogout.hidden = true;
   }
 }
 

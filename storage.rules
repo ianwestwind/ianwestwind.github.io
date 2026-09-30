@@ -32,12 +32,15 @@ service firebase.storage {
         && request.resource.size < 25 * 1024 * 1024;  // 25 MB max
     }
 
-    // Profile photo (admin only write)
+    // Profile and collaborator photos
     match /profile/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null
+      allow create, update: if request.auth != null
         && request.resource.size < 10 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
+      // Deletes have no request.resource; required so removing a
+      // collaborator can delete their photo.
+      allow delete: if request.auth != null;
     }
   }
 }

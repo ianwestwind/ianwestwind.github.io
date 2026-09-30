@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timeline · Multimodal Intelligence Lab</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="nav-sidebar">
+      <a href="index.html" class="nav-brand">Overfitting &amp; Prayer</a>
+      <div class="nav-links">
+        <a href="index.html">About</a>
+        <a href="portfolio-software.html">Software</a>
+        <a href="portfolio-design.html">Design</a>
+        <div class="nav-dropdown" data-nav-key="forum">
+          <div class="nav-dropdown-head">
+            <a href="forum.html" class="nav-dropdown-btn">Research <span class="nav-dropdown-chevron">▾</span></a>
+          </div>
+          <div class="nav-dropdown-menu">
+            <a href="forum.html?section=lead">LEAD</a>
+            <a href="forum.html?section=winn">WINN</a>
+            <a href="forum.html?section=publications">Publications</a>
+          </div>
+        </div>
+        <a href="writing.html">Writing</a>
+        <a href="news.html">News</a>
+        <div class="nav-dropdown" data-nav-key="teaching">
+          <button type="button" class="nav-dropdown-btn">Teaching <span class="nav-dropdown-chevron">▾</span></button>
+          <div class="nav-dropdown-menu">
+            <a href="teaching/bayesian-thinking.html" target="_blank">Bayesian Thinking</a>
+            <a href="#">Intro to Python</a>
+          </div>
+        </div>
+        <a href="consultation.html">Consultation</a>
+        <a href="timeline.html" class="active">Timeline</a>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-wrapper">
+        <div class="page-title-bar">
+          <div class="container">
+            <h1>Timeline</h1>
+            <p>Milestones, dues, and progress across projects</p>
+          </div>
+        </div>
+
+        <div class="section-sm container">
+          <div class="list-header" id="tl-admin-bar" hidden>
+            <span class="list-header-count" id="tl-count"></span>
+            <button type="button" class="btn btn-ghost btn-sm" id="tl-add-toggle">+ Project</button>
+          </div>
+
+          <div id="tl-project-form-wrap" class="post-form" hidden>
+            <h3>New project</h3>
+            <form id="tl-project-form">
+              <div class="form-group">
+                <label for="tl-name">Name</label>
+                <input type="text" id="tl-name" placeholder="Project name" required />
+              </div>
+              <div class="tl-date-row">
+                <div class="form-group">
+                  <label for="tl-start">Start</label>
+                  <input type="date" id="tl-start" required />
+                </div>
+                <div class="form-group">
+                  <label for="tl-end">End</label>
+                  <input type="date" id="tl-end" required />
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm">Add project</button>
+            </form>
+          </div>
+
+          <div class="tl-toolbar">
+            <button type="button" class="btn btn-ghost btn-sm" id="tl-zoom-out" aria-label="Zoom out">−</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="tl-zoom-in" aria-label="Zoom in">+</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="tl-today">Today</button>
+            <span class="tl-legend">Bar is the project span. Fill is how much is done. Circle is a milestone, square is a due, line is today.</span>
+          </div>
+
+          <div class="tl-scroll" id="tl-scroll">
+            <div id="tl-canvas"></div>
+          </div>
+          <p class="tl-muted" id="tl-empty" hidden>No projects yet.</p>
+          <div class="tl-detail" id="tl-detail" hidden></div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="sidebar-controls">
+      <button type="button" class="controls-signout" id="nav-logout" hidden>Sign Out</button>
+      <div class="controls-group controls-account">
+        <span class="controls-group-label" id="nav-user-email" hidden></span>
+        <div class="controls-theme controls-account-actions">
+          <span class="nav-role-badge" id="nav-role-badge" hidden></span>
+          <a href="settings.html" id="nav-settings" hidden>Settings</a>
+          <a href="login.html" id="nav-login">Sign In</a>
+        </div>
+      </div>
+      <div class="controls-group">
+        <span class="controls-group-label">Theme</span>
+        <div class="controls-theme">
+          <button type="button" id="theme-light">Light</button>
+          <button type="button" id="theme-dark">Dark</button>
+        </div>
+      </div>
+      <div class="controls-group">
+        <span class="controls-group-label">Font</span>
+        <div class="controls-font">
+          <button type="button" class="font-option" data-font="inter" aria-label="Inter">Aa</button>
+          <button type="button" class="font-option" data-font="georgia" aria-label="Georgia">Aa</button>
+          <button type="button" class="font-option" data-font="system" aria-label="System">Aa</button>
+        </div>
+      </div>
+      <div class="controls-group">
+        <span class="controls-group-label">Size</span>
+        <div class="controls-font-size">
+          <button type="button" class="font-size-option" data-size="s">S</button>
+          <button type="button" class="font-size-option" data-size="m">M</button>
+          <button type="button" class="font-size-option" data-size="l">L</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="footer">
+    <div class="container"><p>© 2026 Multimodal Intelligence Lab</p></div>
+  </footer>
+
+  <script type="module">
+    import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js?v=8";
+    import { initLayoutControls } from "./js/layout-controls.js";
+    import { logVisit } from "./js/analytics.js";
+    import { initNavVisibility } from "./js/nav-visibility.js";
+    import { initTimeline } from "./js/timeline.js";
+
+    initLayoutControls();
+    logVisit("timeline");
+
+    document.getElementById("nav-logout").addEventListener("click", async () => {
+      if (!(await logout())) return;
+      showToast("Signed out.", "info");
+      window.location.reload();
+    });
+
+    initAuth(async (user, role) => {
+      updateNavUI(user, role);
+      await initNavVisibility(role);
+      initTimeline(role);
+    });
+  </script>
+</body>
+</html>

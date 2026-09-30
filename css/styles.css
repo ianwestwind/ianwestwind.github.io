@@ -26,7 +26,8 @@
   --danger-hover: #999;
 
   --nav-width: 200px;
-  --sidebar-user-width: 370px;
+  --sidebar-user-width: 7.75rem;
+  --sidebar-account-btn: 6.25rem;
   --controls-width: 200px;
   --radius: 0;
   --radius-lg: 0;
@@ -238,7 +239,8 @@ p { color: var(--text-secondary); }
    of hidden items. Uses visibility:hidden so layout space is preserved. */
 html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="portfolio-software.html"],
 html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="portfolio-design.html"],
-html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="forum.html"],
+html:not([data-nav-ready]) .nav-sidebar .nav-dropdown[data-nav-key="forum"],
+html:not([data-nav-ready]) .nav-sidebar .nav-dropdown[data-nav-key="teaching"],
 html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="writing.html"],
 html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="news.html"],
 html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="consultation.html"] {
@@ -253,10 +255,12 @@ html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="consultation.html"] {
 .nav-link-row > a {
   flex: 1;
 }
-.nav-link-row.dragging {
+.nav-link-row.dragging,
+.nav-dropdown.dragging {
   opacity: 0.4;
 }
-.nav-link-row.drag-over {
+.nav-link-row.drag-over,
+.nav-dropdown.drag-over {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
   border-radius: 2px;
@@ -315,6 +319,17 @@ html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="consultation.html"] {
   flex-direction: column;
 }
 
+.nav-dropdown-head {
+  display: flex;
+  align-items: center;
+}
+
+.nav-dropdown-head .nav-dropdown-btn {
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-sidebar .nav-links a.nav-dropdown-btn,
 .nav-dropdown-btn {
   color: var(--text-muted);
   font-size: 0.9rem;
@@ -323,6 +338,7 @@ html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="consultation.html"] {
   border: none;
   background: none;
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
   font-family: inherit;
   display: flex;
@@ -330,6 +346,14 @@ html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="consultation.html"] {
   justify-content: space-between;
   width: 100%;
   transition: color var(--transition);
+}
+
+[data-theme="light"] .nav-sidebar .nav-links a.nav-dropdown-btn.active {
+  color: #000;
+}
+
+[data-theme="dark"] .nav-sidebar .nav-links a.nav-dropdown-btn.active {
+  color: #fff;
 }
 
 .nav-dropdown-btn:hover {
@@ -456,33 +480,75 @@ html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="consultation.html"] {
   gap: 0.5rem;
 }
 
-/* Two right sidebars: (1) user — email, status, signout on one line; (2) theme, font, size */
-.sidebar-user {
-  width: var(--sidebar-user-width);
-  flex-shrink: 0;
-  background: var(--bg-primary);
-  border-left: none;
-  padding: 1.5rem 0.75rem 0.75rem;
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  font-size: 0.8rem;
+/* Account controls share the theme / font / size column. */
+.sidebar-controls .controls-account {
+  width: 100%;
 }
 
-.sidebar-user .nav-user {
-  font-size: 0.82rem;
+.sidebar-controls #nav-user-email {
+  display: block;
+  width: 100%;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.sidebar-controls #nav-user-email[hidden],
+.sidebar-controls #nav-role-badge[hidden],
+.sidebar-controls #nav-settings[hidden],
+.sidebar-controls #nav-login[hidden],
+.sidebar-controls #nav-logout[hidden] {
+  display: none !important;
+}
+
+.sidebar-controls .controls-account-actions .nav-role-badge,
+.sidebar-controls .controls-account-actions a,
+.sidebar-controls .controls-signout {
+  background: none;
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 400;
   color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-shrink: 0;
+  text-align: left;
+  font-family: inherit;
+  text-decoration: none;
+  line-height: 1.4;
+  letter-spacing: normal;
+  width: auto;
+  border-radius: 0;
+  box-sizing: border-box;
+}
+
+.sidebar-controls .controls-account-actions a,
+.sidebar-controls .controls-signout {
+  cursor: pointer;
+}
+
+.sidebar-controls .controls-account-actions a:hover,
+.sidebar-controls .controls-account-actions a.active {
+  background: var(--accent-light);
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+.sidebar-controls .controls-signout {
+  border-color: #c0392b;
+  margin-top: 1rem;
+}
+
+.sidebar-controls .controls-signout:hover {
+  border-color: #c0392b;
+  color: #c0392b;
+  background: rgba(192, 57, 43, 0.06);
 }
 
 .sidebar-controls {
   width: var(--controls-width);
   flex-shrink: 0;
+  align-self: flex-start;
+  position: sticky;
+  top: 0;
+  height: 100vh;
   background: var(--bg-primary);
   border-left: none;
   padding: 1.5rem 0.75rem;
@@ -937,6 +1003,33 @@ html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="consultation.html"] {
 
 .auth-card h2 { margin-bottom: 0.3rem; }
 .auth-card .auth-sub { margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+.settings-stack {
+  max-width: 480px;
+  margin: 2rem auto 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0 1rem;
+}
+
+.settings-stack[hidden] { display: none; }
+
+.settings-card {
+  margin: 0;
+  max-width: none;
+}
+
+.settings-current {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0 0 0.25rem;
+}
+
+.settings-current strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
 
 .auth-tabs {
   display: flex;
@@ -1841,6 +1934,49 @@ html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="consultation.html"] {
    About / Profile Page
    ============================================================ */
 
+#research-edit-btn[hidden],
+#research-edit-wrap[hidden],
+#research-display[hidden],
+#research-overview[hidden],
+#research-section[hidden],
+#winn-view[hidden] {
+  display: none !important;
+}
+
+.research-overview {
+  display: grid;
+  grid-template-columns: minmax(180px, 280px) 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.research-photo,
+.research-photo-placeholder {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.research-text p {
+  margin: 0 0 0.9rem;
+  line-height: 1.6;
+}
+
+.research-text p:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 700px) {
+  .research-overview { grid-template-columns: 1fr; }
+}
+
 .about-hero {
   padding: 3.5rem 0 3rem;
 }
@@ -1967,6 +2103,59 @@ html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="consultation.html"] {
   min-width: 0;
 }
 
+.collab-drag {
+  appearance: none;
+  width: 0.85rem;
+  height: 1.35rem;
+  flex: 0 0 auto;
+  margin-right: -0.35rem;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  background-image: radial-gradient(circle, currentColor 1.15px, transparent 1.25px);
+  background-size: 4px 5px;
+  background-position: center;
+  color: var(--text-muted);
+  cursor: grab;
+  touch-action: none;
+}
+
+.collab-drag:active,
+.collab-entry.is-dragging .collab-drag {
+  cursor: grabbing;
+}
+
+.collab-entry.is-dragging {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.collab-entry.is-editing {
+  background: var(--bg-secondary);
+}
+
+.collab-form-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+#collab-delete-btn {
+  margin-left: auto;
+  border-color: #c0392b;
+  color: #c0392b;
+}
+
+#collab-delete-btn[hidden] {
+  display: none !important;
+}
+
+.edit-collab-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 .collab-entry:nth-child(-n+2) { border-top: 1px solid var(--border); }
 
 .collab-person {
@@ -1979,10 +2168,9 @@ html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="consultation.html"] {
   text-decoration: none;
 }
 
-/* Square matches name line + affiliation line (0.88×1.25 + gap + 0.77×1.35). */
 .collab-photo {
-  width: 2.26rem;
-  height: 2.26rem;
+  width: 3rem;
+  height: 3rem;
   flex-shrink: 0;
   object-fit: cover;
   border-radius: 2px;
@@ -1995,7 +2183,7 @@ html:not([data-nav-ready]) .nav-sidebar .nav-links a[href="consultation.html"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--text-muted);
@@ -2152,32 +2340,11 @@ pre.ql-syntax.hljs { border: none; }
     margin-top: 0;
     padding-top: 0;
   }
-  .sidebar-user {
-    width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    border-left: none;
-    border-top: 1px solid var(--border);
-  }
   .sidebar-controls {
     width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0.5rem;
     padding: 0.75rem 1rem;
     border-left: none;
     border-top: 1px solid var(--border);
-  }
-  .sidebar-controls .controls-group {
-    flex-direction: row;
-    align-items: center;
-  }
-  .sidebar-controls .controls-theme,
-  .sidebar-controls .controls-font,
-  .sidebar-controls .controls-font-size {
-    flex-direction: row;
   }
 }
 
@@ -2781,3 +2948,214 @@ pre.ql-syntax.hljs { border: none; }
   color: #fff;
   font-weight: 600;
 }
+
+/* ---------- Project timeline ---------- */
+.tl-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 1rem 0 0.6rem;
+  flex-wrap: wrap;
+}
+
+.tl-legend {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.tl-scroll {
+  overflow: auto;
+  max-height: min(70vh, 640px);
+  border: 1px solid var(--border);
+  background: var(--bg-primary);
+}
+
+.tl-canvas-inner { position: relative; min-height: 100%; }
+
+.tl-row {
+  display: flex;
+  align-items: stretch;
+  min-height: 44px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.tl-row-axis {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  min-height: 32px;
+  cursor: default;
+  background: var(--bg-primary);
+}
+
+.tl-row.is-selected { background: var(--bg-secondary); }
+.tl-row.is-selected .tl-label { background: var(--bg-secondary); }
+
+.tl-label {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  width: 168px;
+  flex: 0 0 168px;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0 0.6rem;
+  background: var(--bg-primary);
+  border-right: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+
+.tl-label-corner { z-index: 5; }
+
+.tl-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
+}
+
+.tl-progress {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  flex: 0 0 auto;
+}
+
+.tl-remove {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 0.15rem;
+  flex: 0 0 auto;
+}
+
+.tl-remove:hover { color: var(--text-primary); }
+
+.tl-track { position: relative; flex: 0 0 auto; }
+
+.tl-axis { height: 32px; }
+
+.tl-tick {
+  position: absolute;
+  top: 8px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transform: translateX(4px);
+}
+
+.tl-tick::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: -8px;
+  bottom: -16px;
+  width: 1px;
+  background: var(--border);
+}
+
+.tl-bar {
+  position: absolute;
+  top: 16px;
+  height: 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.tl-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--text-secondary);
+}
+
+.tl-mark {
+  position: absolute;
+  top: 14px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  background: var(--bg-primary);
+  border: 1px solid var(--text-primary);
+  box-sizing: border-box;
+  z-index: 1;
+}
+
+.tl-mark.is-milestone { border-radius: 50%; }
+.tl-mark.is-due { border-radius: 0; }
+.tl-mark.is-done { background: var(--text-primary); }
+.tl-mark.is-overdue { border-width: 2px; }
+
+.tl-today {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--text-muted);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.tl-muted { color: var(--text-muted); font-size: 0.85rem; margin: 0.35rem 0 0; }
+
+.tl-detail {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.tl-detail h3 { margin-bottom: 0.15rem; }
+
+.tl-marks { margin: 0.85rem 0 1rem; display: flex; flex-direction: column; }
+
+.tl-mark-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+
+.tl-mark-kind {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  width: 5.5rem;
+  flex: 0 0 auto;
+}
+
+.tl-mark-title { flex: 1; min-width: 0; }
+.tl-mark-date { color: var(--text-muted); font-size: 0.8rem; flex: 0 0 auto; }
+.tl-mark-row.is-done .tl-mark-title { color: var(--text-muted); }
+.tl-mark-row.is-overdue .tl-mark-date { color: var(--text-primary); }
+
+.tl-check {
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+.tl-check.is-done { background: var(--text-primary); border-color: var(--text-primary); }
+
+.tl-date-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.tl-edit, .tl-add-mark { margin-top: 0.5rem; }
+
+#tl-admin-bar[hidden],
+#tl-project-form-wrap[hidden],
+#tl-scroll[hidden],
+#tl-detail[hidden],
+#tl-empty[hidden] { display: none; }

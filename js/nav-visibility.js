@@ -8,7 +8,7 @@ import { db } from "./firebase-config.js";
 import {
   doc, getDoc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { hasRole, showToast } from "./auth.js?v=3";
+import { hasRole, showToast } from "./auth.js?v=8";
 
 const NAV_DOC = doc(db, "site_config", "nav_visibility");
 
@@ -20,10 +20,11 @@ const HREF_TO_KEY = {
   "writing.html":            "writing",
   "news.html":               "news",
   "consultation.html":       "consultation",
+  "timeline.html":           "timeline",
 };
 
-const DEFAULT_ORDER = ["software", "design", "forum", "writing", "news", "teaching", "consultation"];
-const DEFAULT_STATE = { software: true, design: true, forum: true, writing: true, news: true, teaching: true, consultation: true };
+const DEFAULT_ORDER = ["software", "design", "forum", "writing", "news", "teaching", "consultation", "timeline"];
+const DEFAULT_STATE = { software: true, design: true, forum: true, writing: true, news: true, teaching: true, consultation: true, timeline: true };
 let _state = { ...DEFAULT_STATE };
 let _order = [...DEFAULT_ORDER];
 
@@ -68,6 +69,7 @@ export async function initNavVisibility(role) {
   const links   = document.querySelectorAll(".nav-sidebar .nav-links a");
 
   links.forEach(link => {
+    if (link.closest(".nav-dropdown")) return;
     const key = HREF_TO_KEY[link.getAttribute("href")];
     if (!key) return;
 
@@ -103,17 +105,61 @@ export async function initNavVisibility(role) {
     }
   });
 
+  _setupDropdown("forum", isAdmin);
+  _setupDropdown("teaching", isAdmin);
   _applyOrder(isAdmin);
   document.documentElement.setAttribute("data-nav-ready", "");
+}
+
+function _setupDropdown(key, isAdmin) {
+  const dropdown = document.querySelector(`.nav-sidebar .nav-dropdown[data-nav-key="${key}"]`);
+  if (!dropdown) return;
+  if (!isAdmin) {
+    if (_state[key] === false) dropdown.style.display = "none";
+    return;
+  }
+
+  // Research already has this wrapper in HTML. Teaching does not, so add it
+  // so the drag handle and eye button sit in the same row as the label.
+  let head = dropdown.querySelector(":scope > .nav-dropdown-head");
+  if (!head) {
+    const label = dropdown.querySelector(":scope > .nav-dropdown-btn");
+    if (!label) return;
+    head = document.createElement("div");
+    head.className = "nav-dropdown-head";
+    dropdown.insertBefore(head, label);
+    head.appendChild(label);
+  }
+  if (head.dataset.ready === "1") return;
+  head.dataset.ready = "1";
+
+  const handle = document.createElement("span");
+  handle.className = "nav-drag-handle";
+  handle.innerHTML = SVG_DRAG;
+  handle.title = "Drag to reorder";
+  head.insertBefore(handle, head.firstChild);
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "nav-eye-btn" + (_state[key] === false ? " is-hidden" : "");
+  btn.dataset.key = key;
+  btn.title = _state[key] !== false ? "Hide from visitors" : "Show to visitors";
+  btn.innerHTML = _state[key] !== false ? SVG_EYE : SVG_EYE_OFF;
+  btn.addEventListener("click", () => _toggle(key, btn));
+  head.appendChild(btn);
+
+  dropdown.draggable = true;
+  _addDragEvents(dropdown);
 }
 
 function _applyOrder(isAdmin) {
   const navLinks = document.querySelector(".nav-sidebar .nav-links");
   if (!navLinks) return;
   _order.forEach(key => {
-    // Teaching uses a div.nav-dropdown; regular items use .nav-link-row (admin) or a (visitor)
-    const sel = key === "teaching"
-      ? `[data-nav-key="${key}"]`
+    // Dropdowns (Research, Teaching) stay as .nav-dropdown.
+    // Regular items use .nav-link-row (admin) or a (visitor).
+    const sel = key === "teaching" || key === "forum"
+      ? `.nav-dropdown[data-nav-key="${key}"]`
       : isAdmin
         ? `.nav-link-row[data-nav-key="${key}"]`
         : `a[data-nav-key="${key}"]`;
@@ -124,16 +170,20 @@ function _applyOrder(isAdmin) {
 
 function _addDragEvents(row) {
   row.addEventListener("dragstart", e => {
+    if (e.target.closest(".nav-dropdown-menu") || e.target.closest(".nav-eye-btn")) {
+      e.preventDefault();
+      return;
+    }
     _dragSrc = row;
     row.classList.add("dragging");
     e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", row.dataset.navKey);
+    e.dataTransfer.setData("text/plain", row.dataset.navKey || "");
   });
 
   row.addEventListener("dragend", () => {
     _dragSrc = null;
     row.classList.remove("dragging");
-    document.querySelectorAll(".nav-link-row.drag-over")
+    document.querySelectorAll(".nav-link-row.drag-over, .nav-dropdown.drag-over")
       .forEach(r => r.classList.remove("drag-over"));
     _saveDragOrder();
   });
@@ -142,7 +192,7 @@ function _addDragEvents(row) {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     if (_dragSrc && row !== _dragSrc) {
-      document.querySelectorAll(".nav-link-row.drag-over")
+      document.querySelectorAll(".nav-link-row.drag-over, .nav-dropdown.drag-over")
         .forEach(r => r.classList.remove("drag-over"));
       row.classList.add("drag-over");
     }
@@ -156,7 +206,7 @@ function _addDragEvents(row) {
     e.preventDefault();
     if (!_dragSrc || _dragSrc === row) return;
     const parent = row.parentNode;
-    const rows   = [...parent.querySelectorAll(".nav-link-row")];
+    const rows   = [...parent.querySelectorAll(":scope > .nav-link-row, :scope > .nav-dropdown[data-nav-key]")];
     const srcIdx = rows.indexOf(_dragSrc);
     const dstIdx = rows.indexOf(row);
     if (srcIdx < dstIdx) {
@@ -171,11 +221,10 @@ function _addDragEvents(row) {
 async function _saveDragOrder() {
   const navLinks = document.querySelector(".nav-sidebar .nav-links");
   if (!navLinks) return;
-  // Collect ordered keys from .nav-link-row items (draggable links), then
-  // re-insert any non-draggable keys (e.g. "teaching") at their current position.
-  const rowKeys = [...navLinks.querySelectorAll(".nav-link-row[data-nav-key]")]
-    .map(r => r.dataset.navKey);
-  const allEls  = [...navLinks.querySelectorAll("[data-nav-key]")];
+  // Direct children only, so open submenu links are not treated as nav items.
+  const allEls = [...navLinks.querySelectorAll(
+    ":scope > .nav-link-row[data-nav-key], :scope > .nav-dropdown[data-nav-key], :scope > a[data-nav-key]"
+  )];
   _order = allEls.map(el => el.dataset.navKey);
   try {
     await setDoc(NAV_DOC, { ..._state, order: _order });
