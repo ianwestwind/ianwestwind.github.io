@@ -8,7 +8,7 @@ import { db } from "./firebase-config.js";
 import {
   doc, getDoc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { hasRole, showToast } from "./auth.js?v=8";
+import { hasRole, showToast } from "./auth.js?v=11";
 
 const NAV_DOC = doc(db, "site_config", "nav_visibility");
 
@@ -35,6 +35,15 @@ const SVG_EYE_OFF = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="
 const SVG_DRAG = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="16" viewBox="0 0 12 16" fill="currentColor" aria-hidden="true"><circle cx="4" cy="3" r="1.5"/><circle cx="8" cy="3" r="1.5"/><circle cx="4" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="4" cy="13" r="1.5"/><circle cx="8" cy="13" r="1.5"/></svg>`;
 
 let _dragSrc = null;
+const _orderListeners = new Set();
+
+export function onNavOrderChange(listener) {
+  _orderListeners.add(listener);
+}
+
+export function notifyNavOrder() {
+  _orderListeners.forEach(listener => listener());
+}
 
 export async function initNavVisibility(role) {
   try {
@@ -226,6 +235,7 @@ async function _saveDragOrder() {
     ":scope > .nav-link-row[data-nav-key], :scope > .nav-dropdown[data-nav-key], :scope > a[data-nav-key]"
   )];
   _order = allEls.map(el => el.dataset.navKey);
+  notifyNavOrder();
   try {
     await setDoc(NAV_DOC, { ..._state, order: _order });
   } catch (e) {

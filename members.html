@@ -3,13 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Timeline · Multimodal Intelligence Lab</title>
+  <title>Members · Multimodal Intelligence Lab</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-  <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 </head>
 <body>
   <div class="app-layout">
@@ -39,8 +35,8 @@
           </div>
         </div>
         <a href="consultation.html">Consultation</a>
-        <a href="timeline.html" class="active">Timeline</a>
-        <a href="members.html" id="nav-members" hidden>Members</a>
+        <a href="timeline.html">Timeline</a>
+        <a href="members.html" id="nav-members" class="active" hidden>Members</a>
       </div>
     </aside>
 
@@ -48,70 +44,18 @@
       <div class="page-wrapper">
         <div class="page-title-bar">
           <div class="container">
-            <h1>Timeline</h1>
-            <p>Milestones, dues, and progress across projects</p>
+            <h1>Members</h1>
+            <p>Who is in the lab, and what each level can do</p>
           </div>
         </div>
 
         <div class="section-sm container">
-          <div class="list-header" id="tl-admin-bar" hidden>
-            <span class="list-header-count" id="tl-count"></span>
-            <button type="button" class="btn btn-ghost btn-sm" id="tl-add-toggle">+ Project</button>
+          <div id="org-gate" class="access-gate" hidden>
+            <h3>Member directory</h3>
+            <p id="org-gate-copy">Sign in with a regular member account or above to see the directory.</p>
+            <a href="login.html" class="btn btn-primary btn-sm" id="org-gate-login">Sign In</a>
           </div>
-
-          <div id="tl-project-form-wrap" class="post-form" hidden>
-            <h3>New project</h3>
-            <form id="tl-project-form">
-              <div class="form-group">
-                <label for="tl-name">Name</label>
-                <input type="text" id="tl-name" placeholder="Project name" required />
-              </div>
-              <div class="form-group">
-                <label for="tl-type">Type</label>
-                <select id="tl-type" required>
-                  <option value="" selected disabled>Choose a type</option>
-                  <option value="grant">Grant</option>
-                  <option value="paper">Paper</option>
-                  <option value="presentation">Presentation</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div class="tl-date-row">
-                <div class="form-group">
-                  <label for="tl-start">Start</label>
-                  <input type="date" id="tl-start" required />
-                </div>
-                <div class="form-group">
-                  <label for="tl-end">End</label>
-                  <input type="date" id="tl-end" required />
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Details</label>
-                <div id="tl-details-mount"></div>
-              </div>
-              <button type="submit" class="btn btn-primary btn-sm">Add project</button>
-            </form>
-          </div>
-
-          <div class="tl-toolbar">
-            <button type="button" class="btn btn-ghost btn-sm" id="tl-zoom-out" aria-label="Zoom out">−</button>
-            <button type="button" class="btn btn-ghost btn-sm" id="tl-zoom-in" aria-label="Zoom in">+</button>
-            <button type="button" class="btn btn-ghost btn-sm" id="tl-today">Today</button>
-            <span class="tl-legend">Bar is the project span. Fill is how much is done. Circle is a milestone, square is a due, line is today.</span>
-            <span class="tl-type-key">
-              <span><span class="tl-swatch is-grant" aria-hidden="true"></span> Grant</span>
-              <span><span class="tl-swatch is-paper" aria-hidden="true"></span> Paper</span>
-              <span><span class="tl-swatch is-presentation" aria-hidden="true"></span> Presentation</span>
-              <span><span class="tl-swatch is-other" aria-hidden="true"></span> Other</span>
-            </span>
-          </div>
-
-          <div class="tl-scroll" id="tl-scroll">
-            <div id="tl-canvas"></div>
-          </div>
-          <p class="tl-muted" id="tl-empty" hidden>No projects yet.</p>
-          <div class="tl-detail" id="tl-detail" hidden></div>
+          <div id="org-chart" class="org-chart" hidden></div>
         </div>
       </div>
     </main>
@@ -160,11 +104,11 @@
     import { initAuth, updateNavUI, logout, showToast } from "./js/auth.js?v=11";
     import { initLayoutControls } from "./js/layout-controls.js";
     import { logVisit } from "./js/analytics.js";
-    import { initNavVisibility } from "./js/nav-visibility.js";
-    import { initTimeline } from "./js/timeline.js";
+    import { initNavVisibility } from "./js/nav-visibility.js?v=order1";
+    import { initMembers } from "./js/members.js?v=pages6";
 
     initLayoutControls();
-    logVisit("timeline");
+    logVisit("members");
 
     document.getElementById("nav-logout").addEventListener("click", async () => {
       if (!(await logout())) return;
@@ -175,7 +119,7 @@
     initAuth(async (user, role) => {
       updateNavUI(user, role);
       await initNavVisibility(role);
-      initTimeline(role);
+      await initMembers(role);
     });
   </script>
 </body>

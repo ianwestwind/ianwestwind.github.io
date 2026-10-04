@@ -10,7 +10,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getCurrentUser, getCurrentRole, hasRole, escHtml, showToast, formatDate
-} from "./auth.js?v=8";
+} from "./auth.js?v=11";
 import {
   initEditor, getEditorHTML, initThumbnailZone, initAttachmentZone, renderBody, highlightContent, initPreview
 } from "./editor.js";
@@ -245,7 +245,7 @@ async function _loadAndRenderComments(postId) {
           <button class="btn btn-primary btn-sm" id="forum-submit-comment-${postId}">Post Comment</button>
         </div>
       </div>
-    ` : ""}
+    ` : (user ? `<p class="comment-locked">Commenting is for regular members and above.</p>` : "")}
   `;
 
   _renderCommentsList(postId, topLevel, repliesByParent, canComment, user, role);

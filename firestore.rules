@@ -25,10 +25,16 @@ service cloud.firestore {
     }
 
     // Role hierarchy check: caller's role must be >= required
-    // Roles: guest(0) < regular(1) < moderator(2) < admin(3)
+    // Roles: guest(0) < visitor(1) < regular(2) < moderator(3) < admin(4)
     // Accepts lowercase or capitalized role (e.g. "admin" or "Admin")
     function hasRole(required) {
-      let rank = {'guest': 0, 'regular': 1, 'moderator': 2, 'Moderator': 2, 'admin': 3, 'Admin': 3};
+      let rank = {
+        'guest': 0,
+        'visitor': 1, 'Visitor': 1,
+        'regular': 2, 'Regular': 2,
+        'moderator': 3, 'Moderator': 3,
+        'admin': 4, 'Admin': 4
+      };
       let role = callerRole();
       return isAuth() && role in rank && required in rank && rank[role] >= rank[required];
     }
@@ -41,24 +47,85 @@ service cloud.firestore {
 
     // ---- /users/{uid} ----
     match /users/{uid} {
-      // Anyone authenticated can read user profiles
-      allow read: if isAuth();
+      // A member can read the directory. Anyone can read their own profile.
+      allow read: if isOwner(uid) || hasRole('regular');
 
       // A user can create their own document (registration)
       // They may NOT set themselves a privileged role
       allow create: if isOwner(uid)
-        && request.resource.data.role == 'regular'
-        && request.resource.data.email == request.auth.token.email;
+        && request.resource.data.role == 'visitor'
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.keys().hasOnly(['displayName', 'email', 'role', 'institution', 'title', 'createdAt'])
+        && request.resource.data.institution is string
+        && request.resource.data.institution.size() > 0
+        && request.resource.data.institution.size() <= 120
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 120;
+
+      function storedRole() {
+        return resource.data.get('role', 'regular').lower();
+      }
+
+      function regularClassOf() {
+        return request.resource.data.get('regularClass', '');
+      }
+
+      function supervisorOk() {
+        let sid = request.resource.data.get('supervisorId', '');
+        let sup = /databases/$(database)/documents/users/$(sid);
+        return sid == ''
+          || (
+            request.resource.data.role == 'regular'
+            && regularClassOf() in ['b', 'c']
+            && sid != uid
+            && exists(sup)
+            && get(sup).data.get('role', '') == 'regular'
+            && (
+              (regularClassOf() == 'b' && get(sup).data.get('regularClass', '') == 'a')
+              || (regularClassOf() == 'c' && get(sup).data.get('regularClass', '') in ['a', 'b'])
+            )
+          );
+      }
+
+      function placementOk() {
+        return request.resource.data.role == 'regular'
+          ? ((regularClassOf() == '' || regularClassOf() in ['a', 'b', 'c']) && supervisorOk())
+          : (regularClassOf() == '' && request.resource.data.get('supervisorId', '') == '');
+      }
 
       // A user can update their own profile fields except role.
       // Email may change only to the address on their Auth token.
+      // Admin can reassign anyone who is not an admin.
+      // Moderator can reassign only regular members and visitors, and only to those two roles.
       allow update: if
         (isOwner(uid)
           && request.resource.data.role == resource.data.role
+          && request.resource.data.get('moderatorId', '') == resource.data.get('moderatorId', '')
+          && request.resource.data.get('regularClass', '') == resource.data.get('regularClass', '')
+          && request.resource.data.get('supervisorId', '') == resource.data.get('supervisorId', '')
           && (request.resource.data.email == resource.data.email
               || request.resource.data.email == request.auth.token.email))
         ||
-        hasRole('admin');
+        (hasRole('admin')
+          && storedRole() != 'admin'
+          && request.resource.data.role in ['visitor', 'regular', 'moderator', 'admin']
+          && placementOk())
+        ||
+        (hasRole('moderator')
+          && storedRole() in ['visitor', 'regular']
+          && request.resource.data.role in ['visitor', 'regular']
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'regularClass', 'supervisorId'])
+          && (
+            (request.resource.data.role == 'visitor'
+              && request.resource.data.get('regularClass', '') == '')
+            || (request.resource.data.role == 'regular'
+              && request.resource.data.regularClass in ['a', 'b', 'c'])
+          )
+          && (
+            request.resource.data.get('supervisorId', '') == ''
+            || request.resource.data.supervisorId == resource.data.get('supervisorId', '')
+          ));
 
       // Only admin can delete user documents
       allow delete: if hasRole('admin');
@@ -116,7 +183,7 @@ service cloud.firestore {
     // ---- /writing_posts/{postId}/comments/{cid} ----
     match /writing_posts/{postId}/comments/{cid} {
       allow read: if true;
-      allow create: if isAuth()
+      allow create: if hasRole('regular')
         && request.resource.data.authorUid == request.auth.uid;
       allow update: if isOwner(resource.data.authorUid) || hasRole('admin');
       allow delete: if hasRole('admin') || isOwner(resource.data.authorUid);
@@ -126,7 +193,7 @@ service cloud.firestore {
     // ---- /news_posts/{postId}/comments/{cid} ----
     match /news_posts/{postId}/comments/{cid} {
       allow read: if true;
-      allow create: if isAuth()
+      allow create: if hasRole('regular')
         && request.resource.data.authorUid == request.auth.uid;
       allow update: if isOwner(resource.data.authorUid) || hasRole('admin');
       allow delete: if hasRole('admin') || isOwner(resource.data.authorUid);
@@ -178,19 +245,17 @@ service cloud.firestore {
       // Everyone can read
       allow read: if true;
 
-      // Only moderators and admins can create writing posts
-      allow create: if hasRole('moderator')
+      // Only admins can create writing posts
+      allow create: if hasRole('admin')
         && request.resource.data.authorUid == request.auth.uid;
 
       // Anyone can increment/decrement likeCount only;
-      // author (mod+) or admin can update any field
+      // only an admin can update any other field
       allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount'])
-        || (isOwner(resource.data.authorUid) && hasRole('moderator'))
         || hasRole('admin');
 
-      // Moderators can delete any; authors can delete their own
-      allow delete: if hasRole('moderator')
-        || isOwner(resource.data.authorUid);
+      // Only an admin can delete a writing post
+      allow delete: if hasRole('admin');
     }
 
 
@@ -208,8 +273,8 @@ service cloud.firestore {
       // Admin sees all; requester sees their own
       allow read: if hasRole('admin')
         || (isAuth() && resource.data.requesterUid == request.auth.uid);
-      // Authenticated users can create for themselves only
-      allow create: if isAuth()
+      // Regular members and above can request a booking for themselves
+      allow create: if hasRole('regular')
         && request.resource.data.requesterUid == request.auth.uid;
       // Only admin can update (approve/reject)
       allow update: if hasRole('admin');

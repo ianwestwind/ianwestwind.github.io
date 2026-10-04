@@ -16,7 +16,7 @@
 <body>
   <div class="app-layout">
     <aside class="nav-sidebar">
-      <a href="index.html" class="nav-brand">Overfitting &amp; Prayer</a>
+      <a href="index.html" class="nav-brand"><img src="img/logo.png" alt="Overfitting &amp; Prayer" class="nav-brand-logo is-placeholder" /></a>
       <div class="nav-links">
         <a href="index.html">About</a>
         <a href="portfolio-software.html">Software</a>
@@ -42,6 +42,7 @@
         </div>
         <a href="consultation.html">Consultation</a>
         <a href="timeline.html">Timeline</a>
+        <a href="members.html" id="nav-members" hidden>Members</a>
       </div>
     </aside>
     <main class="main-content">
@@ -293,7 +294,7 @@
   </div>
 
   <script type="module">
-    import { initAuth, updateNavUI, logout, hasRole, showToast } from "./js/auth.js?v=8";
+    import { initAuth, updateNavUI, logout, hasRole, showToast } from "./js/auth.js?v=11";
     import { initLayoutControls } from "./js/layout-controls.js";
     import { initForumPage, submitForumPost } from "./js/forum.js";
     import { logVisit, showStats } from "./js/analytics.js";
@@ -437,10 +438,14 @@
         const toggleBtn = document.getElementById("toggle-form-btn");
 
         if (!hasRole(role, "regular")) {
-          gate.innerHTML = `
-            <div class="access-gate">
+          gate.innerHTML = user
+            ? `<div class="access-gate">
+              <h3>Posting is for regular members and above</h3>
+              <p>A visitor account can read these posts. Regular members, moderators, and admins can post.</p>
+            </div>`
+            : `<div class="access-gate">
               <h3>Sign in to post</h3>
-              <p>You need a registered account to post. All visitors can read.</p>
+              <p>Anyone can read. A regular member account or above is required to post.</p>
               <a href="login.html" class="btn btn-primary btn-sm">Sign In / Register</a>
             </div>`;
           if (toggleBtn) toggleBtn.style.display = "none";

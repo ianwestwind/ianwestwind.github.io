@@ -15,7 +15,7 @@
   <div class="app-layout">
     <!-- ===== Left: vertical menu ===== -->
     <aside class="nav-sidebar">
-      <a href="index.html" class="nav-brand">Overfitting &amp; Prayer</a>
+      <a href="index.html" class="nav-brand"><img src="img/logo.png" alt="Overfitting &amp; Prayer" class="nav-brand-logo is-placeholder" /></a>
       <div class="nav-links">
         <a href="index.html" class="active">About</a>
         <a href="portfolio-software.html">Software</a>
@@ -41,6 +41,7 @@
         </div>
         <a href="consultation.html">Consultation</a>
         <a href="timeline.html">Timeline</a>
+        <a href="members.html" id="nav-members" hidden>Members</a>
       </div>
     </aside>
 
@@ -303,7 +304,7 @@
 
   <script type="module">
     import { auth, db, storage } from "./js/firebase-config.js";
-    import { initAuth, updateNavUI, logout, showToast, hasRole } from "./js/auth.js?v=8";
+    import { initAuth, updateNavUI, logout, showToast, hasRole } from "./js/auth.js?v=11";
     import { initLayoutControls } from "./js/layout-controls.js";
     import { logVisit, showStats } from "./js/analytics.js";
     import { initNavVisibility } from "./js/nav-visibility.js";

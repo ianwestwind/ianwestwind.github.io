@@ -23,7 +23,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // ---- Role hierarchy ----
-const ROLE_RANK = { guest: 0, regular: 1, moderator: 2, admin: 3 };
+// guest is signed out. visitor is the lowest signed-in account.
+const ROLE_RANK = { guest: 0, visitor: 1, regular: 2, moderator: 3, admin: 4 };
 
 export function hasRole(userRole, required) {
   const r = typeof userRole === "string" ? userRole.trim().toLowerCase() : "";
@@ -34,6 +35,9 @@ export function hasRole(userRole, required) {
 // ---- Session state (module-level cache) ----
 let _currentUser = null;
 let _currentRole = "guest";
+let _registering = false;
+
+export function isRegistering() { return _registering; }
 
 export function getCurrentUser() { return _currentUser; }
 export function getCurrentRole() { return _currentRole; }
@@ -47,10 +51,12 @@ async function fetchRole(uid) {
       const normalized = String(raw).trim().toLowerCase() || "regular";
       return normalized;
     }
+    // The profile is written just after the account is created. Until then, the level is visitor.
+    return "visitor";
   } catch (e) {
     console.warn("fetchRole error:", e);
   }
-  return "regular";
+  return "visitor";
 }
 
 // ---- Auth state listener ----
@@ -72,19 +78,38 @@ export function initAuth(callback) {
 }
 
 // ---- Register new user ----
-export async function register(email, password, displayName) {
-  const cred = await createUserWithEmailAndPassword(auth, email, password);
-  const uid  = cred.user.uid;
-
-  // Create user document with default "regular" role
-  await setDoc(doc(db, "users", uid), {
-    displayName: displayName || email.split("@")[0],
-    email:       email,
-    role:        "regular",
-    createdAt:   serverTimestamp()
-  });
-
-  return cred.user;
+export async function register(email, password, displayName, institution, title) {
+  const cleanInstitution = String(institution || "").trim();
+  const cleanTitle = String(title || "").trim();
+  if (!cleanInstitution || !cleanTitle || cleanInstitution.length > 120 || cleanTitle.length > 120) {
+    const err = new Error("Institution and title are required.");
+    err.code = "auth/invalid-profile";
+    throw err;
+  }
+  _registering = true;
+  let cred = null;
+  try {
+    cred = await createUserWithEmailAndPassword(auth, email, password);
+    const token = await cred.user.getIdTokenResult(true);
+    const storedEmail = token.claims.email || cred.user.email || email.trim();
+    await setDoc(doc(db, "users", cred.user.uid), {
+      displayName: displayName || storedEmail.split("@")[0],
+      email:       storedEmail,
+      institution: cleanInstitution,
+      title:       cleanTitle,
+      role:        "visitor",
+      createdAt:   serverTimestamp()
+    });
+    _currentRole = "visitor";
+    return cred.user;
+  } catch (err) {
+    if (cred?.user) {
+      try { await cred.user.delete(); } catch (e) { console.warn("register cleanup:", e); }
+    }
+    throw err;
+  } finally {
+    _registering = false;
+  }
 }
 
 // ---- Login ----
@@ -168,11 +193,10 @@ export function friendlyAuthError(code) {
 }
 
 // ---- Update nav UI with auth state ----
-function roleDisplayName(role) {
-  return role === "regular" ? "WINNer" : role;
-}
-
 export function updateNavUI(user, role) {
+  const navMembers = document.getElementById("nav-members");
+  if (navMembers) navMembers.hidden = !hasRole(role, "regular");
+
   const navEmail    = document.getElementById("nav-user-email");
   const navBadge    = document.getElementById("nav-role-badge");
   const navLogin    = document.getElementById("nav-login");
@@ -189,7 +213,7 @@ export function updateNavUI(user, role) {
     }
     if (navBadge) {
       navBadge.className = `nav-role-badge badge-${role}`;
-      navBadge.textContent = roleDisplayName(role);
+      navBadge.textContent = role;
       navBadge.hidden = false;
     }
     if (navLogin)    navLogin.hidden = true;

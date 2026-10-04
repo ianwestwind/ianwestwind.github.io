@@ -2,6 +2,7 @@
 // Theme, font, and font-size controls (right sidebar). Persists to localStorage.
 
 import { initTeachingLock } from "./teaching-lock.js";
+import { initLogo } from "./logo.js";
 
 const THEME_KEY = "winn-theme";
 const FONT_KEY = "winn-font";
@@ -91,6 +92,7 @@ export function initLayoutControls() {
 
   initTeachingLock();
   initResearchNav();
+  initLogo();
 }
 
 function initResearchNav() {

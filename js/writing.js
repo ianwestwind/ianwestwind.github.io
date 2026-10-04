@@ -1,6 +1,6 @@
 // ============================================================
 // Multimodal Intelligence Lab — writing.js
-// Writing posts (moderator+ can post); thumbnail cards + scheduling
+// Writing posts (admin can post); thumbnail cards + scheduling
 // ============================================================
 
 import { db } from "./firebase-config.js";
@@ -10,7 +10,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getCurrentUser, getCurrentRole, hasRole, escHtml, showToast, formatDate
-} from "./auth.js?v=8";
+} from "./auth.js?v=11";
 import {
   initEditor, getEditorHTML, initThumbnailZone, initAttachmentZone, renderBody, highlightContent, initPreview
 } from "./editor.js";
@@ -66,9 +66,9 @@ function _showList() {
   const rows  = document.getElementById("writing-rows");
   if (!rows) return;
 
-  const isMod   = hasRole(_userRole, "moderator");
+  const isAdmin = hasRole(_userRole, "admin");
   const visible = [..._posts.entries()]
-    .filter(([, d]) => isMod || _isPublished(d))
+    .filter(([, d]) => isAdmin || _isPublished(d))
     .sort((a, b)  => _publishSec(b[1]) - _publishSec(a[1]));
 
   _updateCount(visible.length);
@@ -80,7 +80,7 @@ function _showList() {
 
   rows.innerHTML = visible.map(([id, data]) => {
     const isPub = _isPublished(data);
-    const badge = (!isPub && isMod) ? `<span class="scheduled-badge">Scheduled</span>` : "";
+    const badge = (!isPub && isAdmin) ? `<span class="scheduled-badge">Scheduled</span>` : "";
     const thumb = data.thumbnailUrl
       ? `<img src="${escHtml(data.thumbnailUrl)}" alt="" class="pub-card-thumb" />`
       : `<div class="pub-card-thumb pub-card-thumb-placeholder"></div>`;
@@ -182,14 +182,13 @@ function _showDetail(id) {
   document.getElementById("detail-view").style.display = "";
 
   const role      = getCurrentRole();
-  const user      = getCurrentUser();
-  const isAuthor  = user && (user.uid === data.authorUid || (!data.authorUid && (user.displayName === data.authorName || (user.email && user.email === data.authorName))));
-  const canDelete = hasRole(role, "admin") || hasRole(role, "moderator") || isAuthor;
-  const isMod     = hasRole(role, "moderator");
-  const scheduled = !_isPublished(data) && isMod;
+  const canDelete = hasRole(role, "admin");
+  const isAdmin   = hasRole(role, "admin");
+  if (!isAdmin && !_isPublished(data)) { location.hash = ""; return; }
+  const scheduled = !_isPublished(data) && isAdmin;
 
   const sortedPairs = [..._posts.entries()]
-    .filter(([, d]) => isMod || _isPublished(d))
+    .filter(([, d]) => isAdmin || _isPublished(d))
     .sort((a, b) => _publishSec(b[1]) - _publishSec(a[1]));
 
   const likedKey  = `winwriting_liked_${id}`;
@@ -311,7 +310,7 @@ async function _loadAndRenderComments(postId) {
           <button class="btn btn-primary btn-sm" id="writing-submit-comment-${postId}">Post Comment</button>
         </div>
       </div>
-    ` : ""}
+    ` : (user ? `<p class="comment-locked">Commenting is for regular members and above.</p>` : "")}
   `;
 
   _renderCommentsList(postId, topLevel, repliesByParent, canComment, user, role);
@@ -541,9 +540,9 @@ export async function initWritingPage(role) {
   _handleHash();
 
   const listHeader = document.getElementById("writing-list-header");
-  if (listHeader) listHeader.style.display = hasRole(role, "moderator") ? "" : "none";
+  if (listHeader) listHeader.style.display = hasRole(role, "admin") ? "" : "none";
 
-  if (hasRole(role, "moderator") && !_quill) {
+  if (hasRole(role, "admin") && !_quill) {
     try {
       _quill      = initEditor("writing-toolbar", "writing-editor", "writing");
       _thumbZone  = initThumbnailZone("writing-thumb", "writing-thumb-preview", "writing");
@@ -603,8 +602,8 @@ export async function submitWriting() {
   const role       = getCurrentRole();
   const user       = getCurrentUser();
 
-  if (!hasRole(role, "moderator")) {
-    showToast("Only moderators and admins can post in Writing.", "error"); return;
+  if (!hasRole(role, "admin")) {
+    showToast("Only admins can post in Writing.", "error"); return;
   }
 
   const title  = titleInput.value.trim();

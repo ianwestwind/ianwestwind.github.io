@@ -10,7 +10,7 @@
 <body>
   <div class="app-layout">
     <aside class="nav-sidebar">
-      <a href="index.html" class="nav-brand">Overfitting &amp; Prayer</a>
+      <a href="index.html" class="nav-brand"><img src="img/logo.png" alt="Overfitting &amp; Prayer" class="nav-brand-logo is-placeholder" /></a>
       <div class="nav-links">
         <a href="index.html">About</a>
         <a href="portfolio-software.html">Software</a>
@@ -36,6 +36,7 @@
         </div>
         <a href="consultation.html">Consultation</a>
         <a href="timeline.html">Timeline</a>
+        <a href="members.html" id="nav-members" hidden>Members</a>
       </div>
     </aside>
     <main class="main-content">
@@ -141,7 +142,7 @@
   </footer>
 
   <script type="module">
-    import { initAuth, updateNavUI, logout, hasRole, showToast } from "./js/auth.js?v=8";
+    import { initAuth, updateNavUI, logout, hasRole, showToast } from "./js/auth.js?v=11";
     import { initLayoutControls } from "./js/layout-controls.js";
     import { initDiscussionPage, submitDiscussionPost } from "./js/discussion.js";
     import { logVisit, showStats } from "./js/analytics.js";
@@ -165,13 +166,16 @@
       const toggleBtn = document.getElementById("toggle-form-btn");
 
       if (!hasRole(role, "regular")) {
-        gate.innerHTML = `
-          <div class="access-gate">
+        gate.innerHTML = user
+          ? `<div class="access-gate">
+            <h3>Posting is for regular members and above</h3>
+            <p>A visitor account can read the discussion. Regular members, moderators, and admins can post.</p>
+          </div>`
+          : `<div class="access-gate">
             <h3>Sign in to participate</h3>
             <p>Register or log in to join the discussion.</p>
             <a href="login.html" class="btn btn-primary btn-sm">Sign In / Register</a>
-          </div>
-        `;
+          </div>`;
         if (toggleBtn) toggleBtn.style.display = "none";
       }
 

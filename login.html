@@ -10,7 +10,7 @@
 <body>
   <div class="app-layout">
     <aside class="nav-sidebar">
-      <a href="index.html" class="nav-brand">Overfitting &amp; Prayer</a>
+      <a href="index.html" class="nav-brand"><img src="img/logo.png" alt="Overfitting &amp; Prayer" class="nav-brand-logo is-placeholder" /></a>
       <div class="nav-links">
         <a href="index.html">About</a>
         <a href="portfolio-software.html">Software</a>
@@ -36,6 +36,7 @@
         </div>
         <a href="consultation.html">Consultation</a>
         <a href="timeline.html">Timeline</a>
+        <a href="members.html" id="nav-members" hidden>Members</a>
       </div>
     </aside>
     <main class="main-content">
@@ -68,8 +69,16 @@
         <!-- Register form -->
         <form id="form-register" style="display:none">
           <div class="form-group">
-            <label for="reg-name">Display Name</label>
-            <input type="text" id="reg-name" name="displayName" autocomplete="name" placeholder="Your name" required />
+            <label for="reg-name">Full name</label>
+            <input type="text" id="reg-name" name="displayName" autocomplete="name" placeholder="First and last name" required />
+          </div>
+          <div class="form-group">
+            <label for="reg-institution">Institution</label>
+            <input type="text" id="reg-institution" name="institution" autocomplete="organization" placeholder="University or organization" required maxlength="120" />
+          </div>
+          <div class="form-group">
+            <label for="reg-title">Title</label>
+            <input type="text" id="reg-title" name="title" autocomplete="organization-title" placeholder="Professor, student, researcher" required maxlength="120" />
           </div>
           <div class="form-group">
             <label for="reg-email">Email</label>
@@ -136,7 +145,7 @@
   </footer>
 
   <script type="module">
-    import { initAuth, login, register, logout, updateNavUI, showToast } from "./js/auth.js?v=8";
+    import { initAuth, login, register, logout, updateNavUI, showToast, isRegistering } from "./js/auth.js?v=12";
     import { initLayoutControls } from "./js/layout-controls.js";
     import { logVisit } from "./js/analytics.js";
     import { initNavVisibility } from "./js/nav-visibility.js";
@@ -147,7 +156,7 @@
     initAuth(async (user, role) => {
       updateNavUI(user, role);
       await initNavVisibility(role);
-      if (user) window.location.href = "index.html";
+      if (user && !isRegistering()) window.location.href = "index.html";
     });
 
     document.getElementById("nav-logout").addEventListener("click", async () => {
@@ -197,6 +206,8 @@
     document.getElementById("form-register").addEventListener("submit", async (e) => {
       e.preventDefault();
       const displayName = e.target.displayName.value.trim();
+      const institution = e.target.institution.value.trim();
+      const title       = e.target.title.value.trim();
       const email       = e.target.email.value.trim();
       const password    = e.target.password.value;
       const errorEl     = document.getElementById("reg-error");
@@ -206,7 +217,7 @@
       btn.disabled = true;
       btn.textContent = "Creating account…";
       try {
-        await register(email, password, displayName);
+        await register(email, password, displayName, institution, title);
         showToast("Account created! Welcome!", "success");
         setTimeout(() => window.location.href = "index.html", 700);
       } catch (err) {
@@ -225,7 +236,9 @@
         "auth/user-not-found":          "No account found with that email.",
         "auth/wrong-password":          "Incorrect password.",
         "auth/invalid-credential":      "Invalid email or password.",
-        "auth/too-many-requests":       "Too many attempts. Please try again later."
+        "auth/too-many-requests":       "Too many attempts. Please try again later.",
+        "auth/invalid-profile":         "Enter an institution and a title.",
+        "permission-denied":            "The account could not be saved. The Firestore rules need to be deployed."
       };
       return map[code] || "An error occurred. Please try again.";
     }

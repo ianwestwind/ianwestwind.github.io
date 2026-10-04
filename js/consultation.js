@@ -11,7 +11,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getCurrentUser, hasRole, escHtml, showToast, formatDate
-} from "./auth.js?v=8";
+} from "./auth.js?v=11";
 
 const SLOTS_COL    = "consultation_slots";
 const BOOKINGS_COL = "consultations";
@@ -566,11 +566,19 @@ export async function initConsultationPage(role) {
   const userView  = document.getElementById("consult-user-view");
   const adminView = document.getElementById("consult-admin-view");
 
-  // Show auth gate for unauthenticated users
-  if (!user && !isAdmin) {
+  // Guests and visitors cannot book. Admins use the management view.
+  if (!isAdmin && (!user || !hasRole(role, "regular"))) {
     if (gate)      gate.style.display      = "";
     if (userView)  userView.style.display  = "none";
     if (adminView) adminView.style.display = "none";
+    if (user && gate) {
+      const title = gate.querySelector("h3");
+      const copy = gate.querySelector("p");
+      const link = gate.querySelector("a");
+      if (title) title.textContent = "Booking is for regular members and above";
+      if (copy) copy.textContent = "A visitor account can read the site. Regular members, moderators, and admins can request a consultation.";
+      if (link) link.style.display = "none";
+    }
     return;
   }
 
