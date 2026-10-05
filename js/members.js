@@ -218,9 +218,9 @@ function profileLines(person) {
 function personCard(person, actorRole, moderators, regulars) {
   return `<article class="org-card">
       <span class="org-card-name">${escHtml(memberName(person))}</span>
+      ${profileLines(person)}
       ${emailLine(person.email)}
       ${roleControl(person, actorRole)}
-      ${profileLines(person)}
       ${supervisorControl(person, actorRole, regulars)}
       ${leadControl(person, actorRole, moderators, regulars)}
     </article>`;

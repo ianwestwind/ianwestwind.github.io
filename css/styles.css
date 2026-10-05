@@ -3624,7 +3624,7 @@ a.org-card-email:hover { color: var(--text-secondary); }
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
-  margin-top: 0.4rem;
+  margin-top: 0.2rem;
   color: var(--text-secondary);
   font-size: 0.8rem;
   line-height: 1.35;
