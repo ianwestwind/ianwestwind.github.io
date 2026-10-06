@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Members · Multimodal Intelligence Lab</title>
-  <link rel="stylesheet" href="css/styles.css?v=forms2" />
+  <title>Application · Multimodal Intelligence Lab</title>
+  <link rel="stylesheet" href="css/styles.css?v=forms6" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 </head>
 <body>
@@ -47,9 +47,9 @@
             <a href="apply.html?form=transition" data-join-internal hidden>Volunteer Transition</a>
           </div>
         </div>
-        <div class="nav-dropdown open" id="nav-members" hidden>
+        <div class="nav-dropdown" id="nav-members" hidden>
           <div class="nav-dropdown-head">
-            <a href="members.html" class="nav-dropdown-btn active">Members <span class="nav-dropdown-chevron">▾</span></a>
+            <a href="members.html" class="nav-dropdown-btn">Members <span class="nav-dropdown-chevron">▾</span></a>
           </div>
           <div class="nav-dropdown-menu">
             <a href="members-diagram.html">Diagram</a>
@@ -61,20 +61,52 @@
 
     <main class="main-content">
       <div class="page-wrapper">
-        <div class="page-title-bar">
-          <div class="container">
-            <h1>Members</h1>
-            <p>People in the lab</p>
+        <div class="section-sm container join-wide">
+          <div id="apply-missing" hidden>
+            <h1>Choose an application</h1>
+            <p class="apply-intro">Use the form that matches your role. All three ask for the same background information, then questions specific to that group.</p>
+            <div class="join-apply">
+              <a href="apply.html?form=collaborator">Collaborator Inquiry</a>
+              <a href="apply.html?form=trainee">Graduate &amp; Medical Trainee</a>
+              <a href="apply.html?form=undergraduate">Undergraduate</a>
+            </div>
           </div>
-        </div>
 
-        <div class="section-sm container">
-          <div id="org-gate" class="access-gate" hidden>
-            <h3>Lab members</h3>
-            <p id="org-gate-copy">Sign in with a regular member account or above to see lab members.</p>
-            <a href="login.html" class="btn btn-primary btn-sm" id="org-gate-login">Sign In</a>
+          <div id="apply-gate" hidden>
+            <h1>Volunteer Transition</h1>
+            <p class="apply-intro">This request is for current lab members who have finished six months as a volunteer. Sign in with a member account to continue.</p>
+            <a class="btn btn-primary btn-sm" href="login.html">Sign in</a>
           </div>
-          <div id="org-chart" class="org-chart" data-members-view="profiles" hidden></div>
+
+          <div class="apply-card" id="apply-card" hidden>
+            <div id="apply-root">
+              <p class="apply-kicker" id="apply-kicker"></p>
+              <h1 id="apply-title"></h1>
+              <p class="apply-intro" id="apply-intro"></p>
+              <div class="apply-progress"><div id="apply-progress-bar"></div></div>
+              <p class="apply-step" id="apply-step"></p>
+              <form id="apply-form">
+                <h2 class="apply-page-title" id="apply-page-title"></h2>
+                <div id="apply-body"></div>
+                <p class="form-error" id="apply-error"></p>
+                <div class="apply-actions">
+                  <button type="button" class="btn btn-ghost btn-sm" id="apply-back">Back</button>
+                  <span style="display:flex;gap:.5rem;">
+                    <button type="button" class="btn btn-primary btn-sm" id="apply-next">Next</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="apply-submit" hidden>Submit application</button>
+                  </span>
+                </div>
+              </form>
+              <div id="apply-done" class="apply-done" hidden>
+                <h2></h2>
+                <p></p>
+              </div>
+            </div>
+            <div id="apply-admin" class="apply-admin" hidden>
+              <button type="button" class="btn btn-ghost btn-sm" id="apply-admin-toggle">View submissions</button>
+              <div id="apply-admin-list" class="apply-admin-list" hidden></div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -124,10 +156,10 @@
     import { initLayoutControls } from "./js/layout-controls.js?v=nav3";
     import { logVisit } from "./js/analytics.js";
     import { initNavVisibility } from "./js/nav-visibility.js?v=join3";
-    import { initMembers } from "./js/members.js?v=pages8";
+    import { initApply } from "./js/apply.js?v=16";
 
     initLayoutControls();
-    logVisit("members");
+    logVisit("apply");
 
     document.getElementById("nav-logout").addEventListener("click", async () => {
       if (!(await logout())) return;
@@ -138,7 +170,7 @@
     initAuth(async (user, role) => {
       updateNavUI(user, role);
       await initNavVisibility(role);
-      await initMembers(role);
+      await initApply(user, role);
     });
   </script>
 </body>

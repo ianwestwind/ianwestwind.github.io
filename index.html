@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ian Kim · Multimodal Intelligence Lab</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=forms2" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
@@ -41,7 +41,26 @@
         </div>
         <a href="consultation.html">Consultation</a>
         <a href="timeline.html">Timeline</a>
-        <a href="members.html" id="nav-members" hidden>Members</a>
+        <div class="nav-dropdown" data-nav-key="join">
+          <div class="nav-dropdown-head">
+            <a href="join.html" class="nav-dropdown-btn">Join Us <span class="nav-dropdown-chevron">▾</span></a>
+          </div>
+          <div class="nav-dropdown-menu">
+            <a href="apply.html?form=collaborator">Collaborator Inquiry</a>
+            <a href="apply.html?form=trainee">Graduate &amp; Medical Trainee</a>
+            <a href="apply.html?form=undergraduate">Undergraduate</a>
+            <a href="apply.html?form=transition" data-join-internal hidden>Volunteer Transition</a>
+          </div>
+        </div>
+        <div class="nav-dropdown" id="nav-members" hidden>
+          <div class="nav-dropdown-head">
+            <a href="members.html" class="nav-dropdown-btn">Members <span class="nav-dropdown-chevron">▾</span></a>
+          </div>
+          <div class="nav-dropdown-menu">
+            <a href="members-diagram.html">Diagram</a>
+            <a href="members-access.html">Access</a>
+          </div>
+        </div>
       </div>
     </aside>
 
@@ -304,10 +323,10 @@
 
   <script type="module">
     import { auth, db, storage } from "./js/firebase-config.js";
-    import { initAuth, updateNavUI, logout, showToast, hasRole } from "./js/auth.js?v=11";
-    import { initLayoutControls } from "./js/layout-controls.js";
+    import { initAuth, updateNavUI, logout, showToast, hasRole } from "./js/auth.js?v=13";
+    import { initLayoutControls } from "./js/layout-controls.js?v=nav3";
     import { logVisit, showStats } from "./js/analytics.js";
-    import { initNavVisibility } from "./js/nav-visibility.js";
+    import { initNavVisibility } from "./js/nav-visibility.js?v=join3";
     import {
       doc, getDoc, setDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -576,30 +595,52 @@
       return [...list.querySelectorAll(".collab-entry")].map(el => el.dataset.index).join(",");
     }
 
-    function _placeCollabDrag(list, dragEl, x, y) {
+    function _collabDropSlot(list, dragEl, x, y) {
       const under = document.elementFromPoint(x, y);
       const over = under?.closest(".collab-entry");
-      if (!over || over === dragEl || !list.contains(over)) return;
+      if (!over || over === dragEl || !list.contains(over)) return null;
       const box = over.getBoundingClientRect();
       const listBox = list.getBoundingClientRect();
-      const twoCol = box.width < listBox.width * 0.75;
-      const after = twoCol && y >= box.top && y <= box.bottom
+      const beside = box.width < listBox.width * 0.75 && y >= box.top && y <= box.bottom;
+      const after = beside
         ? x > box.left + box.width / 2
         : y > box.top + box.height / 2;
-      if (after) over.after(dragEl);
-      else over.before(dragEl);
+      return { el: over, after, beside };
+    }
+
+    function _markCollabDrop(list, slot) {
+      list.querySelectorAll(".is-drop-before, .is-drop-after, .is-drop-above, .is-drop-below").forEach(el => {
+        el.classList.remove("is-drop-before", "is-drop-after", "is-drop-above", "is-drop-below");
+      });
+      if (!slot) return;
+      const name = slot.beside
+        ? (slot.after ? "is-drop-after" : "is-drop-before")
+        : (slot.after ? "is-drop-below" : "is-drop-above");
+      slot.el.classList.add(name);
     }
 
     function _enableCollabDrag(list) {
       let dragEl = null;
       let startOrder = "";
+      let dropSlot = null;
 
-      const finish = () => {
-        if (!dragEl) return;
-        dragEl.classList.remove("is-dragging");
-        const changed = _collabOrderKey(list) !== startOrder;
+      const resetDrag = () => {
+        if (dragEl) dragEl.classList.remove("is-dragging");
         dragEl = null;
-        if (!changed) return;
+        dropSlot = null;
+        _markCollabDrop(list, null);
+      };
+
+      const commit = () => {
+        if (!dragEl) return;
+        const entry = dragEl;
+        const slot = dropSlot;
+        const orderBefore = startOrder;
+        resetDrag();
+        if (!slot) return;
+        if (slot.after) slot.el.after(entry);
+        else slot.el.before(entry);
+        if (_collabOrderKey(list) === orderBefore) return;
         const source = _profileData?.collaborators || [];
         const next = [...list.querySelectorAll(".collab-entry")]
           .map(el => source[Number(el.dataset.index)])
@@ -619,16 +660,18 @@
           if (_editingCollabIndex != null) _closeCollabForm();
           e.preventDefault();
           dragEl = entry;
+          dropSlot = null;
           startOrder = _collabOrderKey(list);
           entry.classList.add("is-dragging");
           handle.setPointerCapture(e.pointerId);
         });
         handle.addEventListener("pointermove", (e) => {
           if (!dragEl || !handle.hasPointerCapture(e.pointerId)) return;
-          _placeCollabDrag(list, dragEl, e.clientX, e.clientY);
+          dropSlot = _collabDropSlot(list, dragEl, e.clientX, e.clientY);
+          _markCollabDrop(list, dropSlot);
         });
-        handle.addEventListener("pointerup", finish);
-        handle.addEventListener("pointercancel", finish);
+        handle.addEventListener("pointerup", commit);
+        handle.addEventListener("pointercancel", resetDrag);
       });
     }
 

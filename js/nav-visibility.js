@@ -8,7 +8,7 @@ import { db } from "./firebase-config.js";
 import {
   doc, getDoc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { hasRole, showToast } from "./auth.js?v=11";
+import { hasRole, showToast } from "./auth.js?v=13";
 
 const NAV_DOC = doc(db, "site_config", "nav_visibility");
 
@@ -23,8 +23,9 @@ const HREF_TO_KEY = {
   "timeline.html":           "timeline",
 };
 
-const DEFAULT_ORDER = ["software", "design", "forum", "writing", "news", "teaching", "consultation", "timeline"];
-const DEFAULT_STATE = { software: true, design: true, forum: true, writing: true, news: true, teaching: true, consultation: true, timeline: true };
+const DEFAULT_ORDER = ["software", "design", "forum", "writing", "news", "teaching", "consultation", "timeline", "join"];
+const DEFAULT_STATE = { software: true, design: true, forum: true, writing: true, news: true, teaching: true, consultation: true, timeline: true, join: false };
+const KEY_LABEL = { join: "Join Us" };
 let _state = { ...DEFAULT_STATE };
 let _order = [...DEFAULT_ORDER];
 
@@ -82,51 +83,65 @@ export async function initNavVisibility(role) {
     const key = HREF_TO_KEY[link.getAttribute("href")];
     if (!key) return;
 
+    // Auth can resolve as a guest first, then as admin. A guest pass sets
+    // display:none on hidden items; the admin pass must undo that so the
+    // label stays visible next to the eye control.
     if (isAdmin) {
-      const row = document.createElement("div");
-      row.className   = "nav-link-row";
-      row.dataset.navKey = key;
-      row.draggable   = true;
-      link.parentNode.insertBefore(row, link);
-      row.appendChild(link);
+      link.style.display = "";
+      let row = link.parentElement;
+      if (!row || !row.classList.contains("nav-link-row")) {
+        row = document.createElement("div");
+        row.className   = "nav-link-row";
+        row.dataset.navKey = key;
+        row.draggable   = true;
+        link.parentNode.insertBefore(row, link);
+        row.appendChild(link);
 
-      // Drag handle (left)
-      const handle = document.createElement("span");
-      handle.className = "nav-drag-handle";
-      handle.innerHTML = SVG_DRAG;
-      handle.title     = "Drag to reorder";
-      row.insertBefore(handle, link);
+        const handle = document.createElement("span");
+        handle.className = "nav-drag-handle";
+        handle.innerHTML = SVG_DRAG;
+        handle.title     = "Drag to reorder";
+        row.insertBefore(handle, link);
 
-      // Eye button (right)
-      const btn = document.createElement("button");
-      btn.type      = "button";
-      btn.className = "nav-eye-btn" + (_state[key] === false ? " is-hidden" : "");
-      btn.dataset.key = key;
-      btn.title     = _state[key] !== false ? "Hide from visitors" : "Show to visitors";
-      btn.innerHTML = _state[key] !== false ? SVG_EYE : SVG_EYE_OFF;
-      btn.addEventListener("click", () => _toggle(key, btn));
-      row.appendChild(btn);
+        const btn = document.createElement("button");
+        btn.type      = "button";
+        btn.className = "nav-eye-btn";
+        btn.dataset.key = key;
+        btn.addEventListener("click", () => _toggle(key, btn));
+        row.appendChild(btn);
 
-      _addDragEvents(row);
+        _addDragEvents(row);
+      }
+      _paintEye(row.querySelector(".nav-eye-btn"), key);
     } else {
       link.dataset.navKey = key;
-      if (_state[key] === false) link.style.display = "none";
+      link.style.display = _state[key] === false ? "none" : "";
     }
   });
 
   _setupDropdown("forum", isAdmin);
   _setupDropdown("teaching", isAdmin);
+  _setupDropdown("join", isAdmin);
   _applyOrder(isAdmin);
   document.documentElement.setAttribute("data-nav-ready", "");
+}
+
+function _paintEye(btn, key) {
+  if (!btn) return;
+  const visible = _state[key] !== false;
+  btn.classList.toggle("is-hidden", !visible);
+  btn.title = visible ? "Hide from visitors" : "Show to visitors";
+  btn.innerHTML = visible ? SVG_EYE : SVG_EYE_OFF;
 }
 
 function _setupDropdown(key, isAdmin) {
   const dropdown = document.querySelector(`.nav-sidebar .nav-dropdown[data-nav-key="${key}"]`);
   if (!dropdown) return;
   if (!isAdmin) {
-    if (_state[key] === false) dropdown.style.display = "none";
+    dropdown.style.display = _state[key] === false ? "none" : "";
     return;
   }
+  dropdown.style.display = "";
 
   // Research already has this wrapper in HTML. Teaching does not, so add it
   // so the drag handle and eye button sit in the same row as the label.
@@ -167,7 +182,7 @@ function _applyOrder(isAdmin) {
   _order.forEach(key => {
     // Dropdowns (Research, Teaching) stay as .nav-dropdown.
     // Regular items use .nav-link-row (admin) or a (visitor).
-    const sel = key === "teaching" || key === "forum"
+    const sel = key === "teaching" || key === "forum" || key === "join"
       ? `.nav-dropdown[data-nav-key="${key}"]`
       : isAdmin
         ? `.nav-link-row[data-nav-key="${key}"]`
@@ -254,7 +269,7 @@ async function _toggle(key, btn) {
 
   try {
     await setDoc(NAV_DOC, { ..._state, order: _order });
-    const label = key.charAt(0).toUpperCase() + key.slice(1);
+    const label = KEY_LABEL[key] || key.charAt(0).toUpperCase() + key.slice(1);
     showToast(label + (nowVisible ? " is now visible." : " is now hidden."), "info");
   } catch (e) {
     _state[key] = wasVisible;

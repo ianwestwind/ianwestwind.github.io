@@ -196,6 +196,9 @@ export function friendlyAuthError(code) {
 export function updateNavUI(user, role) {
   const navMembers = document.getElementById("nav-members");
   if (navMembers) navMembers.hidden = !hasRole(role, "regular");
+  document.querySelectorAll("[data-join-internal]").forEach((el) => {
+    el.hidden = !hasRole(role, "regular");
+  });
 
   const navEmail    = document.getElementById("nav-user-email");
   const navBadge    = document.getElementById("nav-role-badge");

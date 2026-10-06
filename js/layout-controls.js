@@ -92,6 +92,8 @@ export function initLayoutControls() {
 
   initTeachingLock();
   initResearchNav();
+  initMembersNav();
+  initJoinNav();
   initLogo();
 }
 
@@ -120,6 +122,59 @@ function initResearchNav() {
         e.preventDefault();
         dropdown.classList.toggle("open");
       }
+    });
+  });
+}
+
+function initJoinNav() {
+  const onJoin = location.pathname.endsWith("/join.html");
+  const onApply = location.pathname.endsWith("/apply.html");
+  const form = new URLSearchParams(location.search).get("form");
+
+  document.querySelectorAll(".nav-dropdown[data-nav-key='join']").forEach((dropdown) => {
+    const btn = dropdown.querySelector(".nav-dropdown-btn");
+    if (onJoin || onApply) dropdown.classList.add("open");
+    if (onJoin) btn?.classList.add("active");
+    dropdown.querySelectorAll(".nav-dropdown-menu a").forEach((link) => {
+      const href = link.getAttribute("href") || "";
+      const target = new URL(href, location.href);
+      if (onApply && target.searchParams.get("form") === form) link.classList.add("active");
+    });
+    if (!btn || btn.dataset.joinBound === "1") return;
+    btn.dataset.joinBound = "1";
+    btn.addEventListener("click", (e) => {
+      if (!location.pathname.endsWith("/join.html")) return;
+      e.preventDefault();
+      dropdown.classList.toggle("open");
+    });
+  });
+}
+
+function initMembersNav() {
+  const path = location.pathname;
+  const page = path.endsWith("/members-diagram.html")
+    ? "diagram"
+    : path.endsWith("/members-access.html")
+      ? "access"
+      : path.endsWith("/members.html")
+        ? "members"
+        : "";
+
+  document.querySelectorAll("#nav-members").forEach((dropdown) => {
+    const btn = dropdown.querySelector(".nav-dropdown-btn");
+    if (page) dropdown.classList.add("open");
+    if (page === "members") btn?.classList.add("active");
+    dropdown.querySelectorAll(".nav-dropdown-menu a").forEach((link) => {
+      const href = link.getAttribute("href") || "";
+      if (page === "diagram" && href.includes("members-diagram.html")) link.classList.add("active");
+      if (page === "access" && href.includes("members-access.html")) link.classList.add("active");
+    });
+    if (!btn || btn.dataset.membersBound === "1") return;
+    btn.dataset.membersBound = "1";
+    btn.addEventListener("click", (e) => {
+      if (!location.pathname.endsWith("/members.html")) return;
+      e.preventDefault();
+      dropdown.classList.toggle("open");
     });
   });
 }

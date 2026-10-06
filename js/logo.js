@@ -5,7 +5,7 @@
 import { db, storage } from "./firebase-config.js";
 import { doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-import { initAuth, hasRole, showToast } from "./auth.js?v=11";
+import { initAuth, hasRole, showToast } from "./auth.js?v=13";
 
 const LOGO_DOC = doc(db, "site_config", "logo");
 const PLACEHOLDER = "img/logo.png";

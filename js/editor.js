@@ -53,6 +53,14 @@ function ensureRegistered() {
   Size.whitelist = ["12px", "14px", "16px", "18px", "20px", "24px", "32px", "48px"];
   Quill.register(Size, true);
 
+  // Block box marker. Independent of header level, so H1, H2, H3, and
+  // body text can share one box. The value is a group id.
+  const Parchment = Quill.import("parchment");
+  const Box = new Parchment.Attributor.Attribute("box", "data-box", {
+    scope: Parchment.Scope.BLOCK
+  });
+  Quill.register(Box, true);
+
   const BlockEmbed = Quill.import("blots/block/embed");
 
   // Override built-in video blot → native <video> instead of <iframe>

@@ -32,6 +32,22 @@ service firebase.storage {
         && request.resource.size < 25 * 1024 * 1024;  // 25 MB max
     }
 
+    // Application CVs. Anyone can upload a PDF or Word file and read that
+    // file back by its path so the form can store a link. Listing the
+    // folder stays closed. Paths include a random id, so they are not browsable.
+    match /applications/{allPaths=**} {
+      allow get: if true;
+      allow create: if request.resource.size < 10 * 1024 * 1024
+        && (
+          request.resource.contentType.matches('application/pdf')
+          || request.resource.contentType.matches('application/msword')
+          || request.resource.contentType.matches('application/vnd.ms-word')
+          || request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+          || request.resource.contentType.matches('application/octet-stream')
+        );
+      allow update, delete: if request.auth != null;
+    }
+
     // Profile and collaborator photos
     match /profile/{allPaths=**} {
       allow read: if true;

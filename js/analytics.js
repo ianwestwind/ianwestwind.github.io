@@ -8,7 +8,7 @@ import { db } from "./firebase-config.js";
 import {
   collection, addDoc, getDocs, serverTimestamp, query, orderBy, limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { hasRole } from "./auth.js?v=11";
+import { hasRole } from "./auth.js?v=13";
 
 const VISITS = "visits";
 

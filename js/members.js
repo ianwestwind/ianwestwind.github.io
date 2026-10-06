@@ -5,10 +5,11 @@
 // A moderator can reassign regular members and visitors.
 // ============================================================
 
-import { db } from "./firebase-config.js";
+import { db, storage } from "./firebase-config.js";
 import { collection, doc, deleteField, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getCurrentUser, hasRole, escHtml, showToast } from "./auth.js?v=11";
-import { onNavOrderChange } from "./nav-visibility.js?v=order1";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+import { getCurrentUser, hasRole, escHtml, showToast } from "./auth.js?v=13";
+import { onNavOrderChange } from "./nav-visibility.js?v=join3";
 
 const LEVELS = [
   { id: "admin", label: "Admin" },
@@ -36,6 +37,7 @@ const AREA_BY_KEY = {
   teaching: { label: "Teaching", note: "Limited access. Sign up for the class, or ask the director for the password." },
   consultation: { label: "Consultation", access: { admin: "full", moderator: "own", regular: "own", visitor: "none" } },
   timeline: { label: "Timeline", access: { admin: "full", moderator: "read", regular: "read", visitor: "read" } },
+  join: { label: "Join Us", access: { admin: "full", moderator: "read", regular: "read", visitor: "read" } },
   members: { label: "Members", access: { admin: "full", moderator: "own", regular: "read", visitor: "none" } }
 };
 
@@ -48,19 +50,23 @@ const HREF_TO_AREA = {
   "news.html": "news",
   "consultation.html": "consultation",
   "timeline.html": "timeline",
+  "join.html": "join",
   "members.html": "members"
 };
 
-const DEFAULT_AREA_KEYS = ["about", "software", "design", "forum", "writing", "news", "teaching", "consultation", "timeline", "members"];
+const DEFAULT_AREA_KEYS = ["about", "software", "design", "forum", "writing", "news", "teaching", "consultation", "timeline", "join", "members"];
 
 let _people = [];
 let _actorRole = "";
 let _bound = false;
 let _ready = false;
+let _editingId = "";
+let _pendingPhotoFile = null;
+let _photoObjectUrl = "";
 
 onNavOrderChange(() => {
   const chart = document.getElementById("org-chart");
-  if (_ready && chart && !chart.hidden) paint();
+  if (_ready && chart && !chart.hidden && chart.dataset.membersView === "access") paint();
 });
 
 const ROLE_CHOICES = [
@@ -133,12 +139,13 @@ function normalizeRole(role) {
   return String(role || "regular").trim().toLowerCase();
 }
 
-function emailLine(email) {
+function emailLine(email, className = "org-card-email") {
   const value = String(email || "").trim();
+  if (!value) return "";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-    return `<span class="org-card-email">${escHtml(value || "No email")}</span>`;
+    return `<span class="${className}">${escHtml(value)}</span>`;
   }
-  return `<a class="org-card-email" href="mailto:${escHtml(value)}">${escHtml(value)}</a>`;
+  return `<a class="${className}" href="mailto:${escHtml(value)}">${escHtml(value)}</a>`;
 }
 
 function roleControl(person, actorRole) {
@@ -325,6 +332,109 @@ function branchItem(card, children) {
   return `<li class="org-node">${personWrap(card, { joint: "in", stem: !!children })}${kidsList(children)}</li>`;
 }
 
+function safeHttps(url) {
+  try {
+    const parsed = new URL(String(url || "").trim());
+    if (parsed.protocol !== "https:") return "";
+    return escHtml(parsed.href);
+  } catch {
+    return "";
+  }
+}
+
+function initials(name) {
+  const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+  const letters = (parts[0]?.[0] || "") + (parts.length > 1 ? parts[parts.length - 1][0] : "");
+  return (letters || "?").toUpperCase();
+}
+
+function photoMarkup(person, rawSrc = "") {
+  const src = rawSrc ? escHtml(rawSrc) : safeHttps(person.photoUrl);
+  if (src) return `<img class="member-photo" src="${src}" alt="" />`;
+  return `<span class="member-photo member-photo-fallback" aria-hidden="true">${escHtml(initials(memberName(person)))}</span>`;
+}
+
+function bioHtml(bio) {
+  const parts = String(bio || "").trim().split(/\n+/).map(part => part.trim()).filter(Boolean);
+  if (!parts.length) return "";
+  return `<div class="member-bio">${parts.map(part => `<p>${escHtml(part)}</p>`).join("")}</div>`;
+}
+
+function clearPendingPhoto() {
+  _pendingPhotoFile = null;
+  if (_photoObjectUrl) URL.revokeObjectURL(_photoObjectUrl);
+  _photoObjectUrl = "";
+}
+
+function sortProfiles(list) {
+  const roleRank = { admin: 0, moderator: 1, regular: 2, visitor: 3 };
+  const classRank = { a: 0, b: 1, c: 2, "": 3 };
+  return [...list].sort((a, b) => {
+    const byRole = (roleRank[a.role] ?? 9) - (roleRank[b.role] ?? 9);
+    if (byRole) return byRole;
+    const byClass = classRank[classOf(a)] - classRank[classOf(b)];
+    if (byClass) return byClass;
+    return memberName(a).localeCompare(memberName(b), undefined, { sensitivity: "base" });
+  });
+}
+
+function profileForm(person) {
+  return `<form class="member-card is-editing" data-profile-form>
+      <div class="member-photo-field">
+        ${photoMarkup(person, _photoObjectUrl)}
+        <label class="file-input-label">Photo
+          <input type="file" accept="image/*" data-profile-photo />
+        </label>
+      </div>
+      <div class="member-fields">
+        <label>Full name
+          <input name="displayName" required maxlength="120" value="${escHtml(memberName(person) === "Unnamed" ? "" : memberName(person))}" />
+        </label>
+        <label>Title
+          <input name="title" maxlength="120" value="${escHtml(String(person.title || "").trim())}" />
+        </label>
+        <label>Institution
+          <input name="institution" maxlength="120" value="${escHtml(String(person.institution || "").trim())}" />
+        </label>
+        <label>Bio
+          <textarea name="bio" maxlength="800" rows="4">${escHtml(String(person.bio || "").trim())}</textarea>
+        </label>
+        <div class="member-edit-actions">
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-cancel-profile>Cancel</button>
+        </div>
+      </div>
+    </form>`;
+}
+
+function memberProfileCard(person) {
+  const self = getCurrentUser()?.uid === person.id;
+  if (self && _editingId === person.id) return profileForm(person);
+  const lines = [person.title, person.institution]
+    .map(value => String(value || "").trim())
+    .filter(Boolean);
+  const edit = self
+    ? `<button type="button" class="btn btn-ghost btn-sm member-edit-btn" data-edit-profile>Edit</button>`
+    : "";
+  return `<article class="member-card">
+      ${photoMarkup(person)}
+      <div class="member-body">
+        <div class="member-heading">
+          <h2 class="member-name">${escHtml(memberName(person))}</h2>
+          ${edit}
+        </div>
+        ${lines.length ? `<div class="member-meta">${lines.map(line => `<span>${escHtml(line)}</span>`).join("")}</div>` : ""}
+        ${bioHtml(person.bio)}
+        ${emailLine(person.email, "member-email")}
+      </div>
+    </article>`;
+}
+
+function renderProfiles(people) {
+  if (!people.length) return `<p class="org-empty">No members yet.</p>`;
+  return `<div class="member-list">${sortProfiles(people).map(memberProfileCard).join("")}</div>`;
+}
+
 function regularKids(person, actorRole, moderators, regulars) {
   const kids = sortRegulars(regulars.filter(item => supervisorOf(item, regulars)?.id === person.id));
   if (!kids.length) return "";
@@ -389,7 +499,7 @@ export function renderDirectory(people, actorRole = "") {
   ];
   const looseHtml = looseCards.length ? `<div class="org-loose">${looseCards.join("")}</div>` : "";
 
-  return `${renderLevels()}${tree}${looseHtml}`;
+  return `${tree}${looseHtml}`;
 }
 
 async function onAssign(event) {
@@ -589,11 +699,103 @@ export function layoutOrgLines(root) {
   });
 }
 
+function membersView() {
+  return document.getElementById("org-chart")?.dataset.membersView || "profiles";
+}
+
 function paint() {
   const chart = document.getElementById("org-chart");
   if (!chart) return;
-  chart.innerHTML = renderDirectory(_people, _actorRole);
-  layoutOrgLines(chart);
+  const view = membersView();
+  if (view === "access") {
+    chart.innerHTML = renderLevels();
+    return;
+  }
+  if (view === "diagram") {
+    chart.innerHTML = renderDirectory(_people, _actorRole);
+    layoutOrgLines(chart);
+    return;
+  }
+  chart.innerHTML = renderProfiles(_people);
+}
+
+function onEditProfile(event) {
+  if (!event.target.closest?.("[data-edit-profile]")) return;
+  const user = getCurrentUser();
+  if (!user) return;
+  _editingId = user.uid;
+  clearPendingPhoto();
+  paint();
+}
+
+function onCancelProfile(event) {
+  if (!event.target.closest?.("[data-cancel-profile]")) return;
+  _editingId = "";
+  clearPendingPhoto();
+  paint();
+}
+
+function onProfilePhoto(event) {
+  const input = event.target.closest?.("[data-profile-photo]");
+  if (!input) return;
+  const file = input.files?.[0];
+  input.value = "";
+  if (!file) return;
+  if (!file.type.startsWith("image/") || file.size > 10 * 1024 * 1024) {
+    showToast("Use an image up to 10 MB.", "error");
+    return;
+  }
+  _pendingPhotoFile = file;
+  if (_photoObjectUrl) URL.revokeObjectURL(_photoObjectUrl);
+  _photoObjectUrl = URL.createObjectURL(file);
+  const slot = input.closest(".member-photo-field");
+  const current = slot?.querySelector(".member-photo");
+  if (!slot || !current) return;
+  const img = document.createElement("img");
+  img.className = "member-photo";
+  img.alt = "";
+  img.src = _photoObjectUrl;
+  current.replaceWith(img);
+}
+
+async function onSaveProfile(event) {
+  const form = event.target.closest?.("[data-profile-form]");
+  if (!form) return;
+  event.preventDefault();
+  const user = getCurrentUser();
+  const person = _people.find(item => item.id === user?.uid);
+  if (!user || !person) return;
+  const displayName = form.displayName.value.trim();
+  const title = form.title.value.trim();
+  const institution = form.institution.value.trim();
+  const bio = form.bio.value.trim();
+  if (!displayName || displayName.length > 120) {
+    showToast("Add a full name.", "error");
+    return;
+  }
+  if (title.length > 120 || institution.length > 120 || bio.length > 800) {
+    showToast("Shorten the title, institution, or bio.", "error");
+    return;
+  }
+  const patch = { displayName, title, institution, bio };
+  const submit = form.querySelector("[type='submit']");
+  if (submit) submit.disabled = true;
+  try {
+    if (_pendingPhotoFile) {
+      const imageRef = ref(storage, `profile/member-${user.uid}-${Date.now()}.jpg`);
+      await uploadBytes(imageRef, _pendingPhotoFile, { contentType: _pendingPhotoFile.type || "image/jpeg" });
+      patch.photoUrl = await getDownloadURL(imageRef);
+    }
+    await updateDoc(doc(db, "users", user.uid), patch);
+    Object.assign(person, patch);
+    _editingId = "";
+    clearPendingPhoto();
+    showToast("Profile saved.", "success");
+    paint();
+  } catch (err) {
+    if (submit) submit.disabled = false;
+    showToast("Could not save profile: " + (err.message || "unknown error"), "error");
+  }
 }
 
 export async function initMembers(role) {
@@ -606,10 +808,16 @@ export async function initMembers(role) {
   if (!_bound) {
     _bound = true;
     chart.addEventListener("change", (event) => {
-      if (event.target.closest?.("[data-assign-supervisor]")) onAssignSupervisor(event);
+      if (event.target.closest?.("[data-profile-photo]")) onProfilePhoto(event);
+      else if (event.target.closest?.("[data-assign-supervisor]")) onAssignSupervisor(event);
       else if (event.target.closest?.("[data-assign-lead]")) onAssignLead(event);
       else onAssign(event);
     });
+    chart.addEventListener("click", (event) => {
+      onEditProfile(event);
+      onCancelProfile(event);
+    });
+    chart.addEventListener("submit", onSaveProfile);
     if (typeof ResizeObserver !== "undefined") {
       new ResizeObserver(() => {
         if (!chart.hidden) layoutOrgLines(chart);
@@ -620,13 +828,22 @@ export async function initMembers(role) {
   if (!hasRole(role, "regular")) {
     chart.hidden = true;
     chart.innerHTML = "";
+    _editingId = "";
+    clearPendingPhoto();
     gate.hidden = false;
     const signedIn = !!getCurrentUser();
-    if (gateCopy) {
-      gateCopy.textContent = signedIn
-        ? "This directory is for regular members, moderators, and admins."
-        : "Sign in with a regular member account or above to see the directory.";
-    }
+    const view = membersView();
+    const signedOutCopy = {
+      profiles: "Sign in with a regular member account or above to see lab members.",
+      diagram: "Sign in with a regular member account or above to see the diagram.",
+      access: "Sign in with a regular member account or above to see access details."
+    };
+    const signedInCopy = {
+      profiles: "Lab member profiles are for regular members, moderators, and admins.",
+      diagram: "The diagram is for regular members, moderators, and admins.",
+      access: "Access details are for regular members, moderators, and admins."
+    };
+    if (gateCopy) gateCopy.textContent = signedIn ? signedInCopy[view] : signedOutCopy[view];
     if (gateLogin) gateLogin.hidden = signedIn;
     return;
   }

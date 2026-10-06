@@ -11,7 +11,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getCurrentUser, hasRole, escHtml, showToast, formatDate
-} from "./auth.js?v=11";
+} from "./auth.js?v=13";
 
 const SLOTS_COL    = "consultation_slots";
 const BOOKINGS_COL = "consultations";

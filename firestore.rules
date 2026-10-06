@@ -18,10 +18,10 @@ service cloud.firestore {
 
     // Fetch the caller's role from the users collection (safe if doc missing)
     function callerRole() {
-      let path = /databases/$(database)/documents/users/$(request.auth.uid);
-      return !exists(path)
-        ? 'guest'
-        : get(path).data.get('role', 'regular');
+      return !isAuth() ? 'guest'
+        : !exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          ? 'guest'
+          : get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'regular');
     }
 
     // Role hierarchy check: caller's role must be >= required
@@ -303,6 +303,56 @@ service cloud.firestore {
     match /site_config/{docId} {
       allow read: if true;
       allow write: if hasRole('admin');
+    }
+
+
+    // ---- /applications/{id} ----
+    // Public forms 1–3. Form 4 (transition) is members only.
+    // Admins read every submission; applicants cannot read other people's.
+    match /applications/{id} {
+      function answers() {
+        return request.resource.data.answers;
+      }
+      function labRoles() {
+        return [
+          "Lab Rotation",
+          "Thesis or Dissertation Research",
+          "Secondary / Cross-Disciplinary Project",
+          "Medical / Clinical Research Block",
+          "Graduate Course Credit / Capstone / Practicum",
+          "Introductory Trainee Phase",
+          "Visiting Scholar",
+          "Other (Please specify below)"
+        ];
+      }
+      function labRoleOk() {
+        let role = answers().get("labRole", "");
+        let known = role in labRoles();
+        let otherOk = role != "Other (Please specify below)"
+          || (
+            answers().get("labRoleOther", "") is string
+            && answers().labRoleOther.size() > 0
+            && answers().labRoleOther.size() < 500
+          );
+        return request.resource.data.formType == "trainee" ? known && otherOk : !("labRole" in answers()) || (known && otherOk);
+      }
+      function answerOk() {
+        return answers().fullName is string
+          && answers().fullName.size() > 0
+          && answers().fullName.size() < 200
+          && answers().email is string
+          && answers().email.size() > 3
+          && answers().email.size() < 200
+          && answers().accuracyCert == true
+          && answers().dataConsent == true
+          && (!("statement" in answers()) || (answers().statement is string && answers().statement.size() < 20000))
+          && labRoleOk();
+      }
+      allow create: if answerOk() && (
+        request.resource.data.formType in ["collaborator", "trainee", "undergraduate"]
+        || (request.resource.data.formType == "transition" && hasRole("regular"))
+      );
+      allow read, update, delete: if hasRole("admin");
     }
 
 

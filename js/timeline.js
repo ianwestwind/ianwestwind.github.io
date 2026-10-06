@@ -6,7 +6,7 @@
 
 import { db } from "./firebase-config.js";
 import { doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { hasRole, showToast, escHtml } from "./auth.js?v=11";
+import { hasRole, showToast, escHtml } from "./auth.js?v=13";
 import { initEditor, getEditorHTML, renderBody, highlightContent } from "./editor.js";
 
 const TIMELINE_DOC = doc(db, "site_config", "timeline");

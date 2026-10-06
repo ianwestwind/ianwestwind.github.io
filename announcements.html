@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Announcements · Multimodal Intelligence Lab</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=forms2" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 </head>
 <body>
@@ -36,7 +36,26 @@
         </div>
         <a href="consultation.html">Consultation</a>
         <a href="timeline.html">Timeline</a>
-        <a href="members.html" id="nav-members" hidden>Members</a>
+        <div class="nav-dropdown" data-nav-key="join">
+          <div class="nav-dropdown-head">
+            <a href="join.html" class="nav-dropdown-btn">Join Us <span class="nav-dropdown-chevron">▾</span></a>
+          </div>
+          <div class="nav-dropdown-menu">
+            <a href="apply.html?form=collaborator">Collaborator Inquiry</a>
+            <a href="apply.html?form=trainee">Graduate &amp; Medical Trainee</a>
+            <a href="apply.html?form=undergraduate">Undergraduate</a>
+            <a href="apply.html?form=transition" data-join-internal hidden>Volunteer Transition</a>
+          </div>
+        </div>
+        <div class="nav-dropdown" id="nav-members" hidden>
+          <div class="nav-dropdown-head">
+            <a href="members.html" class="nav-dropdown-btn">Members <span class="nav-dropdown-chevron">▾</span></a>
+          </div>
+          <div class="nav-dropdown-menu">
+            <a href="members-diagram.html">Diagram</a>
+            <a href="members-access.html">Access</a>
+          </div>
+        </div>
       </div>
     </aside>
     <main class="main-content">
@@ -127,11 +146,11 @@
   </footer>
 
   <script type="module">
-    import { initAuth, updateNavUI, logout, hasRole, showToast } from "./js/auth.js?v=11";
-    import { initLayoutControls } from "./js/layout-controls.js";
+    import { initAuth, updateNavUI, logout, hasRole, showToast } from "./js/auth.js?v=13";
+    import { initLayoutControls } from "./js/layout-controls.js?v=nav3";
     import { initAnnouncementsPage, submitAnnouncement } from "./js/announcements.js";
     import { logVisit, showStats } from "./js/analytics.js";
-    import { initNavVisibility } from "./js/nav-visibility.js";
+    import { initNavVisibility } from "./js/nav-visibility.js?v=join3";
 
     initLayoutControls();
     logVisit("announcements");
